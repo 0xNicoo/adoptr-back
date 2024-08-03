@@ -44,7 +44,7 @@ public class ExampleController {
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{id}")
     public ResponseEntity<String> delete(@PathVariable Long id) throws BadRequestException {
         exampleService.delete(id);
         return new ResponseEntity<>(HttpStatus.OK);
