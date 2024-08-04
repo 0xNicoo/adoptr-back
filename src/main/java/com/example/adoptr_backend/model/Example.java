@@ -16,4 +16,10 @@ public class Example {
 
     @Column
     private String text;
+
+    @Enumerated(EnumType.STRING)
+    private ExampleType type;
+
+    @Column
+    private Boolean active;
 }
