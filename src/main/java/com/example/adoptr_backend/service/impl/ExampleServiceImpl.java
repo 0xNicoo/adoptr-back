@@ -2,11 +2,16 @@ package com.example.adoptr_backend.service.impl;
 
 import com.example.adoptr_backend.model.Example;
 import com.example.adoptr_backend.repository.ExampleRepository;
+import com.example.adoptr_backend.repository.specification.ExampleSpec;
 import com.example.adoptr_backend.service.ExampleService;
 import com.example.adoptr_backend.service.dto.request.ExampleDTOin;
+import com.example.adoptr_backend.service.dto.request.ExampleFilterDTO;
 import com.example.adoptr_backend.service.dto.response.ExampleDTO;
 import com.example.adoptr_backend.service.mapper.ExampleMapper;
 import org.apache.coyote.BadRequestException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,9 +40,10 @@ public class ExampleServiceImpl implements ExampleService {
     }
 
     @Override
-    public List<ExampleDTO> getAll() {
-        List<Example> examples = exampleRepository.findAll();
-        return ExampleMapper.MAPPER.toDto(examples);
+    public Page<ExampleDTO> getAll(ExampleFilterDTO filter, Pageable pageable) {
+        Specification<Example> spec = ExampleSpec.getSpec(filter);
+        Page<Example> page = exampleRepository.findAll(spec, pageable);
+        return page.map(ExampleMapper.MAPPER::toDto);
     }
 
     @Override

@@ -2,8 +2,11 @@ package com.example.adoptr_backend.controller;
 
 import com.example.adoptr_backend.service.ExampleService;
 import com.example.adoptr_backend.service.dto.request.ExampleDTOin;
+import com.example.adoptr_backend.service.dto.request.ExampleFilterDTO;
 import com.example.adoptr_backend.service.dto.response.ExampleDTO;
 import org.apache.coyote.BadRequestException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,9 +30,9 @@ public class ExampleController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ExampleDTO>> getAll(){
-        List<ExampleDTO> response = exampleService.getAll();
-        return ResponseEntity.ok(response);
+    public ResponseEntity<List<ExampleDTO>> getAll(@ModelAttribute ExampleFilterDTO filterDTO, Pageable pageable){
+        Page<ExampleDTO> response = exampleService.getAll(filterDTO, pageable);
+        return new ResponseEntity<>(response.getContent(), HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
