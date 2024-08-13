@@ -5,6 +5,7 @@ import com.example.adoptr_backend.repository.UserRepository;
 import com.example.adoptr_backend.service.AuthService;
 import com.example.adoptr_backend.service.dto.request.UserDTOin;
 import com.example.adoptr_backend.service.dto.response.UserDTO;
+import com.example.adoptr_backend.service.mapper.UserMapper;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,10 +23,8 @@ public class AuthServiceImpl implements AuthService {
         this.authenticationManager = authenticationManager;
     }
 
-    //TODO: Ver como usar mapstruct para mapear el user/userdto
     public void register(UserDTOin dto) {
-        User user = new User();
-        user.setEmail(dto.getEmail());
+        User user = UserMapper.MAPPER.toEntity(dto);
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         userRepository.save(user);
     }
