@@ -51,32 +51,28 @@ public class AppConfig {
 
     @Bean
     UserDetailsService userDetailsService() {
-        return new UserDetailsService() {
-            @Override
-            public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-                // NOTE: no username, we just use emails internally.
-                Optional<User> optionalUserDao = userRepository.findByEmail(username);
-                if (optionalUserDao.isEmpty()) {
-                    throw new UsernameNotFoundException("User " + username + " not found.");
-                }
-                User user = optionalUserDao.get();
-                return new UserDetails() {
-                    @Override
-                    public Collection<? extends GrantedAuthority> getAuthorities() {
-                        return List.of();
-                    }
-
-                    @Override
-                    public String getPassword() {
-                        return user.getPassword();
-                    }
-
-                    @Override
-                    public String getUsername() {
-                        return user.getEmail();
-                    }
-                };
+        return username -> {
+            Optional<User> userOptional = userRepository.findByEmail(username);
+            if (userOptional.isEmpty()) {
+                throw new UsernameNotFoundException("User " + username + " not found.");
             }
+            User user = userOptional.get();
+            return new UserDetails() {
+                @Override
+                public Collection<? extends GrantedAuthority> getAuthorities() {
+                    return List.of();
+                }
+
+                @Override
+                public String getPassword() {
+                    return user.getPassword();
+                }
+
+                @Override
+                public String getUsername() {
+                    return user.getEmail();
+                }
+            };
         };
     }
 
