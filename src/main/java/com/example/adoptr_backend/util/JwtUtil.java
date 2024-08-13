@@ -1,37 +1,36 @@
-package com.example.adoptr_backend.service.impl;
+package com.example.adoptr_backend.util;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
-import com.example.adoptr_backend.service.JwtService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
 
 @Service
-public class JwtServiceImpl implements JwtService {
+public class JwtUtil {
 
-    private final long jwtExpiration;
-    private final Algorithm signingAlgorithm;
+    private static long jwtExpiration;
+    private static Algorithm signingAlgorithm;
 
-    public JwtServiceImpl(
+    public JwtUtil(
             @Value("${security.jwt.secret-key}") String secretKey,
             @Value("${security.jwt.expiration-time}") long jwtExpiration
     ) {
-        this.jwtExpiration = jwtExpiration;
-        this.signingAlgorithm = Algorithm.HMAC256(secretKey);
+        JwtUtil.jwtExpiration = jwtExpiration;
+        signingAlgorithm = Algorithm.HMAC256(secretKey);
     }
 
-    public String extractEmail(String token) {
+    public static String extractEmail(String token) {
         JWTVerifier jwtVerifier = JWT.require(signingAlgorithm).build();
         DecodedJWT jwt = jwtVerifier.verify(token);
         return jwt.getSubject();
     }
 
-    public boolean isTokenValid(String token, String email) {
+    public static boolean isTokenValid(String token, String email) {
         try {
             JWTVerifier verifier = JWT.require(signingAlgorithm)
                     .withSubject(email)
@@ -43,7 +42,7 @@ public class JwtServiceImpl implements JwtService {
         return true;
     }
 
-    public String buildToken(String email) {
+    public static String buildToken(String email) {
         return JWT.create()
                 .withSubject(email)
                 .withIssuedAt(new Date())
