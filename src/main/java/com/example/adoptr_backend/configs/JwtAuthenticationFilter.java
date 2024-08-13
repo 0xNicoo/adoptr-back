@@ -1,6 +1,6 @@
 package com.example.adoptr_backend.configs;
 
-import com.example.adoptr_backend.service.impl.JwtService;
+import com.example.adoptr_backend.service.impl.JwtServiceImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,15 +21,15 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final HandlerExceptionResolver handlerExceptionResolver;
 
-    private final JwtService jwtService;
+    private final JwtServiceImpl jwtServiceImpl;
     private final UserDetailsService userDetailsService;
 
     public JwtAuthenticationFilter(
-            JwtService jwtService,
+            JwtServiceImpl jwtServiceImpl,
             UserDetailsService userDetailsService,
             HandlerExceptionResolver handlerExceptionResolver
     ) {
-        this.jwtService = jwtService;
+        this.jwtServiceImpl = jwtServiceImpl;
         this.userDetailsService = userDetailsService;
         this.handlerExceptionResolver = handlerExceptionResolver;
     }
@@ -49,14 +49,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             final String jwt = authHeader.substring(7);
-            final String userEmail = jwtService.extractEmail(jwt);
+            final String userEmail = jwtServiceImpl.extractEmail(jwt);
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (userEmail != null && authentication == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
 
-                if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
+                if (jwtServiceImpl.isTokenValid(jwt, userDetails.getUsername())) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,

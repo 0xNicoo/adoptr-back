@@ -5,18 +5,19 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
+import com.example.adoptr_backend.service.JwtService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
 
 @Service
-public class JwtService {
+public class JwtServiceImpl implements JwtService {
 
     private final long jwtExpiration;
     private final Algorithm signingAlgorithm;
 
-    public JwtService(
+    public JwtServiceImpl(
             @Value("${security.jwt.secret-key}") String secretKey,
             @Value("${security.jwt.expiration-time}") long jwtExpiration
     ) {

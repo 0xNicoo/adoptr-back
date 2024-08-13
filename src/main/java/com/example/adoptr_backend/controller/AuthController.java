@@ -1,10 +1,10 @@
 package com.example.adoptr_backend.controller;
 
+import com.example.adoptr_backend.service.AuthService;
+import com.example.adoptr_backend.service.JwtService;
 import com.example.adoptr_backend.service.dto.request.UserDTOin;
 import com.example.adoptr_backend.service.dto.response.TokenResponse;
 import com.example.adoptr_backend.service.dto.response.UserDTO;
-import com.example.adoptr_backend.service.impl.AuthService;
-import com.example.adoptr_backend.service.impl.JwtService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
