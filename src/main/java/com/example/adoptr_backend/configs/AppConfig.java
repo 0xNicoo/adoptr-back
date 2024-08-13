@@ -2,6 +2,9 @@ package com.example.adoptr_backend.configs;
 
 import com.example.adoptr_backend.model.User;
 import com.example.adoptr_backend.repository.UserRepository;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -76,4 +79,6 @@ public class AppConfig {
             }
         };
     }
+
+
 }

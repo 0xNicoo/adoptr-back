@@ -1,5 +1,9 @@
 package com.example.adoptr_backend.configs;
 
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -23,6 +27,13 @@ public class SecurityConfig {
     private final AuthenticationProvider authenticationProvider;
     private final JwtAuthenticationFilter jwtAuthFilter;
 
+    private static String[] SWAGGER_WHITELIST = {
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/swagger-resources/**",
+            "/swagger-resources"
+    };
+
     public SecurityConfig(AuthenticationProvider authenticationProvider, JwtAuthenticationFilter jwtAuthFilter) {
         this.authenticationProvider = authenticationProvider;
         this.jwtAuthFilter = jwtAuthFilter;
@@ -34,10 +45,13 @@ public class SecurityConfig {
         httpSecurity.headers(h -> h.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable));
         httpSecurity.authorizeHttpRequests(
                 authorizeHttpRequests -> authorizeHttpRequests
-                        .requestMatchers("/auth/profile")
-                        .authenticated()
-                        .anyRequest()
+                        .requestMatchers("/auth/login","/auth/register")
                         .permitAll()
+                        .requestMatchers(SWAGGER_WHITELIST)
+                        .permitAll()
+                        .anyRequest()
+                        .authenticated()
+
         );
         httpSecurity.sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         httpSecurity.authenticationProvider(authenticationProvider);
@@ -57,6 +71,17 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfiguration);
         return source;
+    }
+
+    @Bean
+    public OpenAPI customOpenAPI() {
+        return new OpenAPI()
+                .components(new Components()
+                        .addSecuritySchemes("bearer-jwt", new SecurityScheme()
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")))
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
     }
 
 }
