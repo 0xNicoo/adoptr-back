@@ -7,6 +7,7 @@ import com.example.adoptr_backend.service.dto.request.ProfileDTOin;
 import com.example.adoptr_backend.service.dto.response.ProfileDTO;
 import com.example.adoptr_backend.service.mapper.ExampleMapper;
 import com.example.adoptr_backend.service.mapper.ProfileMapper;
+import com.example.adoptr_backend.util.AuthSupport;
 import org.springframework.stereotype.Service;
 
 @Service

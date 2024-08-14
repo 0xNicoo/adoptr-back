@@ -10,4 +10,5 @@ public class ProfileDTO {
     private String lastName;
     private String description;
     private Boolean gender;
+    private Long createdByUser;
 }
