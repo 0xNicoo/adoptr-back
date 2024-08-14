@@ -24,10 +24,16 @@ public class JwtUtil {
         signingAlgorithm = Algorithm.HMAC256(secretKey);
     }
 
-    public static String extractEmail(String token) {
+    public static String getEmail(String token) {
         JWTVerifier jwtVerifier = JWT.require(signingAlgorithm).build();
         DecodedJWT jwt = jwtVerifier.verify(token);
         return jwt.getSubject();
+    }
+
+    public static Long getUserId(String token){
+        JWTVerifier jwtVerifier = JWT.require(signingAlgorithm).build();
+        DecodedJWT jwt = jwtVerifier.verify(token);
+        return jwt.getClaim("userId").asLong();
     }
 
     public static boolean isTokenValid(String token, String email) {
@@ -42,11 +48,12 @@ public class JwtUtil {
         return true;
     }
 
-    public static String buildToken(String email) {
+    public static String buildToken(String email, Long userId) {
         return JWT.create()
                 .withSubject(email)
                 .withIssuedAt(new Date())
                 .withExpiresAt(new Date(System.currentTimeMillis() + jwtExpiration))
+                .withClaim("userId", userId)
                 .sign(signingAlgorithm);
     }
 
