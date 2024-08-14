@@ -13,6 +13,7 @@ public class AuthSupport {
         if (authentication != null) {
             Object principal = authentication.getPrincipal();
             if(principal instanceof CustomUserDetails userDetails){
+                //TODO checkear si es null, tirar error si es null
                 return userDetails.getId();
             }
         }
