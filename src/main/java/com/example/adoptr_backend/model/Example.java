@@ -25,4 +25,5 @@ public class Example {
 
     @Column
     private Boolean active;
+
 }

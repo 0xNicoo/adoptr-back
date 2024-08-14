@@ -2,6 +2,7 @@ package com.example.adoptr_backend.controller;
 
 
 import com.example.adoptr_backend.service.ProfileService;
+import com.example.adoptr_backend.service.dto.request.ExampleDTOin;
 import com.example.adoptr_backend.service.dto.request.ExampleFilterDTO;
 import com.example.adoptr_backend.service.dto.request.ProfileDTOin;
 import com.example.adoptr_backend.service.dto.response.ExampleDTO;
@@ -9,6 +10,7 @@ import com.example.adoptr_backend.service.dto.response.ProfileDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.coyote.BadRequestException;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,5 +38,17 @@ public class ProfileController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/{id}")
+    @Operation(summary = "Obtiene un perfil por id", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<ProfileDTO> getById(@PathVariable Long id) {
+        ProfileDTO response = profileService.getById(id);
+        return ResponseEntity.ok(response);
+    }
 
+    @PutMapping("/{id}")
+    @Operation(summary = "Modifica un perfil", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<ProfileDTO> update(@PathVariable Long id, @RequestBody ProfileDTOin dto) {
+        ProfileDTO response = profileService.update(id, dto);
+        return ResponseEntity.ok(response);
+    }
 }
