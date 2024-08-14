@@ -8,8 +8,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -54,22 +52,7 @@ public class AuthConfig {
                 throw new UsernameNotFoundException("User " + username + " not found.");
             }
             User user = userOptional.get();
-            return new UserDetails() {
-                @Override
-                public Collection<? extends GrantedAuthority> getAuthorities() {
-                    return List.of();
-                }
-
-                @Override
-                public String getPassword() {
-                    return user.getPassword();
-                }
-
-                @Override
-                public String getUsername() {
-                    return user.getEmail();
-                }
-            };
+            return new CustomUserDetails(user);
         };
     }
 

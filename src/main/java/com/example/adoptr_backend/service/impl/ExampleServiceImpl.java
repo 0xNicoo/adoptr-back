@@ -8,6 +8,7 @@ import com.example.adoptr_backend.service.dto.request.ExampleDTOin;
 import com.example.adoptr_backend.service.dto.request.ExampleFilterDTO;
 import com.example.adoptr_backend.service.dto.response.ExampleDTO;
 import com.example.adoptr_backend.service.mapper.ExampleMapper;
+import com.example.adoptr_backend.util.AuthSupport;
 import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,7 +28,9 @@ public class ExampleServiceImpl implements ExampleService {
 
     @Override
     public ExampleDTO create(ExampleDTOin dto) {
+        Long userId = AuthSupport.getUserId();
         Example example = ExampleMapper.MAPPER.toEntity(dto);
+        example.setCreatedByUser(userId);
         example = exampleRepository.save(example);
         return ExampleMapper.MAPPER.toDto(example);
     }

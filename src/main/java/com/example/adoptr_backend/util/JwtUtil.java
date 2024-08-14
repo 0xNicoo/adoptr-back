@@ -6,11 +6,11 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.Date;
 
-@Service
+@Component
 public class JwtUtil {
 
     private static long jwtExpiration;
@@ -24,16 +24,10 @@ public class JwtUtil {
         signingAlgorithm = Algorithm.HMAC256(secretKey);
     }
 
-    public static String getEmail(String token) {
+    public static String extractEmail(String token) {
         JWTVerifier jwtVerifier = JWT.require(signingAlgorithm).build();
         DecodedJWT jwt = jwtVerifier.verify(token);
         return jwt.getSubject();
-    }
-
-    public static Long getUserId(String token){
-        JWTVerifier jwtVerifier = JWT.require(signingAlgorithm).build();
-        DecodedJWT jwt = jwtVerifier.verify(token);
-        return jwt.getClaim("userId").asLong();
     }
 
     public static boolean isTokenValid(String token, String email) {
