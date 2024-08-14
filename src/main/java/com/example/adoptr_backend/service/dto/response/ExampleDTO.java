@@ -10,4 +10,5 @@ public class ExampleDTO {
     private String text;
     private ExampleType type;
     private Boolean active;
+    private Long createdByUser;
 }

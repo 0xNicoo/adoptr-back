@@ -21,5 +21,8 @@ public class Example {
     private ExampleType type;
 
     @Column
+    private Long createdByUser;
+
+    @Column
     private Boolean active;
 }
