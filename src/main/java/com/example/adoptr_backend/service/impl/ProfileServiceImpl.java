@@ -20,7 +20,9 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ProfileDTO create(ProfileDTOin dto) {
+        Long userId = AuthSupport.getUserId();
         Profile profile = ProfileMapper.MAPPER.toEntity(dto);
+        profile.setCreatedByUser(userId);
         profile = profileRepository.save(profile);
         return ProfileMapper.MAPPER.toDto(profile);
     }
