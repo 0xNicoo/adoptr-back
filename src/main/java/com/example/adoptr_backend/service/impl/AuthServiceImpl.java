@@ -37,6 +37,6 @@ public class AuthServiceImpl implements AuthService {
                 )
         );
         User user = userRepository.findByEmail(dto.getEmail()).orElseThrow();
-        return new UserDTO(user.getEmail());
+        return new UserDTO(user.getId(), user.getEmail());
     }
 }
