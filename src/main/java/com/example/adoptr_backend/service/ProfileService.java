@@ -7,4 +7,8 @@ import com.example.adoptr_backend.service.dto.response.ProfileDTO;
 public interface ProfileService {
     ProfileDTO create(ProfileDTOin dto);
 
+    ProfileDTO getById(Long id);
+
+    ProfileDTO update(Long id, ProfileDTOin dto);
+
 }
