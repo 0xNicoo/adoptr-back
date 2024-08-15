@@ -1,5 +1,7 @@
 package com.example.adoptr_backend.service.impl;
 
+import com.example.adoptr_backend.exception.custom.BadRequestException;
+import com.example.adoptr_backend.exception.error.type.ExampleError;
 import com.example.adoptr_backend.model.Example;
 import com.example.adoptr_backend.repository.ExampleRepository;
 import com.example.adoptr_backend.repository.specification.ExampleSpec;
@@ -9,7 +11,6 @@ import com.example.adoptr_backend.service.dto.request.ExampleFilterDTO;
 import com.example.adoptr_backend.service.dto.response.ExampleDTO;
 import com.example.adoptr_backend.service.mapper.ExampleMapper;
 import com.example.adoptr_backend.util.AuthSupport;
-import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -66,7 +67,7 @@ public class ExampleServiceImpl implements ExampleService {
     private Example getExample(Long id) throws BadRequestException {
         Optional<Example> exampleOptional = exampleRepository.findById(id);
         if(exampleOptional.isEmpty()){
-            throw new BadRequestException();
+            throw new BadRequestException(ExampleError.EXAMPLE_NOT_FOUND);
         }
         return exampleOptional.get();
     }
