@@ -1,7 +1,7 @@
 package com.example.adoptr_backend.service.impl;
 
 import com.example.adoptr_backend.exception.custom.BadRequestException;
-import com.example.adoptr_backend.exception.error.type.ExampleError;
+import com.example.adoptr_backend.exception.error.Error;
 import com.example.adoptr_backend.model.Example;
 import com.example.adoptr_backend.repository.ExampleRepository;
 import com.example.adoptr_backend.repository.specification.ExampleSpec;
@@ -64,10 +64,10 @@ public class ExampleServiceImpl implements ExampleService {
         exampleRepository.delete(example);
     }
 
-    private Example getExample(Long id) throws BadRequestException {
+    private Example getExample(Long id)  {
         Optional<Example> exampleOptional = exampleRepository.findById(id);
         if(exampleOptional.isEmpty()){
-            throw new BadRequestException(ExampleError.EXAMPLE_NOT_FOUND);
+            throw new BadRequestException(Error.EXAMPLE_NOT_FOUND);
         }
         return exampleOptional.get();
     }

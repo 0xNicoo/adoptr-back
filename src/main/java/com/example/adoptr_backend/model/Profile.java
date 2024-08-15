@@ -25,7 +25,7 @@ public class Profile {
 
     // TODO AGREGAR LA IMAGEN
 
-    @Column
-    private Long createdByUser;
+    @OneToOne
+    private User user;
 
 }

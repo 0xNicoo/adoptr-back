@@ -1,16 +1,16 @@
-package com.example.adoptr_backend.exception.error.type;
+package com.example.adoptr_backend.exception.error;
 
-import com.example.adoptr_backend.exception.error.ErrorCode;
+public enum Error implements ErrorCode {
 
-public enum ExampleError implements ErrorCode {
-
-    EXAMPLE_NOT_FOUND("0001","No se encontro el ejemplo");
+    EXAMPLE_NOT_FOUND("0001","No se encontro el ejemplo"),
+    PROFILE_ALREADY_EXIST("0002", "Este usuario ya tiene un perfil")
+    ;
 
     private final String code;
 
     private final String message;
 
-    ExampleError(String code, String message) {
+    Error(String code, String message) {
         this.code = code;
         this.message = message;
     }
