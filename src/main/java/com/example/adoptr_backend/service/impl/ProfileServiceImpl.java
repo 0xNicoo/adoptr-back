@@ -1,18 +1,12 @@
 package com.example.adoptr_backend.service.impl;
 
-import com.example.adoptr_backend.exception.custom.BadRequestException;
-import com.example.adoptr_backend.exception.error.Error;
-import com.example.adoptr_backend.model.Example;
-import com.example.adoptr_backend.model.Profile;
-import com.example.adoptr_backend.model.User;
+import com.example.adoptr_backend.model.*;
 import com.example.adoptr_backend.repository.ProfileRepository;
 import com.example.adoptr_backend.repository.UserRepository;
+import com.example.adoptr_backend.service.ImageService;
 import com.example.adoptr_backend.service.ProfileService;
-import com.example.adoptr_backend.service.dto.request.ExampleDTOin;
 import com.example.adoptr_backend.service.dto.request.ProfileDTOin;
-import com.example.adoptr_backend.service.dto.response.ExampleDTO;
 import com.example.adoptr_backend.service.dto.response.ProfileDTO;
-import com.example.adoptr_backend.service.mapper.ExampleMapper;
 import com.example.adoptr_backend.service.mapper.ProfileMapper;
 import com.example.adoptr_backend.util.AuthSupport;
 import org.springframework.stereotype.Service;
@@ -26,9 +20,14 @@ public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository profileRepository;
 
-    public ProfileServiceImpl(UserRepository userRepository, ProfileRepository profileRepository) {
+    private final ImageService imageService;
+
+    public ProfileServiceImpl(UserRepository userRepository,
+                              ProfileRepository profileRepository,
+                              ImageService imageService) {
         this.userRepository = userRepository;
         this.profileRepository = profileRepository;
+        this.imageService = imageService;
     }
 
     // TODO HACER EL BAD REQUEST PARA CUANDO EL USUARIO YA TIENE UN PERFIL
@@ -37,7 +36,9 @@ public class ProfileServiceImpl implements ProfileService {
         Long userId = AuthSupport.getUserId();
         Optional<User> user = userRepository.findById(userId);
         Profile profile = ProfileMapper.MAPPER.toEntity(dto);
+        Long imageId = imageService.uploadImage(dto.getImage(), ImageType.PROFILE);
         profile.setUser(user.get());
+        profile.setImageId(imageId);
         profile = profileRepository.save(profile);
         return ProfileMapper.MAPPER.toDto(profile);
     }
@@ -48,11 +49,6 @@ public class ProfileServiceImpl implements ProfileService {
         return ProfileMapper.MAPPER.toDto(profile);
     }
 
-    private Profile getProfile(Long id) {
-        Optional<Profile> profileOptional = profileRepository.findById(id);
-
-        return profileOptional.get();
-    }
 
     @Override
     public ProfileDTO update(Long id, ProfileDTOin dto){
@@ -61,6 +57,12 @@ public class ProfileServiceImpl implements ProfileService {
         ProfileMapper.MAPPER.update(profile, profileUpdated);
         profileRepository.save(profile);
         return ProfileMapper.MAPPER.toDto(profile);
+    }
+
+    private Profile getProfile(Long id) {
+        Optional<Profile> profileOptional = profileRepository.findById(id);
+
+        return profileOptional.get();
     }
 
 }

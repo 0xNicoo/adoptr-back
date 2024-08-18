@@ -23,7 +23,8 @@ public class Profile {
     @Column
     private String description;
 
-    // TODO AGREGAR LA IMAGEN
+    @Column
+    private Long imageId;
 
     @OneToOne
     private User user;
