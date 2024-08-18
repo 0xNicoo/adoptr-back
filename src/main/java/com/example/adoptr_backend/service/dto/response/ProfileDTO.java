@@ -11,5 +11,6 @@ public class ProfileDTO {
     private String lastName;
     private String description;
     private Boolean gender;
+    private String s3Url;
     private UserDTO user;
 }

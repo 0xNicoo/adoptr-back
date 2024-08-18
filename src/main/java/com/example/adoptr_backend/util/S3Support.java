@@ -1,13 +1,18 @@
 package com.example.adoptr_backend.util;
 
+import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectResult;
+import com.example.adoptr_backend.model.Image;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URL;
+import java.util.Date;
 
 @Component
 public class S3Support {
@@ -31,5 +36,23 @@ public class S3Support {
         } catch (Exception e) {
             throw new IllegalStateException("AWS (S3) Failed to upload the file", e);
         }
+    }
+
+    public static String getS3url(Image image){
+        Date expiration = getExpirationDate();
+        String path = ImageUtil.buildPath(image);
+        GeneratePresignedUrlRequest presignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, path)
+                .withMethod(HttpMethod.GET)
+                .withExpiration(expiration);
+        URL url = amazonS3.generatePresignedUrl(presignedUrlRequest);
+        return url.toString();
+    }
+
+    private static Date getExpirationDate(){
+        Date expiration = new java.util.Date();
+        long expTimeMillis = expiration.getTime();
+        expTimeMillis += 1000 * 60 * 60;
+        expiration.setTime(expTimeMillis);
+        return expiration;
     }
 }

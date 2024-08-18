@@ -24,7 +24,7 @@ public class ImageUtil {
                 image.getS3name();
     }
 
-    public static Image createImage(MultipartFile file, ImageType imageType){
+    public static Image createImage(MultipartFile file, ImageType imageType, Long modelId){
         Image image = new Image();
         image.setSize(file.getSize());
         image.setExtension(getFileExtension(file));
@@ -32,6 +32,7 @@ public class ImageUtil {
         image.setS3name(UUID.randomUUID());
         image.setType(imageType);
         image.setUserId(AuthSupport.getUserId());
+        image.setModelId(modelId);
         return image;
     }
 

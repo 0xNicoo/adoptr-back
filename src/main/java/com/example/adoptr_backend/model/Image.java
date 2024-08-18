@@ -8,6 +8,11 @@ import java.util.UUID;
 
 @Entity
 @Data
+@Table(indexes = {
+        @Index(name = "type_index", columnList = "type"),
+        @Index(name = "model_id_index", columnList = "modelId"),
+        @Index(name = "user_id_index", columnList = "userId"),
+})
 public class Image {
 
     @Id
@@ -27,6 +32,8 @@ public class Image {
     private ImageType type;
 
     private LocalDateTime createdAt;
+
+    private Long modelId;
 
     private Long userId;
 

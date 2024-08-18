@@ -36,8 +36,9 @@ public class ProfileServiceImpl implements ProfileService {
         Long userId = AuthSupport.getUserId();
         Optional<User> user = userRepository.findById(userId);
         Profile profile = ProfileMapper.MAPPER.toEntity(dto);
-        Long imageId = imageService.uploadImage(dto.getImage(), ImageType.PROFILE);
         profile.setUser(user.get());
+        profile = profileRepository.save(profile);
+        Long imageId = imageService.uploadImage(dto.getImage(), ImageType.PROFILE, profile.getId());
         profile.setImageId(imageId);
         profile = profileRepository.save(profile);
         return ProfileMapper.MAPPER.toDto(profile);
@@ -46,7 +47,10 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public ProfileDTO getById(Long id){
         Profile profile = getProfile(id);
-        return ProfileMapper.MAPPER.toDto(profile);
+        ProfileDTO dto = ProfileMapper.MAPPER.toDto(profile);
+        String s3Url = imageService.getS3url(id,ImageType.PROFILE);
+        dto.setS3Url(s3Url);
+        return dto;
     }
 
 
