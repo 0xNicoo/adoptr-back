@@ -1,12 +1,12 @@
 package com.example.adoptr_backend.exception;
 
 import com.example.adoptr_backend.exception.custom.BadRequestException;
+import com.example.adoptr_backend.exception.custom.UnauthorizeException;
 import com.example.adoptr_backend.exception.error.ApiError;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -22,4 +22,11 @@ public class GlobalExceptionHandler {
         ApiError apiError = new ApiError(exception.getMessage());
         return new ResponseEntity<>(apiError, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiError> unauthorized(UnauthorizeException exception) {
+        ApiError apiError = new ApiError(exception.getMessage());
+        return new ResponseEntity<>(apiError, HttpStatus.UNAUTHORIZED);
+    }
+
 }
