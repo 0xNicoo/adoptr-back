@@ -29,4 +29,6 @@ public class Profile {
     @OneToOne
     private User user;
 
+    //TODO: agregar la localidad y la provincia
+
 }
