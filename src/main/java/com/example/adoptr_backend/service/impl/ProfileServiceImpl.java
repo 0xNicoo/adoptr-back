@@ -1,5 +1,7 @@
 package com.example.adoptr_backend.service.impl;
 
+import com.example.adoptr_backend.exception.custom.BadRequestException;
+import com.example.adoptr_backend.exception.error.Error;
 import com.example.adoptr_backend.model.*;
 import com.example.adoptr_backend.repository.ProfileRepository;
 import com.example.adoptr_backend.repository.UserRepository;
@@ -10,6 +12,7 @@ import com.example.adoptr_backend.service.dto.response.ProfileDTO;
 import com.example.adoptr_backend.service.mapper.ProfileMapper;
 import com.example.adoptr_backend.util.AuthSupport;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -31,10 +34,14 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     // TODO HACER EL BAD REQUEST PARA CUANDO EL USUARIO YA TIENE UN PERFIL
+    @Transactional
     @Override
     public ProfileDTO create(ProfileDTOin dto) {
         Long userId = AuthSupport.getUserId();
         Optional<User> user = userRepository.findById(userId);
+        if (profileRepository.existsByUserId(userId)) {
+            throw new BadRequestException(Error.PROFILE_ALREADY_EXIST);
+        }
         Profile profile = ProfileMapper.MAPPER.toEntity(dto);
         profile.setUser(user.get());
         profile = profileRepository.save(profile);
