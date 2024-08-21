@@ -14,7 +14,7 @@ public class ProvinceSpec {
             final Collection<Predicate> predicates = new ArrayList<>();
 
             if (filter.getName() != null){
-                predicates.add(cb.equal(root.get("title"), filter.getName()));
+                predicates.add(cb.equal(root.get("name"), filter.getName()));
             }
 
             query.orderBy(cb.desc(root.get("id")));
