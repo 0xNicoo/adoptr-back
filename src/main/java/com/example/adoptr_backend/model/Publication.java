@@ -4,10 +4,12 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
-public class Publication {
+@Inheritance(strategy = InheritanceType.JOINED)
+public abstract class Publication {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,9 +18,24 @@ public class Publication {
     @Column
     private String title;
 
+    @Enumerated(EnumType.STRING)
+    private PublicationType type;
+
     @Column
     private String description;
 
     @Column
-    private LocalDate creationDate;
+    private LocalDateTime creationDate;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false, referencedColumnName = "id")
+    private User user;
+
+    @Column
+    private Long imageId;
+
+    @PrePersist
+    public void prePersist(){
+        this.creationDate = LocalDateTime.now();
+    }
 }

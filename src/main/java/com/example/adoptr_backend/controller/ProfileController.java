@@ -22,6 +22,7 @@ public class ProfileController {
     public ProfileController(ProfileService profileService) {
         this.profileService = profileService;
     }
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Crea un perfil", security = { @SecurityRequirement(name = "bearer-jwt") })
     public ResponseEntity<ProfileDTO> create(@ModelAttribute ProfileDTOin dto){
