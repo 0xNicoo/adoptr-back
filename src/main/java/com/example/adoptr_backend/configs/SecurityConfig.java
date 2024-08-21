@@ -45,7 +45,7 @@ public class SecurityConfig {
         httpSecurity.headers(h -> h.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable));
         httpSecurity.authorizeHttpRequests(
                 authorizeHttpRequests -> authorizeHttpRequests
-                        .requestMatchers("/auth/login","/auth/register")
+                        .requestMatchers("/auth/login","/auth/register","/province/**","/province")
                         .permitAll()
                         .requestMatchers(SWAGGER_WHITELIST)
                         .permitAll()
