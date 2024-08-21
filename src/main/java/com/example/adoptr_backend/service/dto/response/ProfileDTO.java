@@ -1,6 +1,7 @@
 package com.example.adoptr_backend.service.dto.response;
 
 import com.example.adoptr_backend.model.ExampleType;
+import com.example.adoptr_backend.model.GenderType;
 import com.example.adoptr_backend.model.User;
 import lombok.Data;
 
@@ -10,7 +11,7 @@ public class ProfileDTO {
     private String firstName;
     private String lastName;
     private String description;
-    private Boolean gender;
+    private GenderType genderType;
     private String s3Url;
     private UserDTO user;
 }

@@ -33,7 +33,7 @@ public class ProfileServiceImpl implements ProfileService {
         this.imageService = imageService;
     }
 
-    // TODO HACER EL BAD REQUEST PARA CUANDO EL USUARIO YA TIENE UN PERFIL
+
     @Transactional
     @Override
     public ProfileDTO create(ProfileDTOin dto) {

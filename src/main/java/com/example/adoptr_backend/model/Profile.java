@@ -17,8 +17,8 @@ public class Profile {
     @Column
     private String lastName;
 
-    @Column
-    private Boolean gender;
+    @Enumerated(EnumType.STRING)
+    private GenderType genderType;
 
     @Column
     private String description;
