@@ -11,4 +11,5 @@ public class ProfileDTOin {
     private GenderType genderType;
     private String description;
     private MultipartFile image;
+    private Long locality_id;
 }

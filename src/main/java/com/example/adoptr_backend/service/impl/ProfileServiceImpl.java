@@ -3,9 +3,11 @@ package com.example.adoptr_backend.service.impl;
 import com.example.adoptr_backend.exception.custom.BadRequestException;
 import com.example.adoptr_backend.exception.error.Error;
 import com.example.adoptr_backend.model.*;
+import com.example.adoptr_backend.repository.LocalityRepository;
 import com.example.adoptr_backend.repository.ProfileRepository;
 import com.example.adoptr_backend.repository.UserRepository;
 import com.example.adoptr_backend.service.ImageService;
+import com.example.adoptr_backend.service.LocalityService;
 import com.example.adoptr_backend.service.ProfileService;
 import com.example.adoptr_backend.service.dto.request.ProfileDTOin;
 import com.example.adoptr_backend.service.dto.response.ProfileDTO;
@@ -20,17 +22,18 @@ import java.util.Optional;
 public class ProfileServiceImpl implements ProfileService {
 
     private final UserRepository userRepository;
-
     private final ProfileRepository profileRepository;
-
     private final ImageService imageService;
+    private final LocalityRepository localityRepository;
 
     public ProfileServiceImpl(UserRepository userRepository,
                               ProfileRepository profileRepository,
-                              ImageService imageService) {
+                              ImageService imageService,
+                              LocalityRepository localityRepository) {
         this.userRepository = userRepository;
         this.profileRepository = profileRepository;
         this.imageService = imageService;
+        this.localityRepository = localityRepository;
     }
 
 
@@ -44,6 +47,15 @@ public class ProfileServiceImpl implements ProfileService {
         }
         Profile profile = ProfileMapper.MAPPER.toEntity(dto);
         profile.setUser(user.get());
+
+        Optional<Locality> localityOptional = localityRepository.findById(dto.getLocality_id());
+        if (localityOptional.isEmpty()) {
+            throw new BadRequestException(Error.LOCALITY_NOT_FOUND);
+        }
+        Locality locality = localityOptional.get();
+        locality.setId(dto.getLocality_id());
+        profile.setLocality(locality);
+
         profile = profileRepository.save(profile);
         Long imageId = imageService.uploadImage(dto.getImage(), ImageType.PROFILE, profile.getId());
         profile.setImageId(imageId);

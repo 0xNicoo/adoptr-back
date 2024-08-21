@@ -14,4 +14,5 @@ public class ProfileDTO {
     private GenderType genderType;
     private String s3Url;
     private UserDTO user;
+    private LocalityDTO locality;
 }

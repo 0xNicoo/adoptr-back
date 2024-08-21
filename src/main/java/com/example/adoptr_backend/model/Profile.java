@@ -29,6 +29,8 @@ public class Profile {
     @OneToOne
     private User user;
 
-    //TODO: agregar la localidad y la provincia
+    @ManyToOne
+    @JoinColumn(name = "locality_id")
+    private Locality locality;
 
 }
