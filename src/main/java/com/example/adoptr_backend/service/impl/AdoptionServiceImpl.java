@@ -84,13 +84,13 @@ public class AdoptionServiceImpl implements AdoptionService {
     }
 
     //TODO Agregar control de si suben una nueva imagen o no.
-
+    //TODO Cuando se edita, en realidad se publica de nuevo la adopcion, hay que fixearlo
     @Override
     public AdoptionDTO update(Long id, AdoptionDTOin dto) {
         Adoption adoption = getAdoption(id);
         Adoption adoptionUpdated = AdoptionMapper.MAPPER.toEntity(dto);
-        AdoptionMapper.MAPPER.update(adoption, adoptionUpdated);
-
+        adoptionUpdated.setUser(adoption.getUser());
+        adoptionUpdated.setType(PublicationType.ADOPTION);
         Long imageId = imageService.uploadImage(dto.getImage(), ImageType.ADOPTION, adoption.getId());
         adoptionUpdated.setImageId(imageId);
         Locality locality = getLocality(dto);

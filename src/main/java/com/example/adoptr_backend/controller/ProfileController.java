@@ -32,7 +32,7 @@ public class ProfileController {
                                              @RequestParam GenderType genderType,
                                              @RequestParam String description,
                                              @RequestParam Long locality_id,
-                                             @RequestParam(required = true) MultipartFile image){
+                                             @RequestParam MultipartFile image){
         ProfileDTOin dto = new ProfileDTOin(firstName, lastName, genderType, description, locality_id, image);
         ProfileDTO response =  profileService.create(dto);
         return ResponseEntity.ok(response);
@@ -45,6 +45,7 @@ public class ProfileController {
         return ResponseEntity.ok(response);
     }
 
+    //TODO: permitir que se pasen parametros vacios sin que se carguen como NULL
     @PutMapping(path = "/{id}",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Modifica un perfil", security = { @SecurityRequirement(name = "bearer-jwt") })
     public ResponseEntity<ProfileDTO> update(@PathVariable Long id,
