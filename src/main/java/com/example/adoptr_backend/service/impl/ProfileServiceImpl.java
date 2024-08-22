@@ -14,6 +14,7 @@ import com.example.adoptr_backend.service.mapper.ProfileMapper;
 import com.example.adoptr_backend.util.AuthSupport;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Optional;
 
@@ -73,9 +74,11 @@ public class ProfileServiceImpl implements ProfileService {
         Locality locality = getLocality(dto);
         profile.setLocality(locality);
         profile = profileRepository.save(profile);
-        Long imageId = imageService.uploadImage(dto.getImage(), ImageType.PROFILE, profile.getId());
-        profile.setImageId(imageId);
-        profileRepository.save(profile);
+        if (dto.getImage() != null) {
+            Long imageId = imageService.uploadImage(dto.getImage(), ImageType.PROFILE, profile.getId());
+            profile.setImageId(imageId);
+            profileRepository.save(profile);
+        }
         return ProfileMapper.MAPPER.toDto(profile);
     }
 

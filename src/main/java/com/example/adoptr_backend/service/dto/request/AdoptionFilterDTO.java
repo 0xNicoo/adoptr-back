@@ -20,4 +20,5 @@ public class AdoptionFilterDTO {
     private int ageYears;
     private AdoptionStatusType adoptionStatusType;
     private LocalDate creationDate;
+    private Long locality_id;
 }

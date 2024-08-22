@@ -18,7 +18,8 @@ public interface ProfileMapper extends EntityMapper<ProfileDTO, Profile>{
 
     Profile toEntity(ProfileDTOin dto);
 
-    @Mapping(target = "id", ignore = true)
+    @Mapping(ignore = true, target = "id")
     @Mapping(ignore = true, target = "user")
+    @Mapping(ignore = true, target = "imageId")
     void update(@MappingTarget Profile entity, Profile updateEntity);
 }
