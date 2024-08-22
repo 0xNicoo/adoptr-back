@@ -7,7 +7,6 @@ import com.example.adoptr_backend.repository.LocalityRepository;
 import com.example.adoptr_backend.repository.ProfileRepository;
 import com.example.adoptr_backend.repository.UserRepository;
 import com.example.adoptr_backend.service.ImageService;
-import com.example.adoptr_backend.service.LocalityService;
 import com.example.adoptr_backend.service.ProfileService;
 import com.example.adoptr_backend.service.dto.request.ProfileDTOin;
 import com.example.adoptr_backend.service.dto.response.ProfileDTO;
@@ -47,15 +46,8 @@ public class ProfileServiceImpl implements ProfileService {
         }
         Profile profile = ProfileMapper.MAPPER.toEntity(dto);
         profile.setUser(user.get());
-
-        Optional<Locality> localityOptional = localityRepository.findById(dto.getLocality_id());
-        if (localityOptional.isEmpty()) {
-            throw new BadRequestException(Error.LOCALITY_NOT_FOUND);
-        }
-        Locality locality = localityOptional.get();
-        locality.setId(dto.getLocality_id());
+        Locality locality = getLocality(dto);
         profile.setLocality(locality);
-
         profile = profileRepository.save(profile);
         Long imageId = imageService.uploadImage(dto.getImage(), ImageType.PROFILE, profile.getId());
         profile.setImageId(imageId);
@@ -78,6 +70,11 @@ public class ProfileServiceImpl implements ProfileService {
         Profile profile = getProfile(id);
         Profile profileUpdated = ProfileMapper.MAPPER.toEntity(dto);
         ProfileMapper.MAPPER.update(profile, profileUpdated);
+        Locality locality = getLocality(dto);
+        profile.setLocality(locality);
+        profile = profileRepository.save(profile);
+        Long imageId = imageService.uploadImage(dto.getImage(), ImageType.PROFILE, profile.getId());
+        profile.setImageId(imageId);
         profileRepository.save(profile);
         return ProfileMapper.MAPPER.toDto(profile);
     }
@@ -87,5 +84,16 @@ public class ProfileServiceImpl implements ProfileService {
 
         return profileOptional.get();
     }
+
+    private Locality getLocality(ProfileDTOin dto) {
+        Optional<Locality> localityOptional = localityRepository.findById(dto.getLocality_id());
+        if (localityOptional.isEmpty()) {
+            throw new BadRequestException(Error.LOCALITY_NOT_FOUND);
+        }
+        Locality locality = localityOptional.get();
+        locality.setId(dto.getLocality_id());
+        return locality;
+    }
+
 
 }

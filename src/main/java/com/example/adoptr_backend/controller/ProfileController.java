@@ -37,9 +37,9 @@ public class ProfileController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(path = "/{id}",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Modifica un perfil", security = { @SecurityRequirement(name = "bearer-jwt") })
-    public ResponseEntity<ProfileDTO> update(@PathVariable Long id, @RequestBody ProfileDTOin dto) {
+    public ResponseEntity<ProfileDTO> update(@PathVariable Long id, @ModelAttribute ProfileDTOin dto) {
         ProfileDTO response = profileService.update(id, dto);
         return ResponseEntity.ok(response);
     }
