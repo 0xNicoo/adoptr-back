@@ -18,4 +18,5 @@ public class AdoptionDTOin {
     private int ageYears;
     private int ageMonths;
     private MultipartFile image;
+    private Long locality_id;
 }

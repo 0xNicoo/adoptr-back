@@ -1,13 +1,17 @@
 package com.example.adoptr_backend.service.impl;
 
+import com.example.adoptr_backend.exception.custom.BadRequestException;
+import com.example.adoptr_backend.exception.error.Error;
 import com.example.adoptr_backend.model.*;
 import com.example.adoptr_backend.repository.AdoptionRepository;
+import com.example.adoptr_backend.repository.LocalityRepository;
 import com.example.adoptr_backend.repository.UserRepository;
 import com.example.adoptr_backend.repository.specification.AdoptionSpec;
 import com.example.adoptr_backend.service.AdoptionService;
 import com.example.adoptr_backend.service.ImageService;
 import com.example.adoptr_backend.service.dto.request.AdoptionDTOin;
 import com.example.adoptr_backend.service.dto.request.AdoptionFilterDTO;
+import com.example.adoptr_backend.service.dto.request.ProfileDTOin;
 import com.example.adoptr_backend.service.dto.response.AdoptionDTO;
 import com.example.adoptr_backend.service.dto.response.ProfileDTO;
 import com.example.adoptr_backend.service.mapper.AdoptionMapper;
@@ -29,14 +33,18 @@ public class AdoptionServiceImpl implements AdoptionService {
 
     private final ImageService imageService;
 
+    private final LocalityRepository localityRepository;
+
 
     public AdoptionServiceImpl(AdoptionRepository adoptionRepository,
                                UserRepository userRepository,
-                               ImageService imageService)
+                               ImageService imageService,
+                               LocalityRepository localityRepository)
                                 {
         this.adoptionRepository = adoptionRepository;
         this.userRepository = userRepository;
         this.imageService = imageService;
+        this.localityRepository = localityRepository;
     }
 
     @Override
@@ -49,6 +57,8 @@ public class AdoptionServiceImpl implements AdoptionService {
         adoption = adoptionRepository.save(adoption);
         Long imageId = imageService.uploadImage(dto.getImage(), ImageType.ADOPTION, adoption.getId());
         adoption.setImageId(imageId);
+        Locality locality = getLocality(dto);
+        adoption.setLocality(locality);
         adoption = adoptionRepository.save(adoption);
         AdoptionDTO adoptionDTO = AdoptionMapper.MAPPER.toDto(adoption);
         adoptionDTO.setS3Url(imageService.getS3url(adoption.getId(), ImageType.ADOPTION));
@@ -79,10 +89,12 @@ public class AdoptionServiceImpl implements AdoptionService {
     public AdoptionDTO update(Long id, AdoptionDTOin dto) {
         Adoption adoption = getAdoption(id);
         Adoption adoptionUpdated = AdoptionMapper.MAPPER.toEntity(dto);
-        adoptionUpdated.setUser(adoption.getUser());
-        adoptionUpdated.setType(PublicationType.ADOPTION);
+        AdoptionMapper.MAPPER.update(adoption, adoptionUpdated);
+
         Long imageId = imageService.uploadImage(dto.getImage(), ImageType.ADOPTION, adoption.getId());
         adoptionUpdated.setImageId(imageId);
+        Locality locality = getLocality(dto);
+        adoptionUpdated.setLocality(locality);
         adoptionRepository.save(adoptionUpdated);
         AdoptionDTO adoptionDTO = AdoptionMapper.MAPPER.toDto(adoptionUpdated);
         adoptionDTO.setS3Url(imageService.getS3url(adoption.getId(), ImageType.ADOPTION));
@@ -99,5 +111,15 @@ public class AdoptionServiceImpl implements AdoptionService {
     private Adoption getAdoption(Long id) {
         Optional<Adoption> adoptionOptional = adoptionRepository.findById(id);
         return adoptionOptional.get();
+    }
+
+    private Locality getLocality(AdoptionDTOin dto) {
+        Optional<Locality> localityOptional = localityRepository.findById(dto.getLocality_id());
+        if (localityOptional.isEmpty()) {
+            throw new BadRequestException(Error.LOCALITY_NOT_FOUND);
+        }
+        Locality locality = localityOptional.get();
+        locality.setId(dto.getLocality_id());
+        return locality;
     }
 }

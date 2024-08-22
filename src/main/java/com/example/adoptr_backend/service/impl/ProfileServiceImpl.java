@@ -3,6 +3,7 @@ package com.example.adoptr_backend.service.impl;
 import com.example.adoptr_backend.exception.custom.BadRequestException;
 import com.example.adoptr_backend.exception.error.Error;
 import com.example.adoptr_backend.model.*;
+import com.example.adoptr_backend.repository.LocalityRepository;
 import com.example.adoptr_backend.repository.ProfileRepository;
 import com.example.adoptr_backend.repository.UserRepository;
 import com.example.adoptr_backend.service.ImageService;
@@ -13,6 +14,7 @@ import com.example.adoptr_backend.service.mapper.ProfileMapper;
 import com.example.adoptr_backend.util.AuthSupport;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Optional;
 
@@ -20,20 +22,21 @@ import java.util.Optional;
 public class ProfileServiceImpl implements ProfileService {
 
     private final UserRepository userRepository;
-
     private final ProfileRepository profileRepository;
-
     private final ImageService imageService;
+    private final LocalityRepository localityRepository;
 
     public ProfileServiceImpl(UserRepository userRepository,
                               ProfileRepository profileRepository,
-                              ImageService imageService) {
+                              ImageService imageService,
+                              LocalityRepository localityRepository) {
         this.userRepository = userRepository;
         this.profileRepository = profileRepository;
         this.imageService = imageService;
+        this.localityRepository = localityRepository;
     }
 
-    // TODO HACER EL BAD REQUEST PARA CUANDO EL USUARIO YA TIENE UN PERFIL
+
     @Transactional
     @Override
     public ProfileDTO create(ProfileDTOin dto) {
@@ -44,6 +47,8 @@ public class ProfileServiceImpl implements ProfileService {
         }
         Profile profile = ProfileMapper.MAPPER.toEntity(dto);
         profile.setUser(user.get());
+        Locality locality = getLocality(dto);
+        profile.setLocality(locality);
         profile = profileRepository.save(profile);
         Long imageId = imageService.uploadImage(dto.getImage(), ImageType.PROFILE, profile.getId());
         profile.setImageId(imageId);
@@ -66,7 +71,14 @@ public class ProfileServiceImpl implements ProfileService {
         Profile profile = getProfile(id);
         Profile profileUpdated = ProfileMapper.MAPPER.toEntity(dto);
         ProfileMapper.MAPPER.update(profile, profileUpdated);
-        profileRepository.save(profile);
+        Locality locality = getLocality(dto);
+        profile.setLocality(locality);
+        profile = profileRepository.save(profile);
+        if (dto.getImage() != null) {
+            Long imageId = imageService.uploadImage(dto.getImage(), ImageType.PROFILE, profile.getId());
+            profile.setImageId(imageId);
+            profileRepository.save(profile);
+        }
         return ProfileMapper.MAPPER.toDto(profile);
     }
 
@@ -75,5 +87,16 @@ public class ProfileServiceImpl implements ProfileService {
 
         return profileOptional.get();
     }
+
+    private Locality getLocality(ProfileDTOin dto) {
+        Optional<Locality> localityOptional = localityRepository.findById(dto.getLocality_id());
+        if (localityOptional.isEmpty()) {
+            throw new BadRequestException(Error.LOCALITY_NOT_FOUND);
+        }
+        Locality locality = localityOptional.get();
+        locality.setId(dto.getLocality_id());
+        return locality;
+    }
+
 
 }

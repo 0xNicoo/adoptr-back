@@ -21,4 +21,5 @@ public class AdoptionDTO {
     private int ageMonths;
     private UserDTO user;
     private String s3Url;
+    private LocalityDTO locality;
 }

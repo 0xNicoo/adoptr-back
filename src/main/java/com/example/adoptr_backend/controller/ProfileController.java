@@ -1,6 +1,7 @@
 package com.example.adoptr_backend.controller;
 
 
+import com.example.adoptr_backend.model.GenderType;
 import com.example.adoptr_backend.service.ProfileService;
 import com.example.adoptr_backend.service.dto.request.ProfileDTOin;
 import com.example.adoptr_backend.service.dto.response.ProfileDTO;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/profile")
@@ -25,7 +27,13 @@ public class ProfileController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Crea un perfil", security = { @SecurityRequirement(name = "bearer-jwt") })
-    public ResponseEntity<ProfileDTO> create(@ModelAttribute ProfileDTOin dto){
+    public ResponseEntity<ProfileDTO> create(@RequestParam String firstName,
+                                             @RequestParam String lastName,
+                                             @RequestParam GenderType genderType,
+                                             @RequestParam String description,
+                                             @RequestParam Long locality_id,
+                                             @RequestParam(required = true) MultipartFile image){
+        ProfileDTOin dto = new ProfileDTOin(firstName, lastName, genderType, description, locality_id, image);
         ProfileDTO response =  profileService.create(dto);
         return ResponseEntity.ok(response);
     }
@@ -37,9 +45,16 @@ public class ProfileController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(path = "/{id}",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Modifica un perfil", security = { @SecurityRequirement(name = "bearer-jwt") })
-    public ResponseEntity<ProfileDTO> update(@PathVariable Long id, @RequestBody ProfileDTOin dto) {
+    public ResponseEntity<ProfileDTO> update(@PathVariable Long id,
+                                             @RequestParam String firstName,
+                                             @RequestParam String lastName,
+                                             @RequestParam GenderType genderType,
+                                             @RequestParam String description,
+                                             @RequestParam Long locality_id,
+                                             @RequestParam(required = false) MultipartFile image) {
+        ProfileDTOin dto = new ProfileDTOin(firstName, lastName, genderType, description, locality_id, image);
         ProfileDTO response = profileService.update(id, dto);
         return ResponseEntity.ok(response);
     }

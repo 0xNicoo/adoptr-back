@@ -17,8 +17,8 @@ public class Profile {
     @Column
     private String lastName;
 
-    @Column
-    private Boolean gender;
+    @Enumerated(EnumType.STRING)
+    private GenderType genderType;
 
     @Column
     private String description;
@@ -29,6 +29,8 @@ public class Profile {
     @OneToOne
     private User user;
 
-    //TODO: agregar la localidad y la provincia
+    @ManyToOne
+    @JoinColumn(name = "locality_id")
+    private Locality locality;
 
 }
