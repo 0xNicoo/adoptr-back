@@ -16,7 +16,6 @@ public class AdoptionDTOin {
     private boolean castrated;
     private AnimalType animalType;
     private SizeType sizeType;
-    private AdoptionStatusType adoptionStatusType;
     private int ageYears;
     private int ageMonths;
     private MultipartFile image;
