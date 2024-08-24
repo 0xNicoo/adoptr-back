@@ -17,6 +17,7 @@ public interface AdoptionMapper extends EntityMapper<AdoptionDTO, Adoption>{
 
     @Mapping(ignore = true, target = "id")
     @Mapping(ignore = true, target = "user")
+    @Mapping(ignore = true, target = "imageId")
     void update(@MappingTarget Adoption entity, Adoption updateEntity);
 
 }

@@ -11,11 +11,8 @@ import com.example.adoptr_backend.service.AdoptionService;
 import com.example.adoptr_backend.service.ImageService;
 import com.example.adoptr_backend.service.dto.request.AdoptionDTOin;
 import com.example.adoptr_backend.service.dto.request.AdoptionFilterDTO;
-import com.example.adoptr_backend.service.dto.request.ProfileDTOin;
 import com.example.adoptr_backend.service.dto.response.AdoptionDTO;
-import com.example.adoptr_backend.service.dto.response.ProfileDTO;
 import com.example.adoptr_backend.service.mapper.AdoptionMapper;
-import com.example.adoptr_backend.service.mapper.ProfileMapper;
 import com.example.adoptr_backend.util.AuthSupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,6 +44,8 @@ public class AdoptionServiceImpl implements AdoptionService {
         this.localityRepository = localityRepository;
     }
 
+
+    //TODO: Siempre se guarda con la misma foto
     @Override
     public AdoptionDTO create(AdoptionDTOin dto) {
         Long userId = AuthSupport.getUserId();
@@ -74,29 +73,42 @@ public class AdoptionServiceImpl implements AdoptionService {
         return dto;
     }
 
-    //TODO agregar que traiga tambien la imagen
+    //TODO agregar que traiga tambien la imagen.
 
     @Override
     public Page<AdoptionDTO> getAll(AdoptionFilterDTO filter, Pageable pageable) {
         Specification<Adoption> spec = AdoptionSpec.getSpec(filter);
         Page<Adoption> page = adoptionRepository.findAll(spec, pageable);
-        return page.map(AdoptionMapper.MAPPER::toDto);
+        Page<AdoptionDTO> dtoPage = page.map(AdoptionMapper.MAPPER::toDto);
+        return dtoPage;
     }
 
     //TODO Agregar control de si suben una nueva imagen o no.
-    //TODO Cuando se edita, en realidad se publica de nuevo la adopcion, hay que fixearlo
+    //TODO arreglar el actualiar si viene una imagen nueva, no se actualiza.
     @Override
     public AdoptionDTO update(Long id, AdoptionDTOin dto) {
         Adoption adoption = getAdoption(id);
-        Adoption adoptionUpdated = AdoptionMapper.MAPPER.toEntity(dto);
-        adoptionUpdated.setUser(adoption.getUser());
-        adoptionUpdated.setType(PublicationType.ADOPTION);
-        Long imageId = imageService.uploadImage(dto.getImage(), ImageType.ADOPTION, adoption.getId());
-        adoptionUpdated.setImageId(imageId);
+        adoption.setTitle(dto.getTitle());
+        adoption.setDescription(dto.getDescription());
+        adoption.setSexType(dto.getSexType());
+        adoption.setVaccinated(dto.isVaccinated());
+        adoption.setUnprotected(dto.isUnprotected());
+        adoption.setCastrated(dto.isCastrated());
+        adoption.setAnimalType(dto.getAnimalType());
+        adoption.setSizeType(dto.getSizeType());
+        adoption.setAdoptionStatusType(dto.getAdoptionStatusType());
+        adoption.setAgeYears(dto.getAgeYears());
+        adoption.setAgeMonths(dto.getAgeMonths());
+        adoption.setType(PublicationType.ADOPTION);
+        if (dto.getImage() != null) {
+            Long imageId = imageService.uploadImage(dto.getImage(), ImageType.ADOPTION, adoption.getId());
+            adoption.setImageId(imageId);
+            adoptionRepository.save(adoption);
+        }
         Locality locality = getLocality(dto);
-        adoptionUpdated.setLocality(locality);
-        adoptionRepository.save(adoptionUpdated);
-        AdoptionDTO adoptionDTO = AdoptionMapper.MAPPER.toDto(adoptionUpdated);
+        adoption.setLocality(locality);
+        adoptionRepository.save(adoption);
+        AdoptionDTO adoptionDTO = AdoptionMapper.MAPPER.toDto(adoption);
         adoptionDTO.setS3Url(imageService.getS3url(adoption.getId(), ImageType.ADOPTION));
         return adoptionDTO;
     }
