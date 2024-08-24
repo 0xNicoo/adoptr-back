@@ -1,9 +1,11 @@
 package com.example.adoptr_backend.service.dto.request;
 
 import com.example.adoptr_backend.model.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
+@AllArgsConstructor
 @Data
 public class AdoptionDTOin {
     private String title;

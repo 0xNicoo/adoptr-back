@@ -1,5 +1,9 @@
 package com.example.adoptr_backend.controller;
 
+import com.example.adoptr_backend.model.AdoptionStatusType;
+import com.example.adoptr_backend.model.AnimalType;
+import com.example.adoptr_backend.model.SexType;
+import com.example.adoptr_backend.model.SizeType;
 import com.example.adoptr_backend.service.AdoptionService;
 import com.example.adoptr_backend.service.dto.request.AdoptionDTOin;
 import com.example.adoptr_backend.service.dto.request.AdoptionFilterDTO;
@@ -14,12 +18,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/adoption")
 @Tag(name = "Adoption", description = "Adoption Endpoints")
+
 public class AdoptionController {
 
     private final AdoptionService adoptionService;
@@ -28,7 +34,20 @@ public class AdoptionController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "crea una publicacion de adopcion", security = { @SecurityRequirement(name = "bearer-jwt") })
-    public ResponseEntity<AdoptionDTO> create(@ModelAttribute AdoptionDTOin dto){
+    public ResponseEntity<AdoptionDTO> create(@RequestParam String title,
+                                              @RequestParam String description,
+                                              @RequestParam SexType sexType,
+                                              @RequestParam boolean vaccinated,
+                                              @RequestParam boolean unprotected,
+                                              @RequestParam boolean castrated,
+                                              @RequestParam AnimalType animalType,
+                                              @RequestParam SizeType sizeType,
+                                              @RequestParam AdoptionStatusType adoptionStatusType,
+                                              @RequestParam int ageYears,
+                                              @RequestParam int ageMonths,
+                                              @RequestParam MultipartFile image,
+                                              @RequestParam Long locality_id){
+        AdoptionDTOin dto = new AdoptionDTOin(title, description, sexType, vaccinated, unprotected, castrated, animalType, sizeType, adoptionStatusType, ageYears, ageMonths, image, locality_id);
         AdoptionDTO response =  adoptionService.create(dto);
         return ResponseEntity.ok(response);
     }
@@ -49,7 +68,21 @@ public class AdoptionController {
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Modifica una publicacion de adopcion", security = { @SecurityRequirement(name = "bearer-jwt") })
-    public ResponseEntity<AdoptionDTO> update(@PathVariable Long id, @ModelAttribute AdoptionDTOin dto) {
+    public ResponseEntity<AdoptionDTO> update(@PathVariable Long id,
+                                              @RequestParam String title,
+                                              @RequestParam String description,
+                                              @RequestParam SexType sexType,
+                                              @RequestParam boolean vaccinated,
+                                              @RequestParam boolean unprotected,
+                                              @RequestParam boolean castrated,
+                                              @RequestParam AnimalType animalType,
+                                              @RequestParam SizeType sizeType,
+                                              @RequestParam AdoptionStatusType adoptionStatusType,
+                                              @RequestParam int ageYears,
+                                              @RequestParam int ageMonths,
+                                              @RequestParam MultipartFile image,
+                                              @RequestParam Long locality_id) {
+        AdoptionDTOin dto = new AdoptionDTOin(title, description, sexType, vaccinated, unprotected, castrated, animalType, sizeType, adoptionStatusType, ageYears, ageMonths, image, locality_id);
         AdoptionDTO response = adoptionService.update(id, dto);
         return ResponseEntity.ok(response);
     }
