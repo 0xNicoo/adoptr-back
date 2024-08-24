@@ -68,7 +68,7 @@ public class AdoptionServiceImpl implements AdoptionService {
     public AdoptionDTO getById(Long id) {
         Adoption adoption = getAdoption(id);
         AdoptionDTO dto = AdoptionMapper.MAPPER.toDto(adoption);
-        String s3Url = imageService.getS3url(id,ImageType.ADOPTION);
+        String s3Url = imageService.getS3url(id, ImageType.ADOPTION);
         dto.setS3Url(s3Url);
         return dto;
     }
@@ -101,6 +101,7 @@ public class AdoptionServiceImpl implements AdoptionService {
         adoption.setAgeMonths(dto.getAgeMonths());
         adoption.setType(PublicationType.ADOPTION);
         if (dto.getImage() != null) {
+            imageService.deleteImage(adoption.getId(), ImageType.ADOPTION);
             Long imageId = imageService.uploadImage(dto.getImage(), ImageType.ADOPTION, adoption.getId());
             adoption.setImageId(imageId);
             adoptionRepository.save(adoption);

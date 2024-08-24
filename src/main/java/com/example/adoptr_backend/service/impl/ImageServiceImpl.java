@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ImageServiceImpl implements ImageService {
@@ -49,6 +50,12 @@ public class ImageServiceImpl implements ImageService {
         Image image = imageList.get(0);
         String imageUrl = S3Support.getS3url(image);
         return imageUrl;
+    }
+
+    @Override
+    public void deleteImage(Long modelId, ImageType type) {
+        List<Image> imageList = imageRepository.findByModelIdAndType(modelId, type);
+        imageList.forEach(imageRepository::delete);
     }
 
 
