@@ -75,6 +75,7 @@ public class ProfileServiceImpl implements ProfileService {
         profile.setLocality(locality);
         profile = profileRepository.save(profile);
         if (dto.getImage() != null) {
+            imageService.deleteImage(profile.getId(), ImageType.PROFILE);
             Long imageId = imageService.uploadImage(dto.getImage(), ImageType.PROFILE, profile.getId());
             profile.setImageId(imageId);
             profileRepository.save(profile);
