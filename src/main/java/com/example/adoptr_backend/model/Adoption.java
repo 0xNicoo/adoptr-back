@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.time.LocalDateTime;
+
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
@@ -37,4 +39,9 @@ public class Adoption extends Publication {
     @Column
     private int ageMonths;
 
+    @PrePersist
+    public void prePersist(){
+        this.adoptionStatusType = AdoptionStatusType.FOR_ADOPTION;
+        super.setCreationDate(LocalDateTime.now());
+    }
 }

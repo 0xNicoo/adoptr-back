@@ -1,6 +1,5 @@
 package com.example.adoptr_backend.controller;
 
-import com.example.adoptr_backend.model.AdoptionStatusType;
 import com.example.adoptr_backend.model.AnimalType;
 import com.example.adoptr_backend.model.SexType;
 import com.example.adoptr_backend.model.SizeType;
@@ -42,12 +41,11 @@ public class AdoptionController {
                                               @RequestParam boolean castrated,
                                               @RequestParam AnimalType animalType,
                                               @RequestParam SizeType sizeType,
-                                              @RequestParam AdoptionStatusType adoptionStatusType,
                                               @RequestParam int ageYears,
                                               @RequestParam int ageMonths,
                                               @RequestParam MultipartFile image,
                                               @RequestParam Long locality_id){
-        AdoptionDTOin dto = new AdoptionDTOin(title, description, sexType, vaccinated, unprotected, castrated, animalType, sizeType, adoptionStatusType, ageYears, ageMonths, image, locality_id);
+        AdoptionDTOin dto = new AdoptionDTOin(title, description, sexType, vaccinated, unprotected, castrated, animalType, sizeType, ageYears, ageMonths, image, locality_id);
         AdoptionDTO response =  adoptionService.create(dto);
         return ResponseEntity.ok(response);
     }
@@ -77,12 +75,11 @@ public class AdoptionController {
                                               @RequestParam boolean castrated,
                                               @RequestParam AnimalType animalType,
                                               @RequestParam SizeType sizeType,
-                                              @RequestParam AdoptionStatusType adoptionStatusType,
                                               @RequestParam int ageYears,
                                               @RequestParam int ageMonths,
                                               @RequestParam MultipartFile image,
                                               @RequestParam Long locality_id) {
-        AdoptionDTOin dto = new AdoptionDTOin(title, description, sexType, vaccinated, unprotected, castrated, animalType, sizeType, adoptionStatusType, ageYears, ageMonths, image, locality_id);
+        AdoptionDTOin dto = new AdoptionDTOin(title, description, sexType, vaccinated, unprotected, castrated, animalType, sizeType, ageYears, ageMonths, image, locality_id);
         AdoptionDTO response = adoptionService.update(id, dto);
         return ResponseEntity.ok(response);
     }

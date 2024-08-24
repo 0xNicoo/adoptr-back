@@ -44,8 +44,6 @@ public class AdoptionServiceImpl implements AdoptionService {
         this.localityRepository = localityRepository;
     }
 
-
-    //TODO: Siempre se guarda con la misma foto
     @Override
     public AdoptionDTO create(AdoptionDTOin dto) {
         Long userId = AuthSupport.getUserId();
@@ -73,18 +71,28 @@ public class AdoptionServiceImpl implements AdoptionService {
         return dto;
     }
 
-    //TODO agregar que traiga tambien la imagen.
-
     @Override
     public Page<AdoptionDTO> getAll(AdoptionFilterDTO filter, Pageable pageable) {
         Specification<Adoption> spec = AdoptionSpec.getSpec(filter);
         Page<Adoption> page = adoptionRepository.findAll(spec, pageable);
-        Page<AdoptionDTO> dtoPage = page.map(AdoptionMapper.MAPPER::toDto);
+        Page<AdoptionDTO> dtoPage = page.map(adoption -> {
+            try {
+                AdoptionDTO dto = AdoptionMapper.MAPPER.toDto(adoption);
+                String s3Url = imageService.getS3url(adoption.getId(), ImageType.ADOPTION);
+                dto.setS3Url(s3Url);
+                return dto;
+            } catch (Exception e) {
+                System.err.println("Error al obtener la URL de la imagen para ID " + adoption.getId() + ": " + e.getMessage());
+                AdoptionDTO dto = AdoptionMapper.MAPPER.toDto(adoption);
+                dto.setS3Url(null);
+                return dto;
+            }
+        });
+
         return dtoPage;
     }
 
-    //TODO Agregar control de si suben una nueva imagen o no.
-    //TODO arreglar el actualiar si viene una imagen nueva, no se actualiza.
+
     @Override
     public AdoptionDTO update(Long id, AdoptionDTOin dto) {
         Adoption adoption = getAdoption(id);
@@ -103,7 +111,6 @@ public class AdoptionServiceImpl implements AdoptionService {
         adoptionDTO.setS3Url(imageService.getS3url(adoption.getId(), ImageType.ADOPTION));
         return adoptionDTO;
     }
-
 
     @Override
     public void delete(Long id)  {

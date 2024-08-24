@@ -34,11 +34,6 @@ public abstract class Publication {
     @Column
     private Long imageId;
 
-    @PrePersist
-    public void prePersist(){
-        this.creationDate = LocalDateTime.now();
-    }
-
     @ManyToOne
     @JoinColumn(name = "locality_id")
     private Locality locality;
