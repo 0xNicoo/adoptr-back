@@ -19,7 +19,7 @@ public class ImageUtil {
                 slash +
                 image.getType() +
                 slash +
-                AuthSupport.getUserId() +
+                image.getUserId() +
                 slash +
                 image.getS3name();
     }
