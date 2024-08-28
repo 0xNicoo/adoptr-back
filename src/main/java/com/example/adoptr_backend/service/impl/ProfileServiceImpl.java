@@ -41,7 +41,10 @@ public class ProfileServiceImpl implements ProfileService {
     public ProfileDTO get() {
         Long userId = AuthSupport.getUserId();
         Profile profile = getProfileByUserId(userId);
-        return ProfileMapper.MAPPER.toDto(profile);
+        ProfileDTO dto = ProfileMapper.MAPPER.toDto(profile);
+        String s3Url = imageService.getS3url(profile.getId(), ImageType.PROFILE);
+        dto.setS3Url(s3Url);
+        return dto;
     }
 
     @Transactional
