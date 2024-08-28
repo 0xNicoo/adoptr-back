@@ -37,6 +37,13 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
 
+    @Override
+    public ProfileDTO get() {
+        Long userId = AuthSupport.getUserId();
+        Profile profile = getProfileByUserId(userId);
+        return ProfileMapper.MAPPER.toDto(profile);
+    }
+
     @Transactional
     @Override
     public ProfileDTO create(ProfileDTOin dto) {
@@ -92,7 +99,17 @@ public class ProfileServiceImpl implements ProfileService {
 
     private Profile getProfile(Long id) {
         Optional<Profile> profileOptional = profileRepository.findById(id);
+        if(profileOptional.isEmpty()){
+            throw new BadRequestException(Error.PROFILE_NOT_FOUND);
+        }
+        return profileOptional.get();
+    }
 
+    private Profile getProfileByUserId(Long userId) {
+        Optional<Profile> profileOptional = profileRepository.findByUserId(userId);
+        if(profileOptional.isEmpty()){
+            throw new BadRequestException(Error.PROFILE_NOT_FOUND);
+        }
         return profileOptional.get();
     }
 

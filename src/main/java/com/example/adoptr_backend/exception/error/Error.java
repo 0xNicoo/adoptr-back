@@ -7,7 +7,8 @@ public enum Error implements ErrorCode {
     AUTH_ERROR("0003", "Error al iniciar sesion"),
     PROVINCE_NOT_FOUND("0004", "No se encontro la provincia"),
     LOCALITY_NOT_FOUND("0005", "No se encontro la localidad"),
-    PROFILE_UPDATE_NOT_FOUND("0006", "No tienes permiso para editar este perfil")
+    PROFILE_UPDATE_NOT_FOUND("0006", "No tienes permiso para editar este perfil"),
+    PROFILE_NOT_FOUND("0007", "El perfil no existe")
 
 
     ;
