@@ -45,6 +45,13 @@ public class ProfileController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping
+    @Operation(summary = "Obtiene el perfil del usuario logeado", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<ProfileDTO> get() {
+        ProfileDTO response = profileService.get();
+        return ResponseEntity.ok(response);
+    }
+
     //TODO: permitir que se pasen parametros vacios sin que se carguen como NULL
     @PutMapping(path = "/{id}",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Modifica un perfil", security = { @SecurityRequirement(name = "bearer-jwt") })

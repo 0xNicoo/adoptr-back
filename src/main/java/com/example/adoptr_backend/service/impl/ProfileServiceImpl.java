@@ -37,6 +37,16 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
 
+    @Override
+    public ProfileDTO get() {
+        Long userId = AuthSupport.getUserId();
+        Profile profile = getProfileByUserId(userId);
+        ProfileDTO dto = ProfileMapper.MAPPER.toDto(profile);
+        String s3Url = imageService.getS3url(profile.getId(), ImageType.PROFILE);
+        dto.setS3Url(s3Url);
+        return dto;
+    }
+
     @Transactional
     @Override
     public ProfileDTO create(ProfileDTOin dto) {
@@ -67,25 +77,42 @@ public class ProfileServiceImpl implements ProfileService {
 
 
     @Override
-    public ProfileDTO update(Long id, ProfileDTOin dto){
+    public ProfileDTO update(Long id, ProfileDTOin dto) {
+        Long userId = AuthSupport.getUserId();
         Profile profile = getProfile(id);
+        if (!profile.getUser().getId().equals(userId)) {
+            throw new BadRequestException(Error.PROFILE_UPDATE_NOT_FOUND);
+        }
         Profile profileUpdated = ProfileMapper.MAPPER.toEntity(dto);
         ProfileMapper.MAPPER.update(profile, profileUpdated);
         Locality locality = getLocality(dto);
         profile.setLocality(locality);
         profile = profileRepository.save(profile);
+
         if (dto.getImage() != null) {
             imageService.deleteImage(profile.getId(), ImageType.PROFILE);
             Long imageId = imageService.uploadImage(dto.getImage(), ImageType.PROFILE, profile.getId());
             profile.setImageId(imageId);
             profileRepository.save(profile);
         }
+
         return ProfileMapper.MAPPER.toDto(profile);
     }
 
+
     private Profile getProfile(Long id) {
         Optional<Profile> profileOptional = profileRepository.findById(id);
+        if(profileOptional.isEmpty()){
+            throw new BadRequestException(Error.PROFILE_NOT_FOUND);
+        }
+        return profileOptional.get();
+    }
 
+    private Profile getProfileByUserId(Long userId) {
+        Optional<Profile> profileOptional = profileRepository.findByUserId(userId);
+        if(profileOptional.isEmpty()){
+            throw new BadRequestException(Error.PROFILE_NOT_FOUND);
+        }
         return profileOptional.get();
     }
 
