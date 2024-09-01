@@ -8,8 +8,11 @@ public enum Error implements ErrorCode {
     PROVINCE_NOT_FOUND("0004", "No se encontro la provincia"),
     LOCALITY_NOT_FOUND("0005", "No se encontro la localidad"),
     PROFILE_UPDATE_NOT_FOUND("0006", "No tienes permiso para editar este perfil"),
-    PROFILE_NOT_FOUND("0007", "El perfil no existe")
-
+    PROFILE_NOT_FOUND("0007", "El perfil no existe"),
+    PUBLICATION_NOT_FOUND("0008", "No se encontro la publicacion"),
+    CHAT_NOT_FOUND("0009", "No se encontro el chat"),
+    USER_NOT_IN_CHAT("0010", "El usuario no pertenece al chat"),
+    CHAT_ERROR("0011", "Error al obtener el chat")
 
     ;
 
