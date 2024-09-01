@@ -7,12 +7,14 @@ import com.example.adoptr_backend.service.AdoptionService;
 import com.example.adoptr_backend.service.dto.request.AdoptionDTOin;
 import com.example.adoptr_backend.service.dto.request.AdoptionFilterDTO;
 import com.example.adoptr_backend.service.dto.response.AdoptionDTO;
+import com.example.adoptr_backend.util.PaginationUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -54,7 +56,8 @@ public class AdoptionController {
     @Operation(summary = "Obtiene publicaciones de adopcion, con filtro", security = { @SecurityRequirement(name = "bearer-jwt") })
     public ResponseEntity<List<AdoptionDTO>> getAll(@ParameterObject AdoptionFilterDTO filterDTO, @ParameterObject Pageable pageable){
         Page<AdoptionDTO> response = adoptionService.getAll(filterDTO, pageable);
-        return new ResponseEntity<>(response.getContent(), HttpStatus.OK);
+        HttpHeaders headers = PaginationUtil.setTotalCountPageHttpHeaders(response);
+        return new ResponseEntity<>(response.getContent(), headers, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")

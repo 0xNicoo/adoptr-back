@@ -67,7 +67,7 @@ public class SecurityConfig {
         corsConfiguration.setAllowedOrigins(List.of("http:localhost:8080"));
         corsConfiguration.setAllowedMethods(List.of("GET", "POST"));
         corsConfiguration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-
+        corsConfiguration.addExposedHeader("X-Total-Count");
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfiguration);
         return source;
