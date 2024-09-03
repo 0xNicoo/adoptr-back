@@ -8,10 +8,11 @@ import java.util.List;
 @Data
 public class ChatDTO {
     private Long id;
-    private Long publicationId;
     private LocalDateTime createdAt;
     private Long adopterUserId;
+    private String adopterUserName;
     private Long publicationUserId;
+    private String publicationUserName;
     private List<MessageDTO> messages;
     private PublicationChatDTO publication;
 }

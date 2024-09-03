@@ -3,8 +3,10 @@ package com.example.adoptr_backend.service.impl;
 import com.example.adoptr_backend.exception.custom.BadRequestException;
 import com.example.adoptr_backend.exception.error.Error;
 import com.example.adoptr_backend.model.Chat;
+import com.example.adoptr_backend.model.Profile;
 import com.example.adoptr_backend.model.Publication;
 import com.example.adoptr_backend.repository.ChatRepository;
+import com.example.adoptr_backend.repository.ProfileRepository;
 import com.example.adoptr_backend.repository.PublicationRepository;
 import com.example.adoptr_backend.service.ChatService;
 import com.example.adoptr_backend.service.PublicationService;
@@ -29,6 +31,8 @@ public class ChatServiceImpl implements ChatService {
 
     private final PublicationRepository publicationRepository;
 
+    private final ProfileRepository profileRepository;
+
     @Override
     public ChatDTO get(Long id) {
         Optional<Chat> chatOptional = chatRepository.findById(id);
@@ -40,7 +44,9 @@ public class ChatServiceImpl implements ChatService {
         if(!Objects.equals(chat.getAdopterUserId(), userId) && !Objects.equals(chat.getPublicationUserId(), userId)){
             throw new BadRequestException(Error.USER_NOT_IN_CHAT);
         }
-        return ChatMapper.MAPPER.toDto(chat);
+        //TODO: esto obtenerlo desde el Usuario (agregarle el perfil al usuario)
+        ChatDTO chatDTO = ChatMapper.MAPPER.toDto(chat);
+        return setUsersName(chatDTO);
     }
 
     @Transactional
@@ -54,17 +60,23 @@ public class ChatServiceImpl implements ChatService {
         }
         Optional<Chat> chatOptional = chatRepository.findByPublicationIdAndAdopterUserId(publication.getId(), adopterUserId);
         if (chatOptional.isPresent()){
-            return ChatMapper.MAPPER.toDto(chatOptional.get());
+            ChatDTO chatDTO = ChatMapper.MAPPER.toDto(chatOptional.get());
+            return setUsersName(chatDTO);
         }
         Chat chat = createChat(publication, adopterUserId);
-        return ChatMapper.MAPPER.toDto(chat);
+        //TODO: esto obtenerlo desde el Usuario (agregarle el perfil al usuario)
+        ChatDTO chatDTO = ChatMapper.MAPPER.toDto(chat);
+        return setUsersName(chatDTO);
     }
 
     @Override
     public List<ChatDTO> getAll() {
         Long userId = AuthSupport.getUserId();
         List<Chat> chats = chatRepository.findByAdopterUserIdOrPublicationUserId(userId, userId);
-        return ChatMapper.MAPPER.toDto(chats);
+        List<ChatDTO> chatDTOList = ChatMapper.MAPPER.toDto(chats);
+        //TODO: esto obtenerlo desde el Usuario (agregarle el perfil al usuario)
+        chatDTOList.forEach(this::setUsersName);
+        return chatDTOList;
     }
 
     @Transactional
@@ -77,6 +89,25 @@ public class ChatServiceImpl implements ChatService {
         publication.addChat(chat);
         publicationRepository.save(publication);
         return chat;
+    }
+
+    //TODO: esto obtenerlo desde el Usuario (agregarle el perfil al usuario)
+    private ChatDTO setUsersName(ChatDTO chatDTO){
+        Profile adopterProfile = getProfile(chatDTO.getAdopterUserId());
+        Profile publisherProfile = getProfile(chatDTO.getPublicationUserId());
+        String adopterName = adopterProfile.getFirstName() + " " + adopterProfile.getLastName();
+        String publisherName = publisherProfile.getFirstName() + " " + publisherProfile.getLastName();
+        chatDTO.setAdopterUserName(adopterName);
+        chatDTO.setPublicationUserName(publisherName);
+        return chatDTO;
+    }
+
+    private Profile getProfile(Long userId){
+        Optional<Profile> profileOptional = profileRepository.findByUserId(userId);
+        if(profileOptional.isEmpty()){
+            throw new BadRequestException(Error.PROFILE_NOT_FOUND);
+        }
+        return profileOptional.get();
     }
 
 
