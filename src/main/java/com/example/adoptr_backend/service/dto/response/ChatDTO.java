@@ -13,4 +13,5 @@ public class ChatDTO {
     private Long adopterUserId;
     private Long publicationUserId;
     private List<MessageDTO> messages;
+    private PublicationChatDTO publication;
 }
