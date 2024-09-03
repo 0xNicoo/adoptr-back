@@ -9,5 +9,5 @@ public interface ChatService {
 
     ChatDTO getByPublication(Long publicationId);
 
-    List<ChatDTO> getList(Long publicationId);
+    List<ChatDTO> getAll();
 }

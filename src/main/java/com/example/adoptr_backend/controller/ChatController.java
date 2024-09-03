@@ -22,21 +22,21 @@ public class ChatController {
 
     private final ChatService chatService;
 
-    @GetMapping("/chat/publication/{publicationId}")
+    @GetMapping("/publication/{publicationId}")
     @Operation(summary = "Obtiene un chat por publicationId", security = { @SecurityRequirement(name = "bearer-jwt") })
     public ResponseEntity<ChatDTO> getByPublication(@PathVariable Long publicationId){
         ChatDTO response = chatService.getByPublication(publicationId);
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/chats/publication/{publicationId}")
+    @GetMapping("/all")
     @Operation(summary = "Obtiene un chat por publicationId", security = { @SecurityRequirement(name = "bearer-jwt") })
-    public ResponseEntity<List<ChatDTO>> getChats(@PathVariable Long publicationId){
-        List<ChatDTO> response = chatService.getList(publicationId);
+    public ResponseEntity<List<ChatDTO>> getChats(){
+        List<ChatDTO> response = chatService.getAll();
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/chat/{id}")
+    @GetMapping("/{id}")
     @Operation(summary = "Obtiene un chat por publicationId", security = { @SecurityRequirement(name = "bearer-jwt") })
     public ResponseEntity<ChatDTO> get(@PathVariable Long id){
         ChatDTO response = chatService.get(id);

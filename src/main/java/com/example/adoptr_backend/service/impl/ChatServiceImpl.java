@@ -61,9 +61,10 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public List<ChatDTO> getList(Long publicationId) {
-        Publication publication = publicationService.get(publicationId);
-        return publication.getChats().stream().map(ChatMapper.MAPPER::toDto).toList();
+    public List<ChatDTO> getAll() {
+        Long userId = AuthSupport.getUserId();
+        List<Chat> chats = chatRepository.findByAdopterUserIdOrPublicationUserId(userId, userId);
+        return ChatMapper.MAPPER.toDto(chats);
     }
 
     @Transactional
