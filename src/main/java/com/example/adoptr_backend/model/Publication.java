@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Data
@@ -31,11 +32,18 @@ public abstract class Publication {
     @JoinColumn(name = "user_id", nullable = false, referencedColumnName = "id")
     private User user;
 
+    @OneToMany(mappedBy = "publication", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Chat> chats;
+
     @Column
     private Long imageId;
 
     @ManyToOne
     @JoinColumn(name = "locality_id")
     private Locality locality;
+
+    public void addChat(Chat chat){
+        this.chats.add(chat);
+    }
 
 }

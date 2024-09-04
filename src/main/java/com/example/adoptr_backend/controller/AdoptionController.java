@@ -26,7 +26,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/adoption")
 @Tag(name = "Adoption", description = "Adoption Endpoints")
-
 public class AdoptionController {
 
     private final AdoptionService adoptionService;
