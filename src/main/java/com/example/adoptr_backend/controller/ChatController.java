@@ -30,14 +30,14 @@ public class ChatController {
     }
 
     @GetMapping("/all")
-    @Operation(summary = "Obtiene un chat por publicationId", security = { @SecurityRequirement(name = "bearer-jwt") })
+    @Operation(summary = "Obtiene todos los chats de un usuario", security = { @SecurityRequirement(name = "bearer-jwt") })
     public ResponseEntity<List<ChatDTO>> getChats(){
         List<ChatDTO> response = chatService.getAll();
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Obtiene un chat por publicationId", security = { @SecurityRequirement(name = "bearer-jwt") })
+    @Operation(summary = "Obtiene un chat", security = { @SecurityRequirement(name = "bearer-jwt") })
     public ResponseEntity<ChatDTO> get(@PathVariable Long id){
         ChatDTO response = chatService.get(id);
         return ResponseEntity.ok(response);

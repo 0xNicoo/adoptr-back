@@ -3,9 +3,11 @@ package com.example.adoptr_backend.service.impl;
 import com.example.adoptr_backend.exception.custom.BadRequestException;
 import com.example.adoptr_backend.exception.error.Error;
 import com.example.adoptr_backend.model.Chat;
+import com.example.adoptr_backend.model.Message;
 import com.example.adoptr_backend.model.Profile;
 import com.example.adoptr_backend.model.Publication;
 import com.example.adoptr_backend.repository.ChatRepository;
+import com.example.adoptr_backend.repository.MessageRepository;
 import com.example.adoptr_backend.repository.ProfileRepository;
 import com.example.adoptr_backend.repository.PublicationRepository;
 import com.example.adoptr_backend.service.ChatService;
@@ -13,6 +15,7 @@ import com.example.adoptr_backend.service.PublicationService;
 import com.example.adoptr_backend.service.dto.response.ChatDTO;
 import com.example.adoptr_backend.service.mapper.ChatMapper;
 import com.example.adoptr_backend.util.AuthSupport;
+import com.example.adoptr_backend.util.ChatMessage;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,14 +36,12 @@ public class ChatServiceImpl implements ChatService {
 
     private final ProfileRepository profileRepository;
 
+    private final MessageRepository messageRepository;
+
     @Override
     public ChatDTO get(Long id) {
-        Optional<Chat> chatOptional = chatRepository.findById(id);
-        if(chatOptional.isEmpty()){
-            throw new BadRequestException(Error.CHAT_NOT_FOUND);
-        }
         Long userId = AuthSupport.getUserId();
-        Chat chat = chatOptional.get();
+        Chat chat = getChat(id);
         if(!Objects.equals(chat.getAdopterUserId(), userId) && !Objects.equals(chat.getPublicationUserId(), userId)){
             throw new BadRequestException(Error.USER_NOT_IN_CHAT);
         }
@@ -79,6 +80,16 @@ public class ChatServiceImpl implements ChatService {
         return chatDTOList;
     }
 
+    @Override
+    public void saveMassage(ChatMessage payload) {
+        Chat chat = getChat(Long.valueOf(payload.getChatId()));
+        Message message = new Message();
+        message.setChat(chat);
+        message.setContent(payload.getContent());
+        message.setUserId(Long.valueOf(payload.getSenderId()));
+        messageRepository.save(message);
+    }
+
     @Transactional
     private Chat createChat(Publication publication, Long adopterUserId) {
         Chat chat = new Chat();
@@ -110,5 +121,11 @@ public class ChatServiceImpl implements ChatService {
         return profileOptional.get();
     }
 
-
+    private Chat getChat(Long id) {
+        Optional<Chat> chatOptional = chatRepository.findById(id);
+        if(chatOptional.isEmpty()){
+            throw new BadRequestException(Error.CHAT_NOT_FOUND);
+        }
+        return chatOptional.get();
+    }
 }
