@@ -6,5 +6,5 @@ import lombok.Data;
 public class PublicationChatDTO {
     private Long id;
     private String title;
-
+    private UserDTO user;
 }
