@@ -19,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -112,9 +113,14 @@ public class AdoptionServiceImpl implements AdoptionService {
         return adoptionDTO;
     }
 
+    //TODO: verificar que el usuario que quiera eliminar la publicacion sea el dueño
     @Override
     public void delete(Long id)  {
+        Long userId = AuthSupport.getUserId();
         Adoption adoption = getAdoption(id);
+        if(!Objects.equals(adoption.getUser().getId(), userId)){
+            throw new BadRequestException(Error.USER_NOT_ADOPTION_OWNER);
+        }
         adoptionRepository.delete(adoption);
     }
 

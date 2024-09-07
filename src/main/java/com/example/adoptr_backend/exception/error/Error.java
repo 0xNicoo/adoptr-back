@@ -12,7 +12,8 @@ public enum Error implements ErrorCode {
     PUBLICATION_NOT_FOUND("0008", "No se encontro la publicacion"),
     CHAT_NOT_FOUND("0009", "No se encontro el chat"),
     USER_NOT_IN_CHAT("0010", "El usuario no pertenece al chat"),
-    CHAT_ERROR("0011", "Error al obtener el chat")
+    CHAT_ERROR("0011", "Error al obtener el chat"),
+    USER_NOT_ADOPTION_OWNER("0012", "El usuario no es dueño de la publicacion de adopcion")
 
     ;
 
