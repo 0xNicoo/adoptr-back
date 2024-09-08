@@ -7,7 +7,9 @@ import lombok.Data;
 @Data
 public class ChatMessage {
     private String content;
+    private String senderEmail;
     private String senderId;
+    private String recipientEmail;
     private String recipientId;
     private String chatId;
 }

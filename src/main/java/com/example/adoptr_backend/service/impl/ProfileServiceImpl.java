@@ -99,6 +99,15 @@ public class ProfileServiceImpl implements ProfileService {
         return ProfileMapper.MAPPER.toDto(profile);
     }
 
+    @Override
+    public ProfileDTO getByUserId(Long userId) {
+        Profile profile = getProfileByUserId(userId);
+        ProfileDTO dto = ProfileMapper.MAPPER.toDto(profile);
+        String s3Url = imageService.getS3url(profile.getId(), ImageType.PROFILE);
+        dto.setS3Url(s3Url);
+        return dto;
+    }
+
 
     private Profile getProfile(Long id) {
         Optional<Profile> profileOptional = profileRepository.findById(id);

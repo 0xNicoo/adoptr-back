@@ -15,4 +15,6 @@ public interface ProfileService {
 
     ProfileDTO update(Long id, ProfileDTOin dto);
 
+    ProfileDTO getByUserId(Long userId);
+
 }
