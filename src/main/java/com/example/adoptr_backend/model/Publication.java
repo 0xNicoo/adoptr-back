@@ -32,7 +32,7 @@ public abstract class Publication {
     @JoinColumn(name = "user_id", nullable = false, referencedColumnName = "id")
     private User user;
 
-    @OneToMany(mappedBy = "publication", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "publication", cascade = CascadeType.ALL)
     private List<Chat> chats;
 
     @Column

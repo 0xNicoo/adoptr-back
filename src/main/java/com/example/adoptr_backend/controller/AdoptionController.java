@@ -75,11 +75,11 @@ public class AdoptionController {
                                               @RequestParam boolean vaccinated,
                                               @RequestParam boolean unprotected,
                                               @RequestParam boolean castrated,
-                                              @RequestParam AnimalType animalType,
+                                              @RequestParam(required = false) AnimalType animalType,
                                               @RequestParam SizeType sizeType,
                                               @RequestParam int ageYears,
                                               @RequestParam int ageMonths,
-                                              @RequestParam MultipartFile image,
+                                              @RequestParam(required = false) MultipartFile image,
                                               @RequestParam Long locality_id) {
         AdoptionDTOin dto = new AdoptionDTOin(title, description, sexType, vaccinated, unprotected, castrated, animalType, sizeType, ageYears, ageMonths, image, locality_id);
         AdoptionDTO response = adoptionService.update(id, dto);
