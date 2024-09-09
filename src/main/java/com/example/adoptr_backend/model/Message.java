@@ -21,7 +21,7 @@ public class Message {
     private String content;
 
     @Column
-    private Long userId;
+    private Long userSenderId;
 
     @Column
     private LocalDateTime createdAt;

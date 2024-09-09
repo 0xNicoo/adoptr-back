@@ -22,7 +22,7 @@ public class SocketChatController {
     @MessageMapping("/chat")
     public void chat(@Payload ChatMessage message){
         chatService.saveMassage(message);
-        simpMessagingTemplate.convertAndSendToUser(message.getRecipientEmail(), "/queue", message);
+        simpMessagingTemplate.convertAndSendToUser(message.getUserReceiverEmail(), "/queue", message);
     }
 
 }

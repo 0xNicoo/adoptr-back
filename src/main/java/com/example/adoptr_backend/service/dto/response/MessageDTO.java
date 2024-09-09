@@ -9,6 +9,6 @@ public class MessageDTO {
     private Long id;
     private Long chatId;
     private String content;
-    private Long userId;
+    private Long userSenderId;
     private LocalDateTime createdAt;
 }

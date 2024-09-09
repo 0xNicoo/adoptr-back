@@ -86,7 +86,7 @@ public class ChatServiceImpl implements ChatService {
         Message message = new Message();
         message.setChat(chat);
         message.setContent(payload.getContent());
-        message.setUserId(Long.valueOf(payload.getSenderId()));
+        message.setUserSenderId(Long.valueOf(payload.getUserSenderId()));
         messageRepository.save(message);
     }
 
