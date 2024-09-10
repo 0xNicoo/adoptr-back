@@ -4,11 +4,13 @@ import com.example.adoptr_backend.exception.custom.BadRequestException;
 import com.example.adoptr_backend.exception.error.Error;
 import com.example.adoptr_backend.model.Adoption;
 import com.example.adoptr_backend.model.Favorite;
+import com.example.adoptr_backend.model.ImageType;
 import com.example.adoptr_backend.model.User;
 import com.example.adoptr_backend.repository.AdoptionRepository;
 import com.example.adoptr_backend.repository.FavoriteRepository;
 import com.example.adoptr_backend.repository.UserRepository;
 import com.example.adoptr_backend.service.FavoriteService;
+import com.example.adoptr_backend.service.ImageService;
 import com.example.adoptr_backend.service.dto.response.AdoptionDTO;
 import com.example.adoptr_backend.service.dto.response.FavoriteDTO;
 import com.example.adoptr_backend.service.mapper.AdoptionMapper;
@@ -30,6 +32,8 @@ public class FavoriteServiceImpl implements FavoriteService {
     private final FavoriteRepository favoriteRepository;
 
     private final AdoptionRepository adoptionRepository;
+
+    private final ImageService imageService;
 
     @Override
     public FavoriteDTO set(Long adoptionId) {
@@ -60,7 +64,9 @@ public class FavoriteServiceImpl implements FavoriteService {
         Page<Favorite> favoriteList = favoriteRepository.findByUserId(userId, pageable);
         List<Long> adoptionIds = favoriteList.getContent().stream().map(Favorite::getAdoptionId).toList();
         List<Adoption> adoptionList = adoptionRepository.findByIdIn(adoptionIds);
-        return AdoptionMapper.MAPPER.toDto(adoptionList);
+        List<AdoptionDTO> adoptionDTOList = AdoptionMapper.MAPPER.toDto(adoptionList);
+        adoptionDTOList.forEach(a -> a.setS3Url(imageService.getS3url(a.getId(), ImageType.ADOPTION)));
+        return adoptionDTOList;
     }
 
     /**
