@@ -9,7 +9,9 @@ import com.example.adoptr_backend.repository.AdoptionRepository;
 import com.example.adoptr_backend.repository.FavoriteRepository;
 import com.example.adoptr_backend.repository.UserRepository;
 import com.example.adoptr_backend.service.FavoriteService;
+import com.example.adoptr_backend.service.dto.response.AdoptionDTO;
 import com.example.adoptr_backend.service.dto.response.FavoriteDTO;
+import com.example.adoptr_backend.service.mapper.AdoptionMapper;
 import com.example.adoptr_backend.service.mapper.FavoriteMapper;
 import com.example.adoptr_backend.util.AuthSupport;
 import lombok.AllArgsConstructor;
@@ -17,7 +19,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -25,7 +29,6 @@ public class FavoriteServiceImpl implements FavoriteService {
 
     private final FavoriteRepository favoriteRepository;
 
-    private final UserRepository userRepository;
     private final AdoptionRepository adoptionRepository;
 
     @Override
@@ -52,10 +55,12 @@ public class FavoriteServiceImpl implements FavoriteService {
     }
 
     @Override
-    public Page<FavoriteDTO> getAll(Pageable pageable) {
+    public List<AdoptionDTO> getAll(Pageable pageable) {
         Long userId = AuthSupport.getUserId();
         Page<Favorite> favoriteList = favoriteRepository.findByUserId(userId, pageable);
-        return favoriteList.map(FavoriteMapper.MAPPER::toDto);
+        List<Long> adoptionIds = favoriteList.getContent().stream().map(Favorite::getAdoptionId).toList();
+        List<Adoption> adoptionList = adoptionRepository.findByIdIn(adoptionIds);
+        return AdoptionMapper.MAPPER.toDto(adoptionList);
     }
 
     /**

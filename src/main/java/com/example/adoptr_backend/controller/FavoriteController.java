@@ -2,6 +2,7 @@ package com.example.adoptr_backend.controller;
 
 import com.example.adoptr_backend.service.FavoriteService;
 import com.example.adoptr_backend.service.dto.request.ExampleFilterDTO;
+import com.example.adoptr_backend.service.dto.response.AdoptionDTO;
 import com.example.adoptr_backend.service.dto.response.ExampleDTO;
 import com.example.adoptr_backend.service.dto.response.FavoriteDTO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,10 +34,10 @@ public class FavoriteController {
     }
 
     @GetMapping("/all")
-    @Operation(summary = "Obtiene todas los favoritos de un usuario", security = { @SecurityRequirement(name = "bearer-jwt") })
-    public ResponseEntity<List<FavoriteDTO>> getAll(@ParameterObject Pageable pageable){
-        Page<FavoriteDTO> response = favoriteService.getAll(pageable);
-        return new ResponseEntity<>(response.getContent(), HttpStatus.OK);
+    @Operation(summary = "Obtiene todas las publicaciones favoritas de un usuario", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<List<AdoptionDTO>> getAll(@ParameterObject Pageable pageable){
+        List<AdoptionDTO> response = favoriteService.getAll(pageable);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{adoptionId}")
