@@ -4,6 +4,7 @@ import com.example.adoptr_backend.model.AnimalType;
 import com.example.adoptr_backend.model.LostStatusType;
 import com.example.adoptr_backend.model.SexType;
 import com.example.adoptr_backend.model.SizeType;
+import jakarta.persistence.Column;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -20,6 +21,9 @@ public class LostDTO {
     private LostStatusType lostStatusType;
     private int ageYears;
     private int ageMonths;
+    private long longitude;
+    private long latitude;
     private UserDTO user;
     private String s3Url;
+    private LocalityDTO locality;
 }

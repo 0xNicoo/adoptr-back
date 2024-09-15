@@ -2,9 +2,11 @@ package com.example.adoptr_backend.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Data
 public class Lost extends Publication{
@@ -27,7 +29,11 @@ public class Lost extends Publication{
     @Column
     private int ageMonths;
 
-    //longitud y latitud
+    @Column
+    private long longitude;
+
+    @Column
+    private long latitude;
 
     @PrePersist
     public void prePersist(){

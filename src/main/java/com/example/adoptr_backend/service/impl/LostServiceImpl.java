@@ -3,11 +3,14 @@ package com.example.adoptr_backend.service.impl;
 import com.example.adoptr_backend.exception.custom.BadRequestException;
 import com.example.adoptr_backend.exception.error.Error;
 import com.example.adoptr_backend.model.*;
+import com.example.adoptr_backend.repository.LocalityRepository;
+import com.example.adoptr_backend.repository.LocalityRepository;
 import com.example.adoptr_backend.repository.LostRepository;
 import com.example.adoptr_backend.repository.UserRepository;
 import com.example.adoptr_backend.repository.specification.LostSpec;
 import com.example.adoptr_backend.service.ImageService;
 import com.example.adoptr_backend.service.LostService;
+import com.example.adoptr_backend.service.dto.request.AdoptionDTOin;
 import com.example.adoptr_backend.service.dto.request.LostDTOin;
 import com.example.adoptr_backend.service.dto.request.LostFilterDTO;
 import com.example.adoptr_backend.service.dto.response.LostDTO;
@@ -30,14 +33,18 @@ public class LostServiceImpl implements LostService {
 
     private final ImageService imageService;
 
+    private final LocalityRepository localityRepository;
+
 
     public LostServiceImpl(LostRepository lostRepository,
                                UserRepository userRepository,
-                               ImageService imageService)
+                               ImageService imageService,
+                               LocalityRepository localityRepository)
     {
         this.lostRepository = lostRepository;
         this.userRepository = userRepository;
         this.imageService = imageService;
+        this.localityRepository = localityRepository;
     }
 
     @Override
@@ -50,6 +57,8 @@ public class LostServiceImpl implements LostService {
         lost = lostRepository.save(lost);
         Long imageId = imageService.uploadImage(dto.getImage(), ImageType.LOST, lost.getId());
         lost.setImageId(imageId);
+        Locality locality = getLocality(dto);
+        lost.setLocality(locality);
         lost = lostRepository.save(lost);
         LostDTO lostDTO = LostMapper.MAPPER.toDto(lost);
         lostDTO.setS3Url(imageService.getS3url(lost.getId(), ImageType.LOST));
@@ -96,6 +105,8 @@ public class LostServiceImpl implements LostService {
             lost.setImageId(imageId);
             lostRepository.save(lost);
         }
+        Locality locality = getLocality(dto);
+        lost.setLocality(locality);
         lostRepository.save(lost);
         LostDTO lostDTO = LostMapper.MAPPER.toDto(lost);
         lostDTO.setS3Url(imageService.getS3url(lost.getId(), ImageType.LOST));
@@ -115,6 +126,16 @@ public class LostServiceImpl implements LostService {
     private Lost getLost(Long id) {
         Optional<Lost> lostOptional = lostRepository.findById(id);
         return lostOptional.get();
+    }
+
+    private Locality getLocality(LostDTOin dto) {
+        Optional<Locality> localityOptional = localityRepository.findById(dto.getLocality_id());
+        if (localityOptional.isEmpty()) {
+            throw new BadRequestException(Error.LOCALITY_NOT_FOUND);
+        }
+        Locality locality = localityOptional.get();
+        locality.setId(dto.getLocality_id());
+        return locality;
     }
 
 }
