@@ -20,7 +20,7 @@ public class Profile {
     @Enumerated(EnumType.STRING)
     private GenderType genderType;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column

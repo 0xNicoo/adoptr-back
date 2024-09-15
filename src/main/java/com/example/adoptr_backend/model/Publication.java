@@ -22,7 +22,7 @@ public abstract class Publication {
     @Enumerated(EnumType.STRING)
     private PublicationType type;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column
