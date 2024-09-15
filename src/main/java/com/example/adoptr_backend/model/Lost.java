@@ -1,0 +1,37 @@
+package com.example.adoptr_backend.model;
+
+import jakarta.persistence.*;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Data
+public class Lost extends Publication{
+
+    @Enumerated(EnumType.STRING )
+    private SexType sexType;
+
+    @Enumerated(EnumType.STRING)
+    private AnimalType animalType;
+
+    @Enumerated(EnumType.STRING)
+    private SizeType sizeType;
+
+    @Enumerated(EnumType.STRING)
+    private LostStatusType lostStatusType;
+
+    @Column
+    private int ageYears;
+
+    @Column
+    private int ageMonths;
+
+    //longitud y latitud
+
+    @PrePersist
+    public void prePersist(){
+        this.lostStatusType = LostStatusType.LOST;
+        super.setCreationDate(LocalDateTime.now());
+    }
+}
