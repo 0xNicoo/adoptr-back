@@ -56,6 +56,15 @@ public class PostServiceImpl implements PostService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<PostDTO> getAll() {
+        Long userId = AuthSupport.getUserId();
+        List<Post> postList = postRepository.findByUserId(userId);
+        return postList.stream()
+                .map(this::mapPostToDTO)
+                .collect(Collectors.toList());
+    }
+
     private User getUserById(Long id) {
         Optional<User> userOptional = userRepository.findById(id);
         if (userOptional.isEmpty()) {
@@ -68,4 +77,6 @@ public class PostServiceImpl implements PostService {
         PostDTO dto = PostMapper.MAPPER.toDto(post);
         return dto;
     }
+
+
 }

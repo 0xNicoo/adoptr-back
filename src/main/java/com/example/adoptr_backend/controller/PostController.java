@@ -23,18 +23,25 @@ public class PostController {
     }
 
     @PostMapping
-    @Operation(summary = "Crea un post", security = { @SecurityRequirement(name = "bearer-jwt") })
+    @Operation(summary = "Crea un post", security = {@SecurityRequirement(name = "bearer-jwt")})
     public ResponseEntity<PostDTO> createPost(@RequestParam String description
-                                              ) {
+    ) {
         PostDTOin dto = new PostDTOin(description);
         PostDTO response = postService.create(dto);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/user/{userId}")
-    @Operation(summary = "Obtiene los posts de un usuario", security = { @SecurityRequirement(name = "bearer-jwt") })
+    @Operation(summary = "Obtiene los posts de un usuario", security = {@SecurityRequirement(name = "bearer-jwt")})
     public ResponseEntity<List<PostDTO>> getPostsByUserId(@PathVariable Long userId) {
         List<PostDTO> posts = postService.getByUserId(userId);
         return ResponseEntity.ok(posts);
+    }
+
+    @GetMapping("/all")
+    @Operation(summary = "Obtiene los posts del usuario logeado", security = {@SecurityRequirement(name = "bearer-jwt")})
+    public ResponseEntity<List<PostDTO>> getAll() {
+        List<PostDTO> response = postService.getAll();
+        return ResponseEntity.ok(response);
     }
 }

@@ -7,6 +7,7 @@ import com.example.adoptr_backend.service.dto.response.PostDTO;
 import java.util.List;
 
 public interface PostService {
+    List<PostDTO> getAll();
 
     PostDTO create(PostDTOin dto);
 
