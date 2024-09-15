@@ -42,8 +42,11 @@ public class LostController {
                                           @RequestParam SizeType sizeType,
                                           @RequestParam int ageYears,
                                           @RequestParam int ageMonths,
-                                          @RequestParam MultipartFile image){
-        LostDTOin dto = new LostDTOin(title, description, sexType, animalType, sizeType, ageYears, ageMonths, image);
+                                          @RequestParam Long longitude,
+                                          @RequestParam Long latitude,
+                                          @RequestParam MultipartFile image,
+                                          @RequestParam Long locality_id){
+        LostDTOin dto = new LostDTOin(title, description, sexType, animalType, sizeType, ageYears, ageMonths, longitude, latitude, image, locality_id);
         LostDTO response =  lostService.create(dto);
         return ResponseEntity.ok(response);
     }
@@ -73,8 +76,11 @@ public class LostController {
                                               @RequestParam SizeType sizeType,
                                               @RequestParam int ageYears,
                                               @RequestParam int ageMonths,
-                                              @RequestParam(required = false) MultipartFile image) {
-        LostDTOin dto = new LostDTOin(title, description, sexType, animalType, sizeType, ageYears, ageMonths, image);
+                                              @RequestParam Long longitude,
+                                              @RequestParam Long latitude,
+                                              @RequestParam(required = false) MultipartFile image,
+                                              @RequestParam Long locality_id){
+        LostDTOin dto = new LostDTOin(title, description, sexType, animalType, sizeType, ageYears, ageMonths, longitude, latitude, image, locality_id);
         LostDTO response = lostService.update(id, dto);
         return ResponseEntity.ok(response);
     }
