@@ -38,6 +38,7 @@ public class PostController {
         return ResponseEntity.ok(posts);
     }
 
+    //TODO: paginar
     @GetMapping("/all")
     @Operation(summary = "Obtiene los posts del usuario logeado", security = {@SecurityRequirement(name = "bearer-jwt")})
     public ResponseEntity<List<PostDTO>> getAll() {
