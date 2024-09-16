@@ -13,4 +13,6 @@ public interface PostService {
 
     List<PostDTO> getByUserId(Long userId);
 
+    void delete(Long id);
+
 }
