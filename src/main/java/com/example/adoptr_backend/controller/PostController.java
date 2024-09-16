@@ -6,6 +6,7 @@ import com.example.adoptr_backend.service.dto.response.PostDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,4 +45,12 @@ public class PostController {
         List<PostDTO> response = postService.getAll();
         return ResponseEntity.ok(response);
     }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Elimina un post", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<String> delete(@PathVariable Long id)  {
+        postService.delete(id);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
 }

@@ -2,6 +2,7 @@ package com.example.adoptr_backend.service.impl;
 
 import com.example.adoptr_backend.exception.custom.BadRequestException;
 import com.example.adoptr_backend.exception.error.Error;
+import com.example.adoptr_backend.model.Adoption;
 import com.example.adoptr_backend.model.Post;
 import com.example.adoptr_backend.model.User;
 import com.example.adoptr_backend.repository.PostRepository;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -78,5 +80,19 @@ public class PostServiceImpl implements PostService {
         return dto;
     }
 
+    @Override
+    public void delete(Long id)  {
+        Long userId = AuthSupport.getUserId();
+        Post post = getPost(id);
+        if(!Objects.equals(post.getUser().getId(), userId)){
+            throw new BadRequestException(Error.USER_NOT_ADOPTION_OWNER);
+        }
+        postRepository.delete(post);
+    }
+
+    private Post getPost(Long id) {
+        Optional<Post> postOptional = postRepository.findById(id);
+        return postOptional.get();
+    }
 
 }
