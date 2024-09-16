@@ -1,12 +1,11 @@
 package com.example.adoptr_backend.model;
 
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.time.LocalDateTime;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
@@ -20,7 +19,11 @@ public class Service extends Publication {
     private int number;
 
     @ManyToOne
-    @JoinColumn(name = "servicetype_id")
-    private ServiceType servicetype;
+    @JoinColumn(name = "serviceType_id")
+    private ServiceType serviceType;
 
+    @PrePersist
+    public void prePersist(){
+        super.setCreationDate(LocalDateTime.now());
+    }
 }
