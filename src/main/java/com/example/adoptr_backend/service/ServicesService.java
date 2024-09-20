@@ -13,4 +13,6 @@ public interface ServicesService {
     Page<ServiceDTO> getAll(ServiceFilterDTO filter, Pageable pageable);
 
     ServiceDTO getById(Long id);
+
+    void delete(Long id);
 }

@@ -1,10 +1,8 @@
 package com.example.adoptr_backend.controller;
 
 import com.example.adoptr_backend.service.ServicesService;
-import com.example.adoptr_backend.service.dto.request.AdoptionFilterDTO;
 import com.example.adoptr_backend.service.dto.request.ServiceDTOin;
 import com.example.adoptr_backend.service.dto.request.ServiceFilterDTO;
-import com.example.adoptr_backend.service.dto.response.AdoptionDTO;
 import com.example.adoptr_backend.service.dto.response.ServiceDTO;
 import com.example.adoptr_backend.util.PaginationUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -58,5 +56,12 @@ public class ServiceController {
     public ResponseEntity<ServiceDTO> getById(@PathVariable Long id) {
         ServiceDTO response = servicesService.getById(id);
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Elimina una publicacion de servicio", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<String> delete(@PathVariable Long id)  {
+        servicesService.delete(id);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }
