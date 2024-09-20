@@ -52,4 +52,11 @@ public class ServiceController {
         HttpHeaders headers = PaginationUtil.setTotalCountPageHttpHeaders(response);
         return new ResponseEntity<>(response.getContent(), headers, HttpStatus.OK);
     }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Obtiene una publicacion de servicio por id", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<ServiceDTO> getById(@PathVariable Long id) {
+        ServiceDTO response = servicesService.getById(id);
+        return ResponseEntity.ok(response);
+    }
 }

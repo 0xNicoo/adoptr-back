@@ -53,6 +53,9 @@ public class ServicesServiceImpl implements ServicesService {
     public ServiceDTO create(ServiceDTOin dto) {
         Long userId = AuthSupport.getUserId();
         Optional<User> user = userRepository.findById(userId);
+        if (user.isEmpty()) {
+            throw new BadRequestException(Error.USER_NOT_FOUND);
+        }
         Service service =  ServiceMapper.MAPPER.toEntity(dto);
         service.setUser(user.get());
         service.setType(PublicationType.SERVICE);
@@ -87,6 +90,23 @@ public class ServicesServiceImpl implements ServicesService {
             }
         });
         return dtoPage;
+    }
+
+    @Override
+    public ServiceDTO getById(Long id) {
+        Service service = getService(id);
+        ServiceDTO dto = ServiceMapper.MAPPER.toDto(service);
+        String s3Url = imageService.getS3url(id, ImageType.SERVICE);
+        dto.setS3Url(s3Url);
+        return dto;
+    }
+
+    private Service getService(Long id) {
+        Optional<Service> serviceOptional = serviceRepository.findById(id);
+        if (serviceOptional.isEmpty()) {
+            throw new BadRequestException(Error.SERVICE_NOT_FOUND);
+        }
+        return serviceOptional.get();
     }
 
     private Locality getLocality(ServiceDTOin dto) {
