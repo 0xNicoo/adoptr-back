@@ -4,12 +4,21 @@ import com.example.adoptr_backend.exception.custom.BadRequestException;
 import com.example.adoptr_backend.exception.error.Error;
 import com.example.adoptr_backend.model.*;
 import com.example.adoptr_backend.repository.*;
+import com.example.adoptr_backend.repository.specification.AdoptionSpec;
+import com.example.adoptr_backend.repository.specification.ServiceSpec;
 import com.example.adoptr_backend.service.ImageService;
 import com.example.adoptr_backend.service.ServicesService;
+import com.example.adoptr_backend.service.dto.request.AdoptionFilterDTO;
 import com.example.adoptr_backend.service.dto.request.ServiceDTOin;
+import com.example.adoptr_backend.service.dto.request.ServiceFilterDTO;
+import com.example.adoptr_backend.service.dto.response.AdoptionDTO;
 import com.example.adoptr_backend.service.dto.response.ServiceDTO;
+import com.example.adoptr_backend.service.mapper.AdoptionMapper;
 import com.example.adoptr_backend.service.mapper.ServiceMapper;
 import com.example.adoptr_backend.util.AuthSupport;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.Optional;
 
@@ -58,6 +67,26 @@ public class ServicesServiceImpl implements ServicesService {
         ServiceDTO serviceDTO = ServiceMapper.MAPPER.toDto(service);
         serviceDTO.setS3Url(imageService.getS3url(service.getId(), ImageType.SERVICE));
         return serviceDTO;
+    }
+
+    @Override
+    public Page<ServiceDTO> getAll(ServiceFilterDTO filter, Pageable pageable) {
+        Specification<Service> spec = ServiceSpec.getSpec(filter);
+        Page<Service> page = serviceRepository.findAll(spec, pageable);
+        Page<ServiceDTO> dtoPage = page.map(service -> {
+            try {
+                ServiceDTO dto = ServiceMapper.MAPPER.toDto(service);
+                String s3Url = imageService.getS3url(service.getId(), ImageType.SERVICE);
+                dto.setS3Url(s3Url);
+                return dto;
+            } catch (Exception e) {
+                System.err.println("Error al obtener la URL de la imagen para ID " + service.getId() + ": " + e.getMessage());
+                ServiceDTO dto = ServiceMapper.MAPPER.toDto(service);
+                dto.setS3Url(null);
+                return dto;
+            }
+        });
+        return dtoPage;
     }
 
     private Locality getLocality(ServiceDTOin dto) {

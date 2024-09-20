@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDate;
 @Data
 public class ServiceFilterDTO {
-    private String tittle;
+    private String title;
     private String street;
     private int number;
     private LocalDate creationDate;
