@@ -1,5 +1,6 @@
 package com.example.adoptr_backend.service;
 
+import com.example.adoptr_backend.service.dto.request.AdoptionDTOin;
 import com.example.adoptr_backend.service.dto.request.ServiceDTOin;
 import com.example.adoptr_backend.service.dto.request.ServiceFilterDTO;
 import com.example.adoptr_backend.service.dto.response.AdoptionDTO;
@@ -15,4 +16,6 @@ public interface ServicesService {
     ServiceDTO getById(Long id);
 
     void delete(Long id);
+
+    ServiceDTO update(Long id, ServiceDTOin dto);
 }

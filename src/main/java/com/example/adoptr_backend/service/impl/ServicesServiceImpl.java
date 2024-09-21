@@ -7,9 +7,12 @@ import com.example.adoptr_backend.repository.*;
 import com.example.adoptr_backend.repository.specification.ServiceSpec;
 import com.example.adoptr_backend.service.ImageService;
 import com.example.adoptr_backend.service.ServicesService;
+import com.example.adoptr_backend.service.dto.request.AdoptionDTOin;
 import com.example.adoptr_backend.service.dto.request.ServiceDTOin;
 import com.example.adoptr_backend.service.dto.request.ServiceFilterDTO;
+import com.example.adoptr_backend.service.dto.response.AdoptionDTO;
 import com.example.adoptr_backend.service.dto.response.ServiceDTO;
+import com.example.adoptr_backend.service.mapper.AdoptionMapper;
 import com.example.adoptr_backend.service.mapper.ServiceMapper;
 import com.example.adoptr_backend.util.AuthSupport;
 import org.springframework.data.domain.Page;
@@ -96,6 +99,32 @@ public class ServicesServiceImpl implements ServicesService {
         String s3Url = imageService.getS3url(id, ImageType.SERVICE);
         dto.setS3Url(s3Url);
         return dto;
+    }
+
+    @Override
+    public ServiceDTO update(Long id, ServiceDTOin dto) {
+        Long userId = AuthSupport.getUserId();
+        Service service = getService(id);
+        if(!Objects.equals(service.getUser().getId(), userId)){
+            throw new BadRequestException(Error.USER_NOT_SERVICE_OWNER);
+        }
+        Service serviceUpdated = ServiceMapper.MAPPER.toEntity(dto);
+        ServiceMapper.MAPPER.update(service, serviceUpdated);
+        if (dto.getImage() != null) {
+            imageService.deleteImage(service.getId(), ImageType.SERVICE);
+            Long imageId = imageService.uploadImage(dto.getImage(), ImageType.SERVICE, service.getId());
+            service.setImageId(imageId);
+            serviceRepository.save(service);
+        }
+        Locality locality = getLocality(dto);
+        service.setLocality(locality);
+        serviceRepository.save(service);
+        ServiceType serviceType = getServiceType(dto);
+        service.setServiceType(serviceType);
+        serviceRepository.save(service);
+        ServiceDTO serviceDTO = ServiceMapper.MAPPER.toDto(service);
+        serviceDTO.setS3Url(imageService.getS3url(service.getId(), ImageType.SERVICE));
+        return serviceDTO;
     }
 
     @Override
