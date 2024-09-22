@@ -12,6 +12,7 @@ import com.example.adoptr_backend.service.dto.request.PostDTOin;
 import com.example.adoptr_backend.service.dto.response.PostDTO;
 import com.example.adoptr_backend.service.mapper.PostMapper;
 import com.example.adoptr_backend.util.AuthSupport;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,17 +52,17 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<PostDTO> getByUserId(Long userId) {
-        List<Post> posts = postRepository.findByUserId(userId);
+    public List<PostDTO> getByUserId(Long userId, Pageable pageable) {
+        List<Post> posts = postRepository.findByUserIdOrderByIdDesc(userId, pageable);
         return posts.stream()
                 .map(this::mapPostToDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<PostDTO> getAll() {
+    public List<PostDTO> getAll(Pageable pageable) {
         Long userId = AuthSupport.getUserId();
-        List<Post> postList = postRepository.findByUserId(userId);
+        List<Post> postList = postRepository.findByUserIdOrderByIdDesc(userId, pageable);
         return postList.stream()
                 .map(this::mapPostToDTO)
                 .collect(Collectors.toList());

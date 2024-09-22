@@ -6,6 +6,8 @@ import com.example.adoptr_backend.service.dto.response.PostDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,16 +36,15 @@ public class PostController {
 
     @GetMapping("/user/{userId}")
     @Operation(summary = "Obtiene los posts de un usuario", security = {@SecurityRequirement(name = "bearer-jwt")})
-    public ResponseEntity<List<PostDTO>> getPostsByUserId(@PathVariable Long userId) {
-        List<PostDTO> posts = postService.getByUserId(userId);
+    public ResponseEntity<List<PostDTO>> getPostsByUserId(@PathVariable Long userId, @ParameterObject Pageable pageable) {
+        List<PostDTO> posts = postService.getByUserId(userId, pageable);
         return ResponseEntity.ok(posts);
     }
 
-    //TODO: paginar
     @GetMapping("/all")
     @Operation(summary = "Obtiene los posts del usuario logeado", security = {@SecurityRequirement(name = "bearer-jwt")})
-    public ResponseEntity<List<PostDTO>> getAll() {
-        List<PostDTO> response = postService.getAll();
+    public ResponseEntity<List<PostDTO>> getAll(@ParameterObject Pageable pageable) {
+        List<PostDTO> response = postService.getAll(pageable);
         return ResponseEntity.ok(response);
     }
 
