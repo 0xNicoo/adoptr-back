@@ -6,11 +6,11 @@ import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.example.adoptr_backend.model.Image;
+import com.example.adoptr_backend.model.ImageType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.Date;
 
@@ -40,7 +40,12 @@ public class S3Support {
 
     public static String getS3url(Image image){
         Date expiration = getExpirationDate();
-        String path = ImageUtil.buildPath(image);
+        String path;
+        if (image.getType().equals(ImageType.SERVICE_TYPE)){
+            path = ImageUtil.buildServiceTypePath(image);
+        } else {
+            path = ImageUtil.buildPath(image);
+        }
         GeneratePresignedUrlRequest presignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, path)
                 .withMethod(HttpMethod.GET)
                 .withExpiration(expiration);

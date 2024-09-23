@@ -5,5 +5,6 @@ public enum ImageType {
     SERVICE,
     LOST,
     PROFILE,
-    NEWS
+    NEWS,
+    SERVICE_TYPE
 }
