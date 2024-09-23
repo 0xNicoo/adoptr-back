@@ -12,4 +12,5 @@ public class ServiceFilterDTO {
     private Long locality_id;
     private Long user_id;
     private Long serviceType_id;
+    private Long province_id;
 }
