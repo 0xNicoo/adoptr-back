@@ -15,7 +15,10 @@ public enum Error implements ErrorCode {
     CHAT_ERROR("0011", "Error al obtener el chat"),
     USER_NOT_ADOPTION_OWNER("0012", "El usuario no es dueño de la publicacion de adopcion"),
     USER_NOT_FOUND("0013", "No se encontro el usuario"),
-    USER_NOT_LOST_OWNER("0014", "El usuario no es dueño de la publicacion de perdidos")
+    USER_NOT_LOST_OWNER("0014", "El usuario no es dueño de la publicacion de perdidos"),
+    SERVICE_TYPE_NOT_FOUND("0015", "No se encontro el tipo de servicio"),
+    SERVICE_NOT_FOUND("0016", "No se encontro el servicio"),
+    USER_NOT_SERVICE_OWNER("0017", "El usuario no es dueño de la publicacion de servicio"),
 
 
     ;

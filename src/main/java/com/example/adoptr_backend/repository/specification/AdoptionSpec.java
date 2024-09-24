@@ -53,6 +53,14 @@ public class AdoptionSpec {
                 predicates.add(cb.equal(root.get("creationDate"), filter.getCreationDate()));
             }
 
+            if (filter.getLocality_id() != null){
+                predicates.add(cb.equal(root.get("locality").get("id"), filter.getLocality_id()));
+            }
+
+            if (filter.getUser_id() != null){
+                predicates.add(cb.equal(root.get("user").get("id"), filter.getUser_id()));
+            }
+
             query.orderBy(cb.desc(root.get("id")));
 
             return cb.and(predicates.toArray(new Predicate[0]));

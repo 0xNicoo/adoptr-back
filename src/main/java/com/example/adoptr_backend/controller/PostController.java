@@ -6,6 +6,9 @@ import com.example.adoptr_backend.service.dto.response.PostDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,18 +26,33 @@ public class PostController {
     }
 
     @PostMapping
-    @Operation(summary = "Crea un post", security = { @SecurityRequirement(name = "bearer-jwt") })
+    @Operation(summary = "Crea un post", security = {@SecurityRequirement(name = "bearer-jwt")})
     public ResponseEntity<PostDTO> createPost(@RequestParam String description
-                                              ) {
+    ) {
         PostDTOin dto = new PostDTOin(description);
         PostDTO response = postService.create(dto);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/user/{userId}")
-    @Operation(summary = "Obtiene los posts de un usuario", security = { @SecurityRequirement(name = "bearer-jwt") })
-    public ResponseEntity<List<PostDTO>> getPostsByUserId(@PathVariable Long userId) {
-        List<PostDTO> posts = postService.getByUserId(userId);
+    @Operation(summary = "Obtiene los posts de un usuario", security = {@SecurityRequirement(name = "bearer-jwt")})
+    public ResponseEntity<List<PostDTO>> getPostsByUserId(@PathVariable Long userId, @ParameterObject Pageable pageable) {
+        List<PostDTO> posts = postService.getByUserId(userId, pageable);
         return ResponseEntity.ok(posts);
     }
+
+    @GetMapping("/all")
+    @Operation(summary = "Obtiene los posts del usuario logeado", security = {@SecurityRequirement(name = "bearer-jwt")})
+    public ResponseEntity<List<PostDTO>> getAll(@ParameterObject Pageable pageable) {
+        List<PostDTO> response = postService.getAll(pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Elimina un post", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<String> delete(@PathVariable Long id)  {
+        postService.delete(id);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
 }
