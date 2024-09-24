@@ -77,7 +77,7 @@ public class ServiceController {
                                              @RequestParam String description,
                                              @RequestParam String street,
                                              @RequestParam int number,
-                                             @RequestParam MultipartFile image,
+                                             @RequestParam(required = false) MultipartFile image,
                                              @RequestParam Long locality_id,
                                              @RequestParam Long serviceType_id){
         ServiceDTOin dto = new ServiceDTOin(title, description, street, number, image, locality_id, serviceType_id);
