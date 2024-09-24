@@ -113,7 +113,6 @@ public class AdoptionServiceImpl implements AdoptionService {
         return adoptionDTO;
     }
 
-    //TODO: verificar que el usuario que quiera eliminar la publicacion sea el dueño
     @Override
     public void delete(Long id)  {
         Long userId = AuthSupport.getUserId();
