@@ -14,5 +14,4 @@ public class ServiceDTOin {
     private MultipartFile image;
     private Long locality_id;
     private Long serviceType_id;
-
 }

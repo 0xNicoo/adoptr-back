@@ -22,4 +22,5 @@ public class AdoptionFilterDTO {
     private LocalDate creationDate;
     private Long locality_id;
     private Long user_id;
+    private Long province_id;
 }

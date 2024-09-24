@@ -41,6 +41,10 @@ public class ServiceSpec {
                 predicates.add(cb.equal(root.get("user").get("id"), filter.getUser_id()));
             }
 
+            if (filter.getProvince_id() != null) {
+                predicates.add(cb.equal(root.get("locality").get("province").get("id"), filter.getProvince_id()));
+            }
+
             query.orderBy(cb.desc(root.get("id")));
 
             return cb.and(predicates.toArray(new Predicate[0]));
