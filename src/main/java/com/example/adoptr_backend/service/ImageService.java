@@ -10,4 +10,6 @@ public interface ImageService {
     String getS3url(Long modelId, ImageType image);
 
     void deleteImage(Long modelId, ImageType type);
+
+    Long uploadServiceTypeImage(MultipartFile file, Long modelId);
 }

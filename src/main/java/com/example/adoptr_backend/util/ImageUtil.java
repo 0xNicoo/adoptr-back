@@ -24,6 +24,14 @@ public class ImageUtil {
                 image.getS3name();
     }
 
+    public static String buildServiceTypePath(Image image){
+        return  MAIN_FOLDER +
+                slash +
+                image.getType() +
+                slash +
+                image.getS3name();
+    }
+
     public static Image createImage(MultipartFile file, ImageType imageType, Long modelId){
         Image image = new Image();
         image.setSize(file.getSize());
@@ -36,6 +44,17 @@ public class ImageUtil {
         return image;
     }
 
+    public static Image createServiceTypeImage(MultipartFile file, Long modelId){
+        Image image = new Image();
+        image.setSize(file.getSize());
+        image.setExtension(getFileExtension(file));
+        image.setOriginalName(file.getOriginalFilename());
+        image.setS3name(UUID.randomUUID());
+        image.setType(ImageType.SERVICE_TYPE);
+        image.setUserId(null);
+        image.setModelId(modelId);
+        return image;
+    }
 
     private static String getFileExtension(MultipartFile file) {
         String originalFilename = file.getOriginalFilename();
@@ -44,5 +63,7 @@ public class ImageUtil {
         }
         return "";
     }
+
+
 }
 

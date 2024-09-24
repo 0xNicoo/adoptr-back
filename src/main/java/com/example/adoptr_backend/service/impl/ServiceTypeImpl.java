@@ -1,8 +1,11 @@
 package com.example.adoptr_backend.service.impl;
 
+import com.example.adoptr_backend.model.ImageType;
 import com.example.adoptr_backend.model.ServiceType;
 import com.example.adoptr_backend.repository.ServiceTypeRepository;
+import com.example.adoptr_backend.repository.UserRepository;
 import com.example.adoptr_backend.repository.specification.ServiceTypeSpec;
+import com.example.adoptr_backend.service.ImageService;
 import com.example.adoptr_backend.service.ServiceTypeService;
 import com.example.adoptr_backend.service.dto.request.ServiceTypeDTOin;
 import com.example.adoptr_backend.service.dto.request.ServiceTypeFilterDTO;
@@ -17,14 +20,27 @@ import org.springframework.stereotype.Service;
 public class ServiceTypeImpl implements ServiceTypeService {
     private final ServiceTypeRepository serviceTypeRepository;
 
-    public ServiceTypeImpl(ServiceTypeRepository serviceTypeRepository) {
+    private final UserRepository userRepository;
+
+    private final ImageService imageService;
+
+    public ServiceTypeImpl(ServiceTypeRepository serviceTypeRepository,
+                           UserRepository userRepository,
+                           ImageService imageService) {
         this.serviceTypeRepository = serviceTypeRepository;
+        this.userRepository = userRepository;
+        this.imageService = imageService;
     }
     @Override
     public ServiceTypeDTO create(ServiceTypeDTOin dto) {
         ServiceType serviceType = ServiceTypeMapper.MAPPER.toEntity(dto);
         serviceType = serviceTypeRepository.save(serviceType);
-        return ServiceTypeMapper.MAPPER.toDto(serviceType);
+        Long imageId = imageService.uploadServiceTypeImage(dto.getImage(), serviceType.getId());
+        serviceType.setImageId(imageId);
+        serviceType = serviceTypeRepository.save(serviceType);
+        ServiceTypeDTO serviceTypeDTO = ServiceTypeMapper.MAPPER.toDto(serviceType);
+        serviceTypeDTO.setS3Url(imageService.getS3url(serviceType.getId(), ImageType.SERVICE_TYPE));
+        return serviceTypeDTO;
     }
 
     @Override

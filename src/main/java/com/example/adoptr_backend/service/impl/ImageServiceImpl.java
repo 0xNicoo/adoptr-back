@@ -58,5 +58,12 @@ public class ImageServiceImpl implements ImageService {
         imageList.forEach(imageRepository::delete);
     }
 
+    @Override
+    public Long uploadServiceTypeImage(MultipartFile file, Long modelId) {
+        Image image = ImageUtil.createServiceTypeImage(file, modelId);
+        image = imageRepository.save(image);
+        S3Support.upload(ImageUtil.buildServiceTypePath(image), file);
+        return image.getId();
+    }
 
 }

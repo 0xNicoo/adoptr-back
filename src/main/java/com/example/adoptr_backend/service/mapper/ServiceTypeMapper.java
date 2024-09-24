@@ -1,9 +1,12 @@
 package com.example.adoptr_backend.service.mapper;
 
+import com.example.adoptr_backend.model.Service;
 import com.example.adoptr_backend.model.ServiceType;
 import com.example.adoptr_backend.service.dto.request.ServiceTypeDTOin;
 import com.example.adoptr_backend.service.dto.response.ServiceTypeDTO;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.mapstruct.factory.Mappers;
 
@@ -11,4 +14,5 @@ import org.mapstruct.factory.Mappers;
 public interface ServiceTypeMapper extends EntityMapper<ServiceTypeDTO, ServiceType> {
     ServiceTypeMapper MAPPER = Mappers.getMapper(ServiceTypeMapper.class);
     ServiceType toEntity(ServiceTypeDTOin dto);
+
 }
