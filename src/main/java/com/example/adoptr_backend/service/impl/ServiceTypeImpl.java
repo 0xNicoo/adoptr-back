@@ -34,6 +34,7 @@ public class ServiceTypeImpl implements ServiceTypeService {
     @Override
     public ServiceTypeDTO create(ServiceTypeDTOin dto) {
         ServiceType serviceType = ServiceTypeMapper.MAPPER.toEntity(dto);
+        serviceType = serviceTypeRepository.save(serviceType);
         Long imageId = imageService.uploadServiceTypeImage(dto.getImage(), serviceType.getId());
         serviceType.setImageId(imageId);
         serviceType = serviceTypeRepository.save(serviceType);
