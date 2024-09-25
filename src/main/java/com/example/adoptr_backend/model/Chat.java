@@ -23,7 +23,7 @@ public class Chat {
     private LocalDateTime createdAt;
 
     @Column
-    private Long adopterUserId;
+    private Long adopterUserId; //TODO: cambiar este nombre, porque el chat no solo va en adopcion.
 
     @Column
     private Long publicationUserId;

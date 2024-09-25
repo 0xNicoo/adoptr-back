@@ -54,7 +54,7 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public ChatDTO getByPublication(Long publicationId) {
         Publication publication = publicationService.get(publicationId);
-        Long adopterUserId = AuthSupport.getUserId();
+        Long adopterUserId = AuthSupport.getUserId(); //TODO: cambiar este nombre, porque el chat no solo va en adopcion.
         // Se verifica por si se le pega con el toke del dueño de la publicacion, para evitar bugs.
         if(publication.getUser().getId().equals(adopterUserId)){
             throw new BadRequestException(Error.CHAT_ERROR);

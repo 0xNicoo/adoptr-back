@@ -23,13 +23,7 @@ public class PublicationServiceImpl implements PublicationService {
         if(publicationOptional.isEmpty()){
             throw new BadRequestException(Error.PUBLICATION_NOT_FOUND);
         }
-        Publication publication = publicationOptional.get();
 
-        //TODO mejorar esto cuando esten los 3 tipos de publicacion
-        if(publication instanceof Adoption){
-            return publication;
-        }
-
-        throw new BadRequestException(Error.PUBLICATION_NOT_FOUND);
+        return publicationOptional.get();
     }
 }
