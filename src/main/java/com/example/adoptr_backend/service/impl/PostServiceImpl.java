@@ -2,11 +2,12 @@ package com.example.adoptr_backend.service.impl;
 
 import com.example.adoptr_backend.exception.custom.BadRequestException;
 import com.example.adoptr_backend.exception.error.Error;
-import com.example.adoptr_backend.model.Adoption;
+import com.example.adoptr_backend.model.ImageType;
 import com.example.adoptr_backend.model.Post;
 import com.example.adoptr_backend.model.User;
 import com.example.adoptr_backend.repository.PostRepository;
 import com.example.adoptr_backend.repository.UserRepository;
+import com.example.adoptr_backend.service.ImageService;
 import com.example.adoptr_backend.service.PostService;
 import com.example.adoptr_backend.service.dto.request.PostDTOin;
 import com.example.adoptr_backend.service.dto.response.PostDTO;
@@ -28,9 +29,13 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
 
+    private final ImageService imageService;
+
     public PostServiceImpl(PostRepository postRepository,
-                           UserRepository userRepository
+                           UserRepository userRepository,
+                           ImageService imageService
     ) {
+        this.imageService = imageService;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
     }
@@ -40,14 +45,24 @@ public class PostServiceImpl implements PostService {
     public PostDTO create(PostDTOin dto) {
         Long userId = AuthSupport.getUserId();
         User user = getUserById(userId);
-
         Post post = new Post();
         post.setDescription(dto.getDescription());
         post.setDate(LocalDateTime.now());
         post.setUser(user);
-
         post = postRepository.save(post);
 
+        if (dto.getImage() != null) {
+            Long imageId = imageService.uploadImage(dto.getImage(), ImageType.NEWS, post.getId());
+            post.setImageId(imageId);
+            post = postRepository.save(post);
+        }
+
+        return mapPostToDTO(post);
+    }
+
+    @Override
+    public PostDTO getById(Long id) {
+        Post post = getPost(id);
         return mapPostToDTO(post);
     }
 
@@ -78,15 +93,22 @@ public class PostServiceImpl implements PostService {
 
     private PostDTO mapPostToDTO(Post post) {
         PostDTO dto = PostMapper.MAPPER.toDto(post);
+        if (post.getImageId() != null) {
+            String s3Url = imageService.getS3url(post.getId(), ImageType.NEWS);
+            dto.setS3Url(s3Url);
+        }
         return dto;
     }
 
     @Override
-    public void delete(Long id)  {
+    public void delete(Long id) {
         Long userId = AuthSupport.getUserId();
         Post post = getPost(id);
-        if(!Objects.equals(post.getUser().getId(), userId)){
-            throw new BadRequestException(Error.USER_NOT_ADOPTION_OWNER);
+        if (!Objects.equals(post.getUser().getId(), userId)) {
+            throw new BadRequestException(Error.USER_NOT_POST_OWNER);
+        }
+        if (post.getImageId() != null) {
+            imageService.deleteImage(post.getId(), ImageType.NEWS);
         }
         postRepository.delete(post);
     }

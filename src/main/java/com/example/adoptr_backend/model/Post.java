@@ -18,7 +18,11 @@ public class Post {
     @Column(nullable = false)
     private LocalDateTime date;
 
+    @Column
+    private Long imageId;
+
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
 }
