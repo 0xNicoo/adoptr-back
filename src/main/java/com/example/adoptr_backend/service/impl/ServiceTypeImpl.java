@@ -9,7 +9,9 @@ import com.example.adoptr_backend.service.ImageService;
 import com.example.adoptr_backend.service.ServiceTypeService;
 import com.example.adoptr_backend.service.dto.request.ServiceTypeDTOin;
 import com.example.adoptr_backend.service.dto.request.ServiceTypeFilterDTO;
+import com.example.adoptr_backend.service.dto.response.ServiceDTO;
 import com.example.adoptr_backend.service.dto.response.ServiceTypeDTO;
+import com.example.adoptr_backend.service.mapper.ServiceMapper;
 import com.example.adoptr_backend.service.mapper.ServiceTypeMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,6 +49,19 @@ public class ServiceTypeImpl implements ServiceTypeService {
     public Page<ServiceTypeDTO> getAll(ServiceTypeFilterDTO filter, Pageable pageable) {
         Specification<ServiceType> spec = ServiceTypeSpec.getSpec(filter);
         Page<ServiceType> page = serviceTypeRepository.findAll(spec, pageable);
-        return page.map(ServiceTypeMapper.MAPPER::toDto);
+        Page<ServiceTypeDTO> dtoPage = page.map(serviceType -> {
+            try {
+                ServiceTypeDTO dto = ServiceTypeMapper.MAPPER.toDto(serviceType);
+                String s3Url = imageService.getS3url(serviceType.getId(), ImageType.SERVICE_TYPE);
+                dto.setS3Url(s3Url);
+                return dto;
+            } catch (Exception e) {
+                System.err.println("Error al obtener la URL de la imagen para ID " + serviceType.getId() + ": " + e.getMessage());
+                ServiceTypeDTO dto = ServiceTypeMapper.MAPPER.toDto(serviceType);
+                dto.setS3Url(null);
+                return dto;
+            }
+        });
+        return dtoPage;
     }
 }
