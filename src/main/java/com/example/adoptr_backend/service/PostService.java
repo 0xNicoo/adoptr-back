@@ -12,6 +12,8 @@ public interface PostService {
 
     PostDTO create(PostDTOin dto);
 
+    PostDTO getById(Long id);
+
     List<PostDTO> getByUserId(Long userId, Pageable pageable);
 
     void delete(Long id);

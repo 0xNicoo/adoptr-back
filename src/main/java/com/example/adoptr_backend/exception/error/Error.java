@@ -19,8 +19,7 @@ public enum Error implements ErrorCode {
     SERVICE_TYPE_NOT_FOUND("0015", "No se encontro el tipo de servicio"),
     SERVICE_NOT_FOUND("0016", "No se encontro el servicio"),
     USER_NOT_SERVICE_OWNER("0017", "El usuario no es dueño de la publicacion de servicio"),
-
-
+    USER_NOT_POST_OWNER("0018", "El usuario no es el dueño del post"),
     ;
 
     private final String code;

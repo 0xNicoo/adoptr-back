@@ -9,8 +9,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -25,12 +27,20 @@ public class PostController {
         this.postService = postService;
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Crea un post", security = {@SecurityRequirement(name = "bearer-jwt")})
-    public ResponseEntity<PostDTO> createPost(@RequestParam String description
+    public ResponseEntity<PostDTO> createPost(@RequestParam String description,
+                                              @RequestParam(required = false) MultipartFile image
     ) {
-        PostDTOin dto = new PostDTOin(description);
+        PostDTOin dto = new PostDTOin(description, image);
         PostDTO response = postService.create(dto);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Obtiene un post por su id", security = {@SecurityRequirement(name = "bearer-jwt")})
+    public ResponseEntity<PostDTO> getById(@PathVariable Long id){
+        PostDTO response = postService.getById(id);
         return ResponseEntity.ok(response);
     }
 
