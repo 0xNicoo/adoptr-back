@@ -16,11 +16,16 @@ import com.example.adoptr_backend.service.dto.request.LostFilterDTO;
 import com.example.adoptr_backend.service.dto.response.LostDTO;
 import com.example.adoptr_backend.service.mapper.LostMapper;
 import com.example.adoptr_backend.util.AuthSupport;
+import com.example.adoptr_backend.util.DistanceHelper;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.text.DecimalFormat;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -78,21 +83,26 @@ public class LostServiceImpl implements LostService {
     public Page<LostDTO> getAll(LostFilterDTO filter, Pageable pageable) {
         Specification<Lost> spec = LostSpec.getSpec(filter);
         Page<Lost> page = lostRepository.findAll(spec, pageable);
-        Page<LostDTO> dtoPage = page.map(lost -> {
-            try {
-                LostDTO dto = LostMapper.MAPPER.toDto(lost);
-                String s3Url = imageService.getS3url(lost.getId(), ImageType.LOST);
-                dto.setS3Url(s3Url);
-                return dto;
-            } catch (Exception e) {
-                System.err.println("Error al obtener la URL de la imagen para ID " + lost.getId() + ": " + e.getMessage());
-                LostDTO dto = LostMapper.MAPPER.toDto(lost);
-                dto.setS3Url(null);
-                return dto;
-            }
-        });
-        return dtoPage;
+        List<LostDTO> sortedDtoList = page.stream().map(lost -> {
+                    try {
+                        LostDTO dto = LostMapper.MAPPER.toDto(lost);
+                        String s3Url = imageService.getS3url(lost.getId(), ImageType.LOST);
+                        dto.setS3Url(s3Url);
+                        updateDistance(dto, filter.getLatitude(), filter.getLongitude());
+                        return dto;
+                    } catch (Exception e) {
+                        System.err.println("Error al obtener la URL de la imagen para ID " + lost.getId() + ": " + e.getMessage());
+                        LostDTO dto = LostMapper.MAPPER.toDto(lost);
+                        dto.setS3Url(null);
+                        return dto;
+                    }
+                })
+                .sorted(Comparator.comparing(LostDTO::getDistanceWithoutUnit))
+                .toList();
+
+        return new PageImpl<>(sortedDtoList, pageable, page.getTotalElements());
     }
+
 
     @Override
     public LostDTO update(Long id, LostDTOin dto) {
@@ -136,6 +146,15 @@ public class LostServiceImpl implements LostService {
         Locality locality = localityOptional.get();
         locality.setId(dto.getLocality_id());
         return locality;
+    }
+
+    private void updateDistance(LostDTO lost, double latitude, double longitude) {
+        double distance = DistanceHelper.calculateDistance(lost, new Location(latitude, longitude));
+        lost.setDistanceWithoutUnit(distance);
+        DecimalFormat format = new DecimalFormat("#.##");
+        String unit = (distance < 1) ? "Mts" : "Km";
+        distance = (distance < 1) ? distance * 1000 : distance;
+        lost.setDistance(format.format(distance) + " " + unit);
     }
 
 }
