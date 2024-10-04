@@ -19,4 +19,6 @@ public class LostFilterDTO {
     private LostStatusType lostStatusType;
     private int ageYears;
     private Long user_id;
+    private double longitude;
+    private double latitude;
 }
