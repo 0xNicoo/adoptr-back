@@ -13,6 +13,7 @@ import com.example.adoptr_backend.service.dto.request.PostDTOin;
 import com.example.adoptr_backend.service.dto.response.PostDTO;
 import com.example.adoptr_backend.service.mapper.PostMapper;
 import com.example.adoptr_backend.util.AuthSupport;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,6 +82,25 @@ public class PostServiceImpl implements PostService {
         return postList.stream()
                 .map(this::mapPostToDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<PostDTO> getAllCommunity(Pageable pageable) {
+        Page<Post> page = postRepository.findAllByOrderByDateDesc(pageable);
+        Page<PostDTO> dtoPage = page.map(post -> {
+            try {
+                PostDTO dto = PostMapper.MAPPER.toDto(post);
+                String s3Url = imageService.getS3url(post.getId(), ImageType.NEWS);
+                dto.setS3Url(s3Url);
+                return dto;
+            } catch (Exception e) {
+                System.err.println("Error al obtener la URL de la imagen para ID " + post.getId() + ": " + e.getMessage());
+                PostDTO dto = PostMapper.MAPPER.toDto(post);
+                dto.setS3Url(null);
+                return dto;
+            }
+        });
+        return dtoPage;
     }
 
     private User getUserById(Long id) {
