@@ -21,9 +21,11 @@ public class LostDTO {
     private LostStatusType lostStatusType;
     private int ageYears;
     private int ageMonths;
-    private long longitude;
-    private long latitude;
+    private double longitude;
+    private double latitude;
     private UserDTO user;
     private String s3Url;
     private LocalityDTO locality;
+    private Double distanceWithoutUnit;
+    private String distance;
 }

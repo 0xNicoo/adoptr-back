@@ -18,8 +18,8 @@ public class LostDTOin {
     private SizeType sizeType;
     private int ageYears;
     private int ageMonths;
-    private long longitude;
-    private long latitude;
+    private double longitude;
+    private double latitude;
     private MultipartFile image;
     private Long locality_id;
 }

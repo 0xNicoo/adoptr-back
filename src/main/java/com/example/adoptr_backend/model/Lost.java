@@ -30,10 +30,10 @@ public class Lost extends Publication{
     private int ageMonths;
 
     @Column
-    private long longitude;
+    private double longitude;
 
     @Column
-    private long latitude;
+    private double latitude;
 
     @PrePersist
     public void prePersist(){
