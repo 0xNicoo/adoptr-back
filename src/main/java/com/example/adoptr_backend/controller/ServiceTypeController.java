@@ -3,6 +3,7 @@ package com.example.adoptr_backend.controller;
 import com.example.adoptr_backend.service.ServiceTypeService;
 import com.example.adoptr_backend.service.dto.request.ServiceTypeDTOin;
 import com.example.adoptr_backend.service.dto.request.ServiceTypeFilterDTO;
+import com.example.adoptr_backend.service.dto.response.AdoptionDTO;
 import com.example.adoptr_backend.service.dto.response.ServiceTypeDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -46,5 +47,23 @@ public class ServiceTypeController {
     public ResponseEntity<List<ServiceTypeDTO>> getAll(@ParameterObject ServiceTypeFilterDTO filterDTO, @ParameterObject Pageable pageable){
         Page<ServiceTypeDTO> response = serviceTypeService.getAll(filterDTO, pageable);
         return new ResponseEntity<>(response.getContent(), HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Obtiene un tipo de servicio por id")
+    public ResponseEntity<ServiceTypeDTO> getById(@PathVariable Long id) {
+        ServiceTypeDTO response = serviceTypeService.getById(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Modifica un tipo de servicio", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<ServiceTypeDTO> update(@PathVariable Long id,
+                                                 @RequestParam String name,
+                                                 @RequestParam String description,
+                                                 @RequestParam(required = false) MultipartFile image) {
+        ServiceTypeDTOin dto = new ServiceTypeDTOin(name, description, image);
+        ServiceTypeDTO response = serviceTypeService.update(id, dto);
+        return ResponseEntity.ok(response);
     }
 }

@@ -8,7 +8,6 @@ public class ServiceTypeDTO {
     private Long id;
     private String name;
     private String description;
-    private UserDTO user;
     private String s3Url;
 
 }
