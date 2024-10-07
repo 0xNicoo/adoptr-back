@@ -1,6 +1,7 @@
 package com.example.adoptr_backend.repository.specification;
 
 import com.example.adoptr_backend.model.Adoption;
+import com.example.adoptr_backend.model.AdoptionStatusType;
 import com.example.adoptr_backend.service.dto.request.AdoptionFilterDTO;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
@@ -63,6 +64,16 @@ public class AdoptionSpec {
 
             if (filter.getProvince_id() != null) {
                 predicates.add(cb.equal(root.get("locality").get("province").get("id"), filter.getProvince_id()));
+            }
+
+
+            if(filter.getAdopted()){
+                predicates.add(cb.or(
+                        cb.equal(root.get("adoptionStatusType"), AdoptionStatusType.ADOPTED),
+                        cb.equal(root.get("adoptionStatusType"), AdoptionStatusType.FOR_ADOPTION)
+                ));
+            }else{
+                predicates.add(cb.equal(root.get("adoptionStatusType"), AdoptionStatusType.FOR_ADOPTION));
             }
 
             query.orderBy(cb.desc(root.get("id")));

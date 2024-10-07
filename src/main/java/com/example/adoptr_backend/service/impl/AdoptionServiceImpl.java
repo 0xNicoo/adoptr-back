@@ -11,6 +11,7 @@ import com.example.adoptr_backend.service.AdoptionService;
 import com.example.adoptr_backend.service.ImageService;
 import com.example.adoptr_backend.service.dto.request.AdoptionDTOin;
 import com.example.adoptr_backend.service.dto.request.AdoptionFilterDTO;
+import com.example.adoptr_backend.service.dto.request.AdoptionStatusDTOin;
 import com.example.adoptr_backend.service.dto.response.AdoptionDTO;
 import com.example.adoptr_backend.service.mapper.AdoptionMapper;
 import com.example.adoptr_backend.util.AuthSupport;
@@ -123,8 +124,22 @@ public class AdoptionServiceImpl implements AdoptionService {
         adoptionRepository.delete(adoption);
     }
 
+    @Override
+    public void changeStatus(AdoptionStatusDTOin dtoIn) {
+        Long userId = AuthSupport.getUserId();
+        Adoption adoption = getAdoption(dtoIn.getAdoptionId());
+        if(!userId.equals(adoption.getUser().getId())){
+            throw new BadRequestException(Error.USER_NOT_ADOPTION_OWNER);
+        }
+        adoption.setAdoptionStatusType(dtoIn.getNextStatus());
+        adoptionRepository.save(adoption);
+    }
+
     private Adoption getAdoption(Long id) {
         Optional<Adoption> adoptionOptional = adoptionRepository.findById(id);
+        if(adoptionOptional.isEmpty()){
+            throw new BadRequestException(Error.PUBLICATION_NOT_FOUND);
+        }
         return adoptionOptional.get();
     }
 

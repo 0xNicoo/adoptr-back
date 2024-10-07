@@ -6,6 +6,7 @@ import com.example.adoptr_backend.model.SizeType;
 import com.example.adoptr_backend.service.AdoptionService;
 import com.example.adoptr_backend.service.dto.request.AdoptionDTOin;
 import com.example.adoptr_backend.service.dto.request.AdoptionFilterDTO;
+import com.example.adoptr_backend.service.dto.request.AdoptionStatusDTOin;
 import com.example.adoptr_backend.service.dto.response.AdoptionDTO;
 import com.example.adoptr_backend.util.PaginationUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -86,11 +87,17 @@ public class AdoptionController {
         return ResponseEntity.ok(response);
     }
 
-
     @DeleteMapping("/{id}")
     @Operation(summary = "Elimina una publicacion de adopcion", security = { @SecurityRequirement(name = "bearer-jwt") })
     public ResponseEntity<String> delete(@PathVariable Long id)  {
         adoptionService.delete(id);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PostMapping("/status")
+    @Operation(summary = "Cambia estado de una adopcion", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<String> changeStatus(@RequestBody AdoptionStatusDTOin dtOin){
+        adoptionService.changeStatus(dtOin);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }

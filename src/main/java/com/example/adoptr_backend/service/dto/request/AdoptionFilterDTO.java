@@ -23,4 +23,5 @@ public class AdoptionFilterDTO {
     private Long locality_id;
     private Long user_id;
     private Long province_id;
+    private Boolean adopted = false;
 }
