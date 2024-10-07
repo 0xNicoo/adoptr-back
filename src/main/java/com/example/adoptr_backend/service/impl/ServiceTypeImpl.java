@@ -73,6 +73,23 @@ public class ServiceTypeImpl implements ServiceTypeService {
     }
 
     @Override
+    public ServiceTypeDTO update(Long id, ServiceTypeDTOin dto) {
+        ServiceType serviceType = getServiceType(id);
+        ServiceType serviceTypeUpdated = ServiceTypeMapper.MAPPER.toEntity(dto);
+        ServiceTypeMapper.MAPPER.update(serviceType, serviceTypeUpdated);
+        if (dto.getImage() != null) {
+            imageService.deleteImage(serviceType.getId(), ImageType.SERVICE_TYPE);
+            Long imageId = imageService.uploadServiceTypeImage(dto.getImage(), serviceType.getId());
+            serviceType.setImageId(imageId);
+        }
+        serviceTypeRepository.save(serviceType);
+        ServiceTypeDTO serviceTypeDTO = ServiceTypeMapper.MAPPER.toDto(serviceType);
+        serviceTypeDTO.setS3Url(imageService.getS3url(serviceType.getId(), ImageType.SERVICE_TYPE));
+        return serviceTypeDTO;
+
+    }
+
+    @Override
     public ServiceTypeDTO getById(Long id) {
         ServiceType serviceType = getServiceType(id);
         ServiceTypeDTO dto = ServiceTypeMapper.MAPPER.toDto(serviceType);
@@ -80,6 +97,8 @@ public class ServiceTypeImpl implements ServiceTypeService {
         dto.setS3Url(s3Url);
         return dto;
     }
+
+
 
     private ServiceType getServiceType(Long id) {
         Optional<ServiceType> serviceTypeOptional = serviceTypeRepository.findById(id);

@@ -55,4 +55,15 @@ public class ServiceTypeController {
         ServiceTypeDTO response = serviceTypeService.getById(id);
         return ResponseEntity.ok(response);
     }
+
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Modifica un tipo de servicio", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<ServiceTypeDTO> update(@PathVariable Long id,
+                                                 @RequestParam String name,
+                                                 @RequestParam String description,
+                                                 @RequestParam(required = false) MultipartFile image) {
+        ServiceTypeDTOin dto = new ServiceTypeDTOin(name, description, image);
+        ServiceTypeDTO response = serviceTypeService.update(id, dto);
+        return ResponseEntity.ok(response);
+    }
 }

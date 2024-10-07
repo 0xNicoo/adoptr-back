@@ -14,4 +14,6 @@ public interface ServiceTypeService {
     ServiceTypeDTO getById(Long id);
 
     Page<ServiceTypeDTO> getAll(ServiceTypeFilterDTO filterDTO, Pageable pageable);
+
+    ServiceTypeDTO update(Long id, ServiceTypeDTOin dto);
 }
