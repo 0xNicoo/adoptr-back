@@ -10,9 +10,9 @@ public class ChatDTO {
     private Long id;
     private LocalDateTime createdAt;
     private Long adopterUserId;
-    private String adopterUserName;
     private Long publicationUserId;
-    private String publicationUserName;
     private List<MessageDTO> messages;
-    private PublicationChatDTO publication;
+    private PublicationDTO publication;
+    private ProfileDTO interlocutorUserProfile;
+    private ProfileDTO publicationUserProfile;
 }
