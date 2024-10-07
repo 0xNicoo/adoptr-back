@@ -76,8 +76,8 @@ public class LostController {
                                               @RequestParam SizeType sizeType,
                                               @RequestParam int ageYears,
                                               @RequestParam int ageMonths,
-                                              @RequestParam Long longitude,
-                                              @RequestParam Long latitude,
+                                              @RequestParam double longitude,
+                                              @RequestParam double latitude,
                                               @RequestParam(required = false) MultipartFile image,
                                               @RequestParam Long locality_id){
         LostDTOin dto = new LostDTOin(title, description, sexType, animalType, sizeType, ageYears, ageMonths, longitude, latitude, image, locality_id);
