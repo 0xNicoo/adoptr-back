@@ -24,6 +24,9 @@ public class Lost extends Publication{
     private LostStatusType lostStatusType;
 
     @Column
+    private Boolean wasFound;
+
+    @Column
     private int ageYears;
 
     @Column

@@ -13,6 +13,7 @@ import com.example.adoptr_backend.service.LostService;
 import com.example.adoptr_backend.service.dto.request.AdoptionDTOin;
 import com.example.adoptr_backend.service.dto.request.LostDTOin;
 import com.example.adoptr_backend.service.dto.request.LostFilterDTO;
+import com.example.adoptr_backend.service.dto.request.LostStatusDTOin;
 import com.example.adoptr_backend.service.dto.response.LostDTO;
 import com.example.adoptr_backend.service.mapper.LostMapper;
 import com.example.adoptr_backend.util.AuthSupport;
@@ -133,8 +134,22 @@ public class LostServiceImpl implements LostService {
         lostRepository.delete(lost);
     }
 
+    @Override
+    public void changeStatus(LostStatusDTOin dtoIn) {
+        Long userId = AuthSupport.getUserId();
+        Lost lost = getLost(dtoIn.getLostId());
+        if(!userId.equals(lost.getUser().getId())){
+            throw new BadRequestException(Error.USER_NOT_ADOPTION_OWNER);
+        }
+        lost.setLostStatusType(dtoIn.getNextStatus());
+        lostRepository.save(lost);
+    }
+
     private Lost getLost(Long id) {
         Optional<Lost> lostOptional = lostRepository.findById(id);
+        if(lostOptional.isEmpty()){
+            throw new BadRequestException(Error.PUBLICATION_NOT_FOUND);
+        }
         return lostOptional.get();
     }
 

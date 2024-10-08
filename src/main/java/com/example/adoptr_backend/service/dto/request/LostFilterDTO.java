@@ -21,4 +21,5 @@ public class LostFilterDTO {
     private Long user_id;
     private double longitude;
     private double latitude;
+    private Boolean wasFound = false;
 }

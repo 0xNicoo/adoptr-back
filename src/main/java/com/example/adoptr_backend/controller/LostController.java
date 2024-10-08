@@ -5,8 +5,10 @@ import com.example.adoptr_backend.model.AnimalType;
 import com.example.adoptr_backend.model.SexType;
 import com.example.adoptr_backend.model.SizeType;
 import com.example.adoptr_backend.service.LostService;
+import com.example.adoptr_backend.service.dto.request.AdoptionStatusDTOin;
 import com.example.adoptr_backend.service.dto.request.LostDTOin;
 import com.example.adoptr_backend.service.dto.request.LostFilterDTO;
+import com.example.adoptr_backend.service.dto.request.LostStatusDTOin;
 import com.example.adoptr_backend.service.dto.response.LostDTO;
 import com.example.adoptr_backend.util.PaginationUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -89,6 +91,13 @@ public class LostController {
     @Operation(summary = "Elimina una publicacion de perdidos", security = { @SecurityRequirement(name = "bearer-jwt") })
     public ResponseEntity<String> delete(@PathVariable Long id)  {
         lostService.delete(id);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PostMapping("/status")
+    @Operation(summary = "Cambia estado de una adopcion", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<String> changeStatus(@RequestBody LostStatusDTOin dtoIn){
+        lostService.changeStatus(dtoIn);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }

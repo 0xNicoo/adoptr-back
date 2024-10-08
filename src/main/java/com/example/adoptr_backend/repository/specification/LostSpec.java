@@ -1,5 +1,6 @@
 package com.example.adoptr_backend.repository.specification;
 
+import com.example.adoptr_backend.model.AdoptionStatusType;
 import com.example.adoptr_backend.model.Lost;
 import com.example.adoptr_backend.service.dto.request.LostFilterDTO;
 import jakarta.persistence.criteria.Predicate;
@@ -38,7 +39,11 @@ public class LostSpec {
             }
 
             if (filter.getLostStatusType() != null){
-                predicates.add(cb.equal(root.get("adoptionStatusType"), filter.getLostStatusType()));
+                predicates.add(cb.equal(root.get("lostStatusType"), filter.getLostStatusType()));
+            }
+
+            if(!filter.getWasFound()){
+                predicates.add(cb.equal(root.get("wasFound"), true));
             }
 
             query.orderBy(cb.desc(root.get("id")));
