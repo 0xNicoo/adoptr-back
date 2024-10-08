@@ -42,10 +42,6 @@ public class LostSpec {
                 predicates.add(cb.equal(root.get("lostStatusType"), filter.getLostStatusType()));
             }
 
-            if(!filter.getWasFound()){
-                predicates.add(cb.equal(root.get("wasFound"), true));
-            }
-
             query.orderBy(cb.desc(root.get("id")));
 
             return cb.and(predicates.toArray(new Predicate[0]));
