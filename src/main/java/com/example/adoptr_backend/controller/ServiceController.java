@@ -84,4 +84,13 @@ public class ServiceController {
         ServiceDTO response = servicesService.update(id, dto);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "Obtiene publicaciones de servicio por usuario", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<List<ServiceDTO>> getByUserId(@PathVariable Long userId, @ParameterObject Pageable pageable) {
+        Page<ServiceDTO> response = servicesService.getByUserId(userId, pageable);
+        HttpHeaders headers = PaginationUtil.setTotalCountPageHttpHeaders(response);
+        return new ResponseEntity<>(response.getContent(), headers, HttpStatus.OK);
+    }
+
 }

@@ -137,6 +137,22 @@ public class ServicesServiceImpl implements ServicesService {
         serviceRepository.delete(service);
     }
 
+    @Override
+    public Page<ServiceDTO> getByUserId(Long userId, Pageable pageable) {
+        Optional<User> user = userRepository.findById(userId);
+        if (user.isEmpty()) {
+            throw new BadRequestException(Error.USER_NOT_FOUND);
+        }
+        Page<Service> services = serviceRepository.findAllByUser(user.get(), pageable);
+        return services.map(service -> {
+            ServiceDTO dto = ServiceMapper.MAPPER.toDto(service);
+            String s3Url = imageService.getS3url(service.getId(), ImageType.SERVICE);
+            dto.setS3Url(s3Url);
+            return dto;
+        });
+    }
+
+
     private Service getService(Long id) {
         Optional<Service> serviceOptional = serviceRepository.findById(id);
         if (serviceOptional.isEmpty()) {

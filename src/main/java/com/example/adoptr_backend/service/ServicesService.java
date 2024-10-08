@@ -18,4 +18,6 @@ public interface ServicesService {
     void delete(Long id);
 
     ServiceDTO update(Long id, ServiceDTOin dto);
+
+    Page<ServiceDTO> getByUserId(Long userId, Pageable pageable);
 }
