@@ -16,4 +16,7 @@ public class ReportReason {
 
     @Column
     private String description;
+
+    @Enumerated(EnumType.STRING)
+    private ReportModelType modelType;
 }

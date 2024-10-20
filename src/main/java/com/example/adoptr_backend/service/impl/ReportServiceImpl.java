@@ -3,6 +3,7 @@ package com.example.adoptr_backend.service.impl;
 import com.example.adoptr_backend.model.ReportModelType;
 import com.example.adoptr_backend.service.ReportService;
 import com.example.adoptr_backend.service.dto.request.ReportDTOin;
+import com.example.adoptr_backend.service.dto.response.ReportDTO;
 import com.example.adoptr_backend.service.impl.report.ReportStrategy;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,7 @@ import java.util.Map;
 @Service
 public class ReportServiceImpl implements ReportService {
 
-    private List<ReportStrategy> reportStrategies;
+    private final List<ReportStrategy> reportStrategies;
 
     private Map<ReportModelType, ReportStrategy> reportStrategyMap;
 
@@ -29,8 +30,8 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public <T> List<T> getReports(ReportModelType reportModelType) {
-        return null;
+    public <T extends ReportDTO> List<T> getReports(ReportModelType reportModelType) {
+        return reportStrategyMap.get(reportModelType).getReports();
     }
 
     @Override
