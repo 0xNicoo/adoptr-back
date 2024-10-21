@@ -1,16 +1,17 @@
 package com.example.adoptr_backend.service.dto.response;
 
 import com.example.adoptr_backend.model.ReportModelType;
+import jakarta.persistence.*;
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 @Data
-public class ReportDTO {
+public class ReportReasonDTO {
+
     private Long id;
-    private Long modelId;
-    private Long reporterUserId;
+
+    private String reason;
+
+    private String description;
+
     private ReportModelType modelType;
-    private ReportReasonDTO reason;
-    private LocalDateTime createdAt;
 }

@@ -11,9 +11,9 @@ import com.example.adoptr_backend.repository.ReportReasonRepository;
 import com.example.adoptr_backend.repository.ReportRepository;
 import com.example.adoptr_backend.service.PublicationService;
 import com.example.adoptr_backend.service.dto.request.ReportDTOin;
-import com.example.adoptr_backend.service.dto.response.PublicationDTO;
-import com.example.adoptr_backend.service.dto.response.PublicationReportDTO;
-import com.example.adoptr_backend.service.dto.response.ReportDTO;
+import com.example.adoptr_backend.service.dto.response.*;
+import com.example.adoptr_backend.service.mapper.ReportMapper;
+import com.example.adoptr_backend.service.mapper.UserMapper;
 import com.example.adoptr_backend.util.AuthSupport;
 import org.springframework.stereotype.Component;
 
@@ -55,34 +55,17 @@ public class PublicationReportStrategy implements ReportStrategy{
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T extends ReportDTO> List<T> getReports() {
+    public <T extends ReportDetailDTO> List<T> getReports() {
         List<Report> reports = reportRepository.findAll();
 
-        List<Long> uniquePublicationsIds = reports.stream()
-                .map(Report::getModelId)
-                .distinct()
-                .toList();
+        List<Publication> uniquePublicationList = getPublications(reports);
+
         Map<Long, List<Report>> reportsByPublication = reports.stream()
                 .collect(Collectors.groupingBy(Report::getModelId));
 
-        List<Publication> publicationList = publicationRepository.findByIdIn(uniquePublicationsIds);
-        Map<Long, Publication> publicationMap = publicationList.stream()
-                .collect(Collectors.toMap(Publication::getId, publication -> publication));
-
-        List<PublicationReportDTO> reportDTOList = reports.stream().map(report -> {
-            PublicationReportDTO dto = new PublicationReportDTO();
-            dto.setId(report.getId());
-            dto.setModelType(report.getModelType());
-
-            Publication publication = publicationMap.get(report.getModelId());
-            if(publication != null){
-                PublicationDTO publicationDTO = new PublicationDTO();
-                publicationDTO.setId(publication.getId());
-                publicationDTO.setTitle(publication.getTitle());
-                dto.setPublicationDTO(publicationDTO);
-            }
-            return dto;
-        }).toList();
+        List<PublicationReportDTO> reportDTOList = uniquePublicationList.stream()
+                .map(pub -> getPublicationReportDTO(pub, reportsByPublication))
+                .toList();
         return (List<T>) reportDTOList;
     }
 
@@ -118,5 +101,41 @@ public class PublicationReportStrategy implements ReportStrategy{
             throw new BadRequestException(Error.PUBLICATION_NOT_FOUND);
         }
         return publicationOptional.get();
+    }
+
+    /**
+     * Obtiene la lista de publicaciones, sin repetir ninguna publicacion.
+     * @param reports
+     * @return
+     */
+    private List<Publication> getPublications(List<Report> reports) {
+        List<Long> uniquePublicationsIds = reports.stream()
+                .map(Report::getModelId)
+                .distinct()
+                .toList();
+        return publicationRepository.findByIdIn(uniquePublicationsIds);
+    }
+
+    private PublicationDTO getPublicationDTO(Publication pub) {
+        PublicationDTO publicationDTO = new PublicationDTO();
+        publicationDTO.setId(pub.getId());
+        publicationDTO.setTitle(pub.getTitle());
+        UserDTO userDTO = UserMapper.MAPPER.toDto(pub.getUser());
+        publicationDTO.setUser(userDTO);
+        return publicationDTO;
+    }
+
+    private PublicationReportDTO getPublicationReportDTO(Publication pub, Map<Long, List<Report>> reportsByPublication) {
+        PublicationReportDTO dto = new PublicationReportDTO();
+        List<Report> relatedReports = reportsByPublication.get(pub.getId());
+
+        if(relatedReports != null){
+            dto.setReportCount((long) relatedReports.size());
+            List<ReportDTO> reportDTOs = relatedReports.stream().map(ReportMapper.MAPPER::toDto).toList();
+            dto.setReports(reportDTOs);
+            PublicationDTO publicationDTO = getPublicationDTO(pub);
+            dto.setPublicationDTO(publicationDTO);
+        }
+        return dto;
     }
 }

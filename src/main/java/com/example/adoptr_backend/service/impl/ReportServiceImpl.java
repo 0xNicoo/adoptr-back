@@ -4,6 +4,7 @@ import com.example.adoptr_backend.model.ReportModelType;
 import com.example.adoptr_backend.service.ReportService;
 import com.example.adoptr_backend.service.dto.request.ReportDTOin;
 import com.example.adoptr_backend.service.dto.response.ReportDTO;
+import com.example.adoptr_backend.service.dto.response.ReportDetailDTO;
 import com.example.adoptr_backend.service.impl.report.ReportStrategy;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public <T extends ReportDTO> List<T> getReports(ReportModelType reportModelType) {
+    public <T extends ReportDetailDTO> List<T> getReports(ReportModelType reportModelType) {
         return reportStrategyMap.get(reportModelType).getReports();
     }
 
