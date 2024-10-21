@@ -4,6 +4,7 @@ package com.example.adoptr_backend.controller;
 import com.example.adoptr_backend.model.ReportModelType;
 import com.example.adoptr_backend.service.ReportService;
 import com.example.adoptr_backend.service.dto.request.ReportDTOin;
+import com.example.adoptr_backend.service.dto.response.ProfileReportDTO;
 import com.example.adoptr_backend.service.dto.response.PublicationReportDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -39,4 +40,17 @@ public class ReportController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @GetMapping("/profile")
+    @Operation(summary = "Obtiene todos los perfiles reportados", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<List<ProfileReportDTO>> getAllProfiles(){
+        List<ProfileReportDTO> response = reportService.getReports(ReportModelType.PROFILE);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/profile")
+    @Operation(summary = "Reporta un perfil", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<String> reportProfile(@RequestBody ReportDTOin dto){
+        reportService.report(ReportModelType.PROFILE, dto);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }
