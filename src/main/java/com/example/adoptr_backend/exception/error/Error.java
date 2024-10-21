@@ -21,7 +21,9 @@ public enum Error implements ErrorCode {
     USER_NOT_SERVICE_OWNER("0017", "El usuario no es dueño de la publicacion de servicio"),
     USER_NOT_POST_OWNER("0018", "El usuario no es el dueño del post"),
     USER_ALREADY_REPORTED_PUBLICATION("0019", "El usuario ya reporto la publicacion"),
-    USER_CAN_NOT_REPORT_PUBLICATION("0020", "El usuario no puede reportar esta publicacion")
+    USER_CAN_NOT_REPORT_PUBLICATION("0020", "El usuario no puede reportar esta publicacion"),
+    USER_CAN_NOT_REPORT_PROFILE("0021", "El usuario no puede reportar este perfil"),
+    USER_ALREADY_REPORTED_PROFILE("0022", "El usuario ya reporto el perfil"),
     ;
 
     private final String code;
