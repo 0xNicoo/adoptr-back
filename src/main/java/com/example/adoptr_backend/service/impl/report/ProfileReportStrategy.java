@@ -131,7 +131,7 @@ public class ProfileReportStrategy implements ReportStrategy{
             List<ReportDTO> reportDTOs = relatedReports.stream().map(ReportMapper.MAPPER::toDto).toList();
             dto.setReports(reportDTOs);
             ProfileDTO profileDTO = getProfileDTO(prof);
-            dto.setProfileDTO(profileDTO);
+            dto.setProfile(profileDTO);
         }
         return dto;
     }

@@ -130,7 +130,7 @@ public class PublicationReportStrategy implements ReportStrategy{
             List<ReportDTO> reportDTOs = relatedReports.stream().map(ReportMapper.MAPPER::toDto).toList();
             dto.setReports(reportDTOs);
             PublicationDTO publicationDTO = getPublicationDTO(pub);
-            dto.setPublicationDTO(publicationDTO);
+            dto.setPublication(publicationDTO);
         }
         return dto;
     }
