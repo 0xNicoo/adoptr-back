@@ -16,6 +16,7 @@ import com.example.adoptr_backend.service.mapper.ReportMapper;
 import com.example.adoptr_backend.service.mapper.UserMapper;
 import com.example.adoptr_backend.util.AuthSupport;
 import com.example.adoptr_backend.util.ReportSupport;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
+@AllArgsConstructor
 public class PublicationReportStrategy implements ReportStrategy{
 
     private final ReportRepository reportRepository;
@@ -33,14 +35,6 @@ public class PublicationReportStrategy implements ReportStrategy{
 
     private final PublicationRepository publicationRepository;
 
-    public PublicationReportStrategy(ReportRepository reportRepository,
-                                     ReportReasonRepository reportReasonRepository,
-                                     PublicationRepository publicationRepository) {
-        this.reportRepository = reportRepository;
-        this.reportReasonRepository = reportReasonRepository;
-        this.publicationRepository = publicationRepository;
-
-    }
 
     @Override
     public void report(ReportDTOin dto) {

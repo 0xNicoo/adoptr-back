@@ -15,6 +15,7 @@ import com.example.adoptr_backend.service.mapper.ReportMapper;
 import com.example.adoptr_backend.service.mapper.UserMapper;
 import com.example.adoptr_backend.util.AuthSupport;
 import com.example.adoptr_backend.util.ReportSupport;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
@@ -24,6 +25,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
+@AllArgsConstructor
 public class ProfileReportStrategy implements ReportStrategy{
 
     private final ReportRepository reportRepository;
@@ -31,15 +33,6 @@ public class ProfileReportStrategy implements ReportStrategy{
     private final ReportReasonRepository reportReasonRepository;
 
     private final ProfileRepository profileRepository;
-
-    public ProfileReportStrategy(ReportRepository reportRepository,
-                                     ReportReasonRepository reportReasonRepository,
-                                     ProfileRepository profileRepository) {
-        this.reportRepository = reportRepository;
-        this.reportReasonRepository = reportReasonRepository;
-        this.profileRepository = profileRepository;
-
-    }
 
     @Override
     public void report(ReportDTOin dto) {
@@ -95,8 +88,6 @@ public class ProfileReportStrategy implements ReportStrategy{
         return report;
     }
 
-
-
     private Profile getProfile(Long profileId){
         Optional<Profile> profileOptional = profileRepository.findById(profileId);
         if(profileOptional.isEmpty()){
@@ -106,7 +97,7 @@ public class ProfileReportStrategy implements ReportStrategy{
     }
 
     /**
-     * Obtiene la lista de publicaciones, sin repetir ningun perfil.
+     * Obtiene la lista de perfiles, sin repetir ningun perfil.
      * @param reports
      * @return
      */

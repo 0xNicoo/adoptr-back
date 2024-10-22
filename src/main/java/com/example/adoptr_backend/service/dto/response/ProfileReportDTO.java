@@ -6,6 +6,6 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class ProfileReportDTO extends ReportDetailDTO{
-    private ProfileDTO profileDTO;
+    private ProfileDTO profile;
     private String url;
 }
