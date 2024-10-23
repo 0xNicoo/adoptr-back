@@ -49,7 +49,7 @@ public class ProfileReportStrategy implements ReportStrategy{
     @Override
     @SuppressWarnings("unchecked")
     public <T extends ReportDetailDTO> List<T> getReports() {
-        List<Report> reports = reportRepository.findAll();
+        List<Report> reports = reportRepository.findAllByModelType(this.getType());
 
         List<Profile> uniqueProfileList = getProfiles(reports);
 

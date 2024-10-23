@@ -51,7 +51,7 @@ public class PublicationReportStrategy implements ReportStrategy{
     @Override
     @SuppressWarnings("unchecked")
     public <T extends ReportDetailDTO> List<T> getReports() {
-        List<Report> reports = reportRepository.findAll();
+        List<Report> reports = reportRepository.findAllByModelType(this.getType());
 
         List<Publication> uniquePublicationList = getPublications(reports);
 
