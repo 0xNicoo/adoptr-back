@@ -1,5 +1,6 @@
 package com.example.adoptr_backend.util;
 
+import com.example.adoptr_backend.model.Post;
 import com.example.adoptr_backend.model.Profile;
 import com.example.adoptr_backend.model.Publication;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +12,7 @@ public class ReportSupport {
     private static String lostUrl;
     private static String serviceUrl;
     private  static String profileUrl;
+    private  static String postUrl;
 
     public ReportSupport(@Value("${publication.adoption.url}") String adoptionUrl,
                          @Value("${publication.lost.url}") String lostUrl,
@@ -32,5 +34,9 @@ public class ReportSupport {
 
     public static String buildProfileURL(Profile profile) {
         return profileUrl + profile.getId();
+    }
+
+    public static String buildPostURL(Post post) {
+        return postUrl + post.getId();
     }
 }
