@@ -1,6 +1,8 @@
 package com.example.adoptr_backend.service.impl;
 
 import com.example.adoptr_backend.model.ReportModelType;
+import com.example.adoptr_backend.model.ReportReason;
+import com.example.adoptr_backend.repository.ReportReasonRepository;
 import com.example.adoptr_backend.service.ReportService;
 import com.example.adoptr_backend.service.dto.request.ReportDTOin;
 import com.example.adoptr_backend.service.dto.response.ReportDTO;
@@ -20,8 +22,13 @@ public class ReportServiceImpl implements ReportService {
 
     private Map<ReportModelType, ReportStrategy> reportStrategyMap;
 
-    public ReportServiceImpl(List<ReportStrategy> reportStrategies){
+    private final ReportReasonRepository reportReasonRepository;
+
+    public ReportServiceImpl(
+            List<ReportStrategy> reportStrategies,
+            ReportReasonRepository reportReasonRepository){
         this.reportStrategies = reportStrategies;
+        this.reportReasonRepository = reportReasonRepository;
     }
 
     @PostConstruct
@@ -38,5 +45,10 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public void report(ReportModelType reportModelType, ReportDTOin dto) {
         reportStrategyMap.get(reportModelType).report(dto);
+    }
+
+    @Override
+    public List<ReportReason> getReportReasons() {
+        return reportReasonRepository.findAll();
     }
 }

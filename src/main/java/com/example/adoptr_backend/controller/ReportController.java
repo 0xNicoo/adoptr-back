@@ -2,6 +2,7 @@ package com.example.adoptr_backend.controller;
 
 
 import com.example.adoptr_backend.model.ReportModelType;
+import com.example.adoptr_backend.model.ReportReason;
 import com.example.adoptr_backend.service.ReportService;
 import com.example.adoptr_backend.service.dto.request.ReportDTOin;
 import com.example.adoptr_backend.service.dto.response.ProfileReportDTO;
@@ -24,6 +25,13 @@ public class ReportController {
 
     public ReportController(ReportService reportService) {
         this.reportService = reportService;
+    }
+
+    @GetMapping("/reasons")
+    @Operation(summary = "Obtiene razones de reporte", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<List<ReportReason>> getReportReasons(){
+        List<ReportReason> response = reportService.getReportReasons();
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/publication")
