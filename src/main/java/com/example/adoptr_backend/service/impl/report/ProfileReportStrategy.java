@@ -127,7 +127,7 @@ public class ProfileReportStrategy implements ReportStrategy{
 
         if(relatedReports != null){
             dto.setReportCount((long) relatedReports.size());
-            dto.setUrl(ReportSupport.buildProfileURL(prof));
+            dto.setUrl(ReportSupport.buildProfileURL(prof.getUser().getId()));
             List<ReportDTO> reportDTOs = relatedReports.stream().map(ReportMapper.MAPPER::toDto).toList();
             dto.setReports(reportDTOs);
             ProfileDTO profileDTO = getProfileDTO(prof);
