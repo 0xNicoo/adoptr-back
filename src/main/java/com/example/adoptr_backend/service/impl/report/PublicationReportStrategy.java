@@ -65,6 +65,13 @@ public class PublicationReportStrategy implements ReportStrategy{
     }
 
     @Override
+    public List<ReportDTO> getReportByModelId(Long modelId) {
+        Publication publication = getPublication(modelId);
+        List<Report> reports = reportRepository.findAllByModelTypeAndModelId(ReportModelType.PUBLICATION, publication.getId());
+        return ReportMapper.MAPPER.toDto(reports);
+    }
+
+    @Override
     public ReportModelType getType() {
         return ReportModelType.PUBLICATION;
     }

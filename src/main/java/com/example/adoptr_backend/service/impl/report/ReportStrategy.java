@@ -13,5 +13,12 @@ public interface ReportStrategy {
 
     <T extends ReportDetailDTO> List<T> getReports();
 
+    /**
+     * Obtiene los reportes de una: Publicacion, Perfil, Post.
+     * @param modelId
+     * @return
+     */
+    List<ReportDTO> getReportByModelId(Long modelId);
+
     ReportModelType getType();
 }

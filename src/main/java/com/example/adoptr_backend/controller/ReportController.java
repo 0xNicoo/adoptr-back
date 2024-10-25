@@ -8,6 +8,7 @@ import com.example.adoptr_backend.service.dto.request.ReportDTOin;
 import com.example.adoptr_backend.service.dto.response.PostReportDTO;
 import com.example.adoptr_backend.service.dto.response.ProfileReportDTO;
 import com.example.adoptr_backend.service.dto.response.PublicationReportDTO;
+import com.example.adoptr_backend.service.dto.response.ReportDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -39,6 +40,13 @@ public class ReportController {
     @Operation(summary = "Obtiene todas las publicaciones reportadas", security = { @SecurityRequirement(name = "bearer-jwt") })
     public ResponseEntity<List<PublicationReportDTO>> getAll(){
         List<PublicationReportDTO> response = reportService.getReports(ReportModelType.PUBLICATION);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/publication/{id}")
+    @Operation(summary = "Obtiene todos los reportes de una publicacion", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<List<ReportDTO>> getReportsByModelId(@PathVariable Long id){
+        List<ReportDTO> response = reportService.getReportsByModelId(ReportModelType.PUBLICATION, id);
         return ResponseEntity.ok(response);
     }
 

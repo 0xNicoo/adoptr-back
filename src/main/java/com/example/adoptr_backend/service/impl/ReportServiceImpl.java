@@ -51,4 +51,9 @@ public class ReportServiceImpl implements ReportService {
     public List<ReportReason> getReportReasons() {
         return reportReasonRepository.findAll();
     }
+
+    @Override
+    public List<ReportDTO> getReportsByModelId(ReportModelType reportModelType, Long modelId) {
+        return reportStrategyMap.get(reportModelType).getReportByModelId(modelId);
+    }
 }

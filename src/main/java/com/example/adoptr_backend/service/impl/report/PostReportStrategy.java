@@ -60,6 +60,11 @@ public class PostReportStrategy implements ReportStrategy{
     }
 
     @Override
+    public List<ReportDTO> getReportByModelId(Long modelId) {
+        return null;
+    }
+
+    @Override
     public ReportModelType getType() {
         return ReportModelType.POST;
     }

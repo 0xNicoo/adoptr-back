@@ -14,4 +14,6 @@ public interface ReportService {
     void report(ReportModelType reportModelType, ReportDTOin dto);
 
     List<ReportReason> getReportReasons();
+
+    List<ReportDTO> getReportsByModelId(ReportModelType reportModelType, Long modelId);
 }
