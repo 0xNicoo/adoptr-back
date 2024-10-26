@@ -2,10 +2,7 @@ package com.example.adoptr_backend.service.impl.report;
 
 import com.example.adoptr_backend.exception.custom.BadRequestException;
 import com.example.adoptr_backend.exception.error.Error;
-import com.example.adoptr_backend.model.Profile;
-import com.example.adoptr_backend.model.Report;
-import com.example.adoptr_backend.model.ReportModelType;
-import com.example.adoptr_backend.model.ReportReason;
+import com.example.adoptr_backend.model.*;
 import com.example.adoptr_backend.repository.ProfileRepository;
 import com.example.adoptr_backend.repository.ReportReasonRepository;
 import com.example.adoptr_backend.repository.ReportRepository;
@@ -64,7 +61,9 @@ public class ProfileReportStrategy implements ReportStrategy{
 
     @Override
     public List<ReportDTO> getReportByModelId(Long modelId) {
-        return null;
+        Profile profile = getProfile(modelId);
+        List<Report> reports = reportRepository.findAllByModelTypeAndModelId(ReportModelType.PROFILE, profile.getId());
+        return ReportMapper.MAPPER.toDto(reports);
     }
 
     @Override

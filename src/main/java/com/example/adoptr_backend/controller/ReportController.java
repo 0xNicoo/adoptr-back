@@ -62,6 +62,13 @@ public class ReportController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/profile/{id}")
+    @Operation(summary = "Obtiene todos los reportes de un perfil", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<List<ReportDTO>> getReportsByModelIdProfile(@PathVariable Long id){
+        List<ReportDTO> response = reportService.getReportsByModelId(ReportModelType.PROFILE, id);
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/profile")
     @Operation(summary = "Reporta un perfil", security = { @SecurityRequirement(name = "bearer-jwt") })
     public ResponseEntity<String> reportProfile(@RequestBody ReportDTOin dto){
