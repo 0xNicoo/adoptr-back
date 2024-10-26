@@ -1,5 +1,6 @@
 package com.example.adoptr_backend.service.mapper;
 
+import com.example.adoptr_backend.service.dto.response.LikesDTO;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
