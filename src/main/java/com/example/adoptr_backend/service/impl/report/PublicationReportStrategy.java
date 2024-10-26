@@ -122,6 +122,7 @@ public class PublicationReportStrategy implements ReportStrategy{
         PublicationDTO publicationDTO = new PublicationDTO();
         publicationDTO.setId(pub.getId());
         publicationDTO.setTitle(pub.getTitle());
+        publicationDTO.setType(pub.getType());
         UserDTO userDTO = UserMapper.MAPPER.toDto(pub.getUser());
         publicationDTO.setUser(userDTO);
         return publicationDTO;
