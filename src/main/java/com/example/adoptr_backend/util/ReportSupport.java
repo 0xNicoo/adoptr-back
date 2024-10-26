@@ -32,8 +32,8 @@ public class ReportSupport {
         };
     }
 
-    public static String buildProfileURL(Profile profile) {
-        return profileUrl + profile.getId();
+    public static String buildProfileURL(Long userId) {
+        return profileUrl + userId;
     }
 
     public static String buildPostURL(Post post) {
