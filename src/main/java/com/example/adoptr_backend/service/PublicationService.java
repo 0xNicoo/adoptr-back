@@ -8,4 +8,6 @@ public interface PublicationService {
 
     Publication get(Long id);
 
+    Long getPublicationCount();
+
 }

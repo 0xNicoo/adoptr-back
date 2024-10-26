@@ -72,4 +72,11 @@ public class ProfileController {
         ProfileDTO response = profileService.update(id, dto);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/count")
+    @Operation(summary = "Obtiene la cantidad de perfiles", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<Long> getProfileCount() {
+        Long profileCount = profileService.getProfileCount();
+        return ResponseEntity.ok(profileCount);
+    }
 }

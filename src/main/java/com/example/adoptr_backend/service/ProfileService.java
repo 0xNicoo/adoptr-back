@@ -17,4 +17,5 @@ public interface ProfileService {
 
     ProfileDTO getByUserId(Long userId);
 
+    Long getProfileCount();
 }

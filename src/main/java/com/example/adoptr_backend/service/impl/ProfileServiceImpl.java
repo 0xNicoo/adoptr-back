@@ -75,6 +75,10 @@ public class ProfileServiceImpl implements ProfileService {
         return dto;
     }
 
+    @Override
+    public Long getProfileCount() {
+        return profileRepository.count();
+    }
 
     @Override
     public ProfileDTO update(Long id, ProfileDTOin dto) {

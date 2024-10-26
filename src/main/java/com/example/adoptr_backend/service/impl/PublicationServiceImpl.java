@@ -26,4 +26,9 @@ public class PublicationServiceImpl implements PublicationService {
 
         return publicationOptional.get();
     }
+
+    @Override
+    public Long getPublicationCount() {
+        return publicationRepository.count();
+    }
 }
