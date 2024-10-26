@@ -29,8 +29,8 @@ public class ReportController {
 
     @GetMapping("/reasons")
     @Operation(summary = "Obtiene razones de reporte", security = { @SecurityRequirement(name = "bearer-jwt") })
-    public ResponseEntity<List<ReportReason>> getReportReasons(){
-        List<ReportReason> response = reportService.getReportReasons();
+    public ResponseEntity<List<ReportReason>> getReportReasons(@RequestParam ReportModelType reportModelType){
+        List<ReportReason> response = reportService.getReportReasons(reportModelType);
         return ResponseEntity.ok(response);
     }
 

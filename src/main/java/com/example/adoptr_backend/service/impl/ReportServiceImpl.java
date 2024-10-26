@@ -58,8 +58,8 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public List<ReportReason> getReportReasons() {
-        return reportReasonRepository.findAll();
+    public List<ReportReason> getReportReasons(ReportModelType reportModelType) {
+        return reportReasonRepository.findAllByModelType(reportModelType);
     }
 
     @Override
