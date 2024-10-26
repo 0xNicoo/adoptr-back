@@ -1,10 +1,7 @@
 package com.example.adoptr_backend.controller;
 
-import com.example.adoptr_backend.model.Post;
 import com.example.adoptr_backend.service.PostService;
-import com.example.adoptr_backend.service.dto.request.AdoptionFilterDTO;
 import com.example.adoptr_backend.service.dto.request.PostDTOin;
-import com.example.adoptr_backend.service.dto.response.AdoptionDTO;
 import com.example.adoptr_backend.service.dto.response.PostDTO;
 import com.example.adoptr_backend.util.PaginationUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -79,4 +76,10 @@ public class PostController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @GetMapping("/count")
+    @Operation(summary = "Obtiene la cantidad de posts", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<Long> getPostsCount() {
+        Long postCount = postService.getPostsCount();
+        return ResponseEntity.ok(postCount);
+    }
 }

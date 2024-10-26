@@ -100,5 +100,19 @@ public class AdoptionController {
         adoptionService.changeStatus(dtOin);
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
+    @GetMapping("/count/adopted")
+    @Operation(summary = "Obtiene la cantidad de publicaciones con estado ADOPTADO", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<Long> getAdoptedCount() {
+        Long adoptedCount = adoptionService.getAdopted();
+        return ResponseEntity.ok(adoptedCount);
+    }
+
+    @GetMapping("/count/foradoption")
+    @Operation(summary = "Obtiene la cantidad de publicaciones con estado EN ADOPCIÓN", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<Long> getForAdoptionCount() {
+        Long forAdoptionCount = adoptionService.getForAdoption();
+        return ResponseEntity.ok(forAdoptionCount);
+    }
 }
 

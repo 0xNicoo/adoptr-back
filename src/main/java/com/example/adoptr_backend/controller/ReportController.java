@@ -5,10 +5,7 @@ import com.example.adoptr_backend.model.ReportModelType;
 import com.example.adoptr_backend.model.ReportReason;
 import com.example.adoptr_backend.service.ReportService;
 import com.example.adoptr_backend.service.dto.request.ReportDTOin;
-import com.example.adoptr_backend.service.dto.response.PostReportDTO;
-import com.example.adoptr_backend.service.dto.response.ProfileReportDTO;
-import com.example.adoptr_backend.service.dto.response.PublicationReportDTO;
-import com.example.adoptr_backend.service.dto.response.ReportDTO;
+import com.example.adoptr_backend.service.dto.response.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/report")
@@ -83,6 +81,13 @@ public class ReportController {
     public ResponseEntity<String> reportPost(@RequestBody ReportDTOin dto){
         reportService.report(ReportModelType.POST, dto);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @GetMapping("/stats")
+    @Operation(summary = "Obtiene estadísticas de reportes", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<ReportStatsDTO> getReportStats() {
+        ReportStatsDTO stats = reportService.getReportStats();
+        return ResponseEntity.ok(stats);
     }
 
 }

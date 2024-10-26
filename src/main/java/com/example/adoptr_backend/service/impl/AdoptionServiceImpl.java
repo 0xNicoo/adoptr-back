@@ -152,4 +152,14 @@ public class AdoptionServiceImpl implements AdoptionService {
         locality.setId(dto.getLocality_id());
         return locality;
     }
+
+    @Override
+    public Long getAdopted() {
+        return adoptionRepository.countByAdoptionStatusType(AdoptionStatusType.ADOPTED);
+    }
+
+    @Override
+    public Long getForAdoption() {
+        return adoptionRepository.countByAdoptionStatusType(AdoptionStatusType.FOR_ADOPTION);
+    }
 }

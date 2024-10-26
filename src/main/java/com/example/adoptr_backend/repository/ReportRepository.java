@@ -19,4 +19,7 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
     Optional<Report> findByModelTypeAndModelIdAndReporterUserId(@Param("modelType") ReportModelType modelType,
                                                                 @Param("modelId") Long modelId,
                                                                 @Param("reporterUserId") Long reporterUserId);
+
+    long countByModelType(ReportModelType reportModelType);
+
 }

@@ -66,4 +66,5 @@ public class LikesController {
         Long likesCount = likesService.getPostLikesCount(postId);
         return ResponseEntity.ok(likesCount);
     }
+
 }

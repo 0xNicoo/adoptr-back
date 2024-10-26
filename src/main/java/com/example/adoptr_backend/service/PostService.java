@@ -19,4 +19,6 @@ public interface PostService {
     void delete(Long id);
 
     Page<PostDTO> getAllCommunity(Pageable pageable);
+
+    Long getPostsCount();
 }
