@@ -60,8 +60,10 @@ public class PostReportStrategy implements ReportStrategy{
     }
 
     @Override
-    public List<ReportDTO> getReportByModelId(Long modelId) {
-        return null;
+    public List<ReportDTO> getReportByModelId(Long modelId){
+        Post post = getPost(modelId);
+        List<Report> reports = reportRepository.findAllByModelTypeAndModelId(ReportModelType.POST, post.getId());
+        return ReportMapper.MAPPER.toDto(reports);
     }
 
     @Override

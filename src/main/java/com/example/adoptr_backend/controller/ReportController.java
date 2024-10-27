@@ -90,6 +90,13 @@ public class ReportController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @GetMapping("/post/{id}")
+    @Operation(summary = "Obtiene todos los reportes de un post", security = { @SecurityRequirement(name = "bearer-jwt") })
+    public ResponseEntity<List<ReportDTO>> getReportsByModelIdPost(@PathVariable Long id){
+        List<ReportDTO> response = reportService.getReportsByModelId(ReportModelType.POST, id);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/stats")
     @Operation(summary = "Obtiene estadísticas de reportes", security = { @SecurityRequirement(name = "bearer-jwt") })
     public ResponseEntity<ReportStatsDTO> getReportStats() {
