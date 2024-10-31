@@ -27,6 +27,8 @@ public enum Error implements ErrorCode {
     POST_NOT_FOUND("0023", "No se encontro el post"),
     USER_ALREADY_REPORTED_POST("0024", "El usuario ya reporto el post"),
     USER_CAN_NOT_REPORT_POST("0025", "El usuario no puede reportar este post"),
+
+    CONTACT_USER_NOT_FOUND("0026", "No se encontró al usuario contactante"),
     ;
 
     private final String code;

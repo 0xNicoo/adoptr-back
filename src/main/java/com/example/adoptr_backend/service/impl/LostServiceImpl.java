@@ -3,10 +3,9 @@ package com.example.adoptr_backend.service.impl;
 import com.example.adoptr_backend.exception.custom.BadRequestException;
 import com.example.adoptr_backend.exception.error.Error;
 import com.example.adoptr_backend.model.*;
+import com.example.adoptr_backend.repository.*;
 import com.example.adoptr_backend.repository.LocalityRepository;
-import com.example.adoptr_backend.repository.LocalityRepository;
-import com.example.adoptr_backend.repository.LostRepository;
-import com.example.adoptr_backend.repository.UserRepository;
+import com.example.adoptr_backend.repository.FoundRepository;
 import com.example.adoptr_backend.repository.specification.LostSpec;
 import com.example.adoptr_backend.service.ImageService;
 import com.example.adoptr_backend.service.LostService;
@@ -25,6 +24,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -41,16 +41,24 @@ public class LostServiceImpl implements LostService {
 
     private final LocalityRepository localityRepository;
 
+    private final FoundRepository foundRepository;
+
+    private final ChatRepository chatRepository;
+
 
     public LostServiceImpl(LostRepository lostRepository,
-                               UserRepository userRepository,
-                               ImageService imageService,
-                               LocalityRepository localityRepository)
+                           UserRepository userRepository,
+                           ImageService imageService,
+                           LocalityRepository localityRepository,
+                           ChatRepository chatRepository,
+                           FoundRepository foundRepository)
     {
         this.lostRepository = lostRepository;
         this.userRepository = userRepository;
         this.imageService = imageService;
         this.localityRepository = localityRepository;
+        this.foundRepository = foundRepository;
+        this.chatRepository = chatRepository;
     }
 
     @Override
@@ -138,9 +146,36 @@ public class LostServiceImpl implements LostService {
     public void changeStatus(LostStatusDTOin dtoIn) {
         Long userId = AuthSupport.getUserId();
         Lost lost = getLost(dtoIn.getLostId());
+
         if(!userId.equals(lost.getUser().getId())){
             throw new BadRequestException(Error.USER_NOT_ADOPTION_OWNER);
         }
+
+        if(dtoIn.getNextStatus() == LostStatusType.LOST && lost.getLostStatusType() == LostStatusType.FOUND) {
+            foundRepository.deleteByLostId(lost.getId());
+        }
+
+        else if(dtoIn.getNextStatus() == LostStatusType.FOUND && dtoIn.getContactUserId() != null) {
+            User contactUser = userRepository.findById(dtoIn.getContactUserId())
+                    .orElseThrow(() -> new BadRequestException(Error.CONTACT_USER_NOT_FOUND));
+
+            boolean chatExists = chatRepository.existsChatForPublicationBetweenUsers(
+                    lost.getId(),
+                    userId,
+                    dtoIn.getContactUserId()
+            );
+
+            if (!chatExists) {
+                throw new BadRequestException(Error.CHAT_NOT_FOUND);
+            }
+
+            Found found = new Found();
+            found.setDate(LocalDateTime.now());
+            found.setUser(contactUser);
+            found.setLost(lost);
+            foundRepository.save(found);
+        }
+
         lost.setLostStatusType(dtoIn.getNextStatus());
         lostRepository.save(lost);
     }

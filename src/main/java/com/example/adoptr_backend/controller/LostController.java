@@ -95,7 +95,7 @@ public class LostController {
     }
 
     @PostMapping("/status")
-    @Operation(summary = "Cambia estado de una adopcion", security = { @SecurityRequirement(name = "bearer-jwt") })
+    @Operation(summary = "Cambia estado de una publicación de perdida", security = { @SecurityRequirement(name = "bearer-jwt") })
     public ResponseEntity<String> changeStatus(@RequestBody LostStatusDTOin dtoIn){
         lostService.changeStatus(dtoIn);
         return new ResponseEntity<>(HttpStatus.OK);

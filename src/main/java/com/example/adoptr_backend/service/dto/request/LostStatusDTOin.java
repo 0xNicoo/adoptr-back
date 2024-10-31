@@ -7,4 +7,5 @@ import lombok.Data;
 public class LostStatusDTOin {
     private LostStatusType nextStatus;
     private Long lostId;
+    private Long contactUserId;
 }
