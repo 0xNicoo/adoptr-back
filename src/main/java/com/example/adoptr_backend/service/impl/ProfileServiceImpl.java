@@ -76,11 +76,6 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    public Long getProfileCount() {
-        return profileRepository.count();
-    }
-
-    @Override
     public ProfileDTO update(Long id, ProfileDTOin dto) {
         Long userId = AuthSupport.getUserId();
         Profile profile = getProfile(id);

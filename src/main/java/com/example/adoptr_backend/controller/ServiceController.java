@@ -93,11 +93,4 @@ public class ServiceController {
         return new ResponseEntity<>(response.getContent(), headers, HttpStatus.OK);
     }
 
-    @GetMapping("/count")
-    @Operation(summary = "Obtiene la cantidad de publicaciones de servicios", security = { @SecurityRequirement(name = "bearer-jwt") })
-    public ResponseEntity<Long> getServiceCount() {
-        Long serviceCount = servicesService.getServiceCount();
-        return ResponseEntity.ok(serviceCount);
-    }
-
 }

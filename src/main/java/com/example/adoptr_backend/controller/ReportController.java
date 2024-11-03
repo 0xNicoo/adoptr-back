@@ -14,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/report")
@@ -96,12 +95,4 @@ public class ReportController {
         List<ReportDTO> response = reportService.getReportsByModelId(ReportModelType.POST, id);
         return ResponseEntity.ok(response);
     }
-
-    @GetMapping("/stats")
-    @Operation(summary = "Obtiene estadísticas de reportes", security = { @SecurityRequirement(name = "bearer-jwt") })
-    public ResponseEntity<ReportStatsDTO> getReportStats() {
-        ReportStatsDTO stats = reportService.getReportStats();
-        return ResponseEntity.ok(stats);
-    }
-
 }

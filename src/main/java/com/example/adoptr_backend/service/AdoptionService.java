@@ -20,9 +20,4 @@ public interface AdoptionService {
     void delete(Long id);
 
     void changeStatus(AdoptionStatusDTOin dtoIn);
-
-
-    Long getAdopted();
-
-    Long getForAdoption();
 }

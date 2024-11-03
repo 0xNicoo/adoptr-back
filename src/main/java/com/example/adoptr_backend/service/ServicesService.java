@@ -20,6 +20,4 @@ public interface ServicesService {
     ServiceDTO update(Long id, ServiceDTOin dto);
 
     Page<ServiceDTO> getByUserId(Long userId, Pageable pageable);
-
-    Long getServiceCount();
 }

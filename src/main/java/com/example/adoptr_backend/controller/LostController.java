@@ -100,11 +100,4 @@ public class LostController {
         lostService.changeStatus(dtoIn);
         return new ResponseEntity<>(HttpStatus.OK);
     }
-
-    @GetMapping("/count")
-    @Operation(summary = "Obtiene la cantidad de publicaciones de perdidas", security = { @SecurityRequirement(name = "bearer-jwt") })
-    public ResponseEntity<Long> getLostCount() {
-        Long lostCount = lostService.getLostCount();
-        return ResponseEntity.ok(lostCount);
-    }
 }

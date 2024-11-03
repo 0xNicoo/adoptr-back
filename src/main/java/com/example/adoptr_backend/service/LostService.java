@@ -21,6 +21,4 @@ public interface LostService {
     void delete(Long id);
 
     void changeStatus(LostStatusDTOin dtoIn);
-
-    Long getLostCount();
 }

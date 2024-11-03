@@ -76,10 +76,4 @@ public class PostController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @GetMapping("/count")
-    @Operation(summary = "Obtiene la cantidad de posts", security = { @SecurityRequirement(name = "bearer-jwt") })
-    public ResponseEntity<Long> getPostsCount() {
-        Long postCount = postService.getPostsCount();
-        return ResponseEntity.ok(postCount);
-    }
 }

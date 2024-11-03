@@ -5,10 +5,9 @@ import com.example.adoptr_backend.model.ReportReason;
 import com.example.adoptr_backend.service.dto.request.ReportDTOin;
 import com.example.adoptr_backend.service.dto.response.ReportDTO;
 import com.example.adoptr_backend.service.dto.response.ReportDetailDTO;
-import com.example.adoptr_backend.service.dto.response.ReportStatsDTO;
+import com.example.adoptr_backend.service.dto.response.ReportSummaryDTO;
 
 import java.util.List;
-import java.util.Map;
 
 public interface ReportService {
     <T extends ReportDetailDTO> List<T> getReports(ReportModelType reportModelType);
@@ -18,6 +17,4 @@ public interface ReportService {
     List<ReportReason> getReportReasons(ReportModelType reportModelType);
 
     List<ReportDTO> getReportsByModelId(ReportModelType reportModelType, Long modelId);
-
-    ReportStatsDTO getReportStats();
 }

@@ -207,9 +207,4 @@ public class LostServiceImpl implements LostService {
         lost.setDistance(format.format(distance) + " " + unit);
     }
 
-    @Override
-    public Long getLostCount() {
-        return lostRepository.count();
-    }
-
 }

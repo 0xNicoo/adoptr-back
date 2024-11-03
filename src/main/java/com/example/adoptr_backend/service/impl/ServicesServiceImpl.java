@@ -180,9 +180,4 @@ public class ServicesServiceImpl implements ServicesService {
         serviceType.setId(dto.getServiceType_id());
         return serviceType;
     }
-
-    @Override
-    public Long getServiceCount() {
-        return serviceRepository.count();
-    }
 }

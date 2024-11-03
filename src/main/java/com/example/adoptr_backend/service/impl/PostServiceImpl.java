@@ -133,11 +133,6 @@ public class PostServiceImpl implements PostService {
         postRepository.delete(post);
     }
 
-    @Override
-    public Long getPostsCount() {
-        return postRepository.count();
-    }
-
     private Post getPost(Long id) {
         Optional<Post> postOptional = postRepository.findById(id);
         return postOptional.get();
