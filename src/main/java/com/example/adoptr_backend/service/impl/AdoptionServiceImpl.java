@@ -3,9 +3,7 @@ package com.example.adoptr_backend.service.impl;
 import com.example.adoptr_backend.exception.custom.BadRequestException;
 import com.example.adoptr_backend.exception.error.Error;
 import com.example.adoptr_backend.model.*;
-import com.example.adoptr_backend.repository.AdoptionRepository;
-import com.example.adoptr_backend.repository.LocalityRepository;
-import com.example.adoptr_backend.repository.UserRepository;
+import com.example.adoptr_backend.repository.*;
 import com.example.adoptr_backend.repository.specification.AdoptionSpec;
 import com.example.adoptr_backend.service.AdoptionService;
 import com.example.adoptr_backend.service.ImageService;
@@ -20,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -34,16 +33,24 @@ public class AdoptionServiceImpl implements AdoptionService {
 
     private final LocalityRepository localityRepository;
 
+    private final AdoptedRepository adoptedRepository;
+
+    private final ChatRepository chatRepository;
+
 
     public AdoptionServiceImpl(AdoptionRepository adoptionRepository,
                                UserRepository userRepository,
                                ImageService imageService,
-                               LocalityRepository localityRepository)
+                               LocalityRepository localityRepository,
+                               AdoptedRepository adoptedRepository,
+                               ChatRepository chatRepository)
                                 {
         this.adoptionRepository = adoptionRepository;
         this.userRepository = userRepository;
         this.imageService = imageService;
         this.localityRepository = localityRepository;
+        this.adoptedRepository = adoptedRepository;
+        this.chatRepository = chatRepository;
     }
 
     @Override
@@ -128,8 +135,34 @@ public class AdoptionServiceImpl implements AdoptionService {
     public void changeStatus(AdoptionStatusDTOin dtoIn) {
         Long userId = AuthSupport.getUserId();
         Adoption adoption = getAdoption(dtoIn.getAdoptionId());
+
         if(!userId.equals(adoption.getUser().getId())){
             throw new BadRequestException(Error.USER_NOT_ADOPTION_OWNER);
+        }
+
+        if(dtoIn.getNextStatus() == AdoptionStatusType.FOR_ADOPTION && adoption.getAdoptionStatusType() == AdoptionStatusType.ADOPTED) {
+            adoptedRepository.deleteByAdoptionId(adoption.getId());
+        }
+
+        else if(dtoIn.getNextStatus() == AdoptionStatusType.FOR_ADOPTION && dtoIn.getContactUserId() != null) {
+            User contactUser = userRepository.findById(dtoIn.getContactUserId())
+                    .orElseThrow(() -> new BadRequestException(Error.CONTACT_USER_NOT_FOUND));
+
+            boolean chatExists = chatRepository.existsChatForPublicationBetweenUsers(
+                    adoption.getId(),
+                    userId,
+                    dtoIn.getContactUserId()
+            );
+
+            if (!chatExists) {
+                throw new BadRequestException(Error.CHAT_NOT_FOUND);
+            }
+
+            Adopted adopted = new Adopted();
+            adopted.setDate(LocalDateTime.now());
+            adopted.setUser(contactUser);
+            adopted.setAdoption(adoption);
+            adoptedRepository.save(adopted);
         }
         adoption.setAdoptionStatusType(dtoIn.getNextStatus());
         adoptionRepository.save(adoption);

@@ -7,4 +7,6 @@ import lombok.Data;
 public class AdoptionStatusDTOin {
     private AdoptionStatusType nextStatus;
     private Long adoptionId;
+    private Long contactUserId;
+
 }
