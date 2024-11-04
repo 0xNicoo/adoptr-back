@@ -42,7 +42,8 @@ dependencies {
 	implementation 'com.auth0:java-jwt:4.4.0'
 	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
 	implementation 'org.mapstruct:mapstruct-processor:1.5.5.Final'
-
+	implementation 'org.springframework.boot:spring-boot-starter-mail:3.3.5'
+	implementation 'org.thymeleaf:thymeleaf:3.1.2.RELEASE'
 }
 
 tasks.named('test') {
