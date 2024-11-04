@@ -13,4 +13,5 @@ public class SummaryDTO {
     private Long adoptedPetsCount;
     private Long servicePublicationsCount;
     private Long lostPublicationsCount;
+    private Long donationCount;
 }

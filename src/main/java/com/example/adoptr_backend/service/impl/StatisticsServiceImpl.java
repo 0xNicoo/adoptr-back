@@ -22,6 +22,7 @@ public class StatisticsServiceImpl implements StatisticsService {
     private final ServiceRepository serviceRepository;
     private final LostRepository lostRepository;
     private final ReportRepository reportRepository;
+    private final DonationRepository donationRepository;
 
 
     @Transactional
@@ -34,6 +35,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         Long adoptedPetsCount = adoptionRepository.countByAdoptionStatusType(AdoptionStatusType.FOR_ADOPTION);
         Long servicePublicationsCount = serviceRepository.count();
         Long lostPublicationsCount = lostRepository.count();
+        Long donationCount = donationRepository.count();
         return new SummaryDTO(
                 publicationsCount,
                 profilesCount,
@@ -41,7 +43,8 @@ public class StatisticsServiceImpl implements StatisticsService {
                 adoptionPublicationsCount,
                 adoptedPetsCount,
                 servicePublicationsCount,
-                lostPublicationsCount
+                lostPublicationsCount,
+                donationCount
         );
     }
 
