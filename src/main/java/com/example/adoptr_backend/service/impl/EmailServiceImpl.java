@@ -1,33 +1,42 @@
 package com.example.adoptr_backend.service.impl;
 
 import com.example.adoptr_backend.service.EmailService;
-import com.example.adoptr_backend.service.dto.request.EmailDTOin;
 import jakarta.mail.internet.MimeMessage;
-import lombok.AllArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.io.File;
+
 @Service
-@AllArgsConstructor
 public class EmailServiceImpl implements EmailService {
+
     private final JavaMailSender javaMailSender;
     private final TemplateEngine templateEngine;
 
-    @Override
-    public void sendEmail(EmailDTOin dto){
-        MimeMessage message = javaMailSender.createMimeMessage();
-        try {
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setTo(dto.getTo());
-            helper.setSubject(dto.getSubject());
+    public EmailServiceImpl(JavaMailSender javaMailSender, TemplateEngine templateEngine) {
+        this.javaMailSender = javaMailSender;
+        this.templateEngine = templateEngine;
+    }
 
+    @Override
+    public void welcomeEmail(String to, String subject, String userName){
+        try {
             Context context = new Context();
-            context.setVariable("message", dto.getMessage());
-            String contentHTML = templateEngine.process("email", context);
+            context.setVariable("name", userName);
+            String contentHTML = templateEngine.process("welcomeEmail", context);
+
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(to);
+            helper.setSubject(subject);
             helper.setText(contentHTML, true);
+
+            File imageFile = new File("src/main/resources/static/images/email-image.png");
+            helper.addInline("welcome-image", imageFile);
+
             javaMailSender.send(message);
         }catch (Exception e){
             throw new RuntimeException("Error al mandar mail: " + e.getMessage(), e);
