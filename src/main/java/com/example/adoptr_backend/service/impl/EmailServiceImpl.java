@@ -25,6 +25,8 @@ public class EmailServiceImpl implements EmailService {
     public void welcomeEmail(String to, String subject, String userName){
         try {
             Context context = new Context();
+
+            //Variables del mail
             context.setVariable("name", userName);
             String contentHTML = templateEngine.process("welcomeEmail", context);
 
@@ -34,6 +36,7 @@ public class EmailServiceImpl implements EmailService {
             helper.setSubject(subject);
             helper.setText(contentHTML, true);
 
+            //Imagenes
             File imageFile = new File("src/main/resources/static/images/email-image.png");
             helper.addInline("welcome-image", imageFile);
 
