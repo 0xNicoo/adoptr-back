@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Publicaste una Mascota Perdida!</title>
+    <style>
+        /* Estilos generales */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            padding: 20px;
+            background-color: #FF823B;
+            color: #ffffff;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 20px;
+            text-align: center;
+        }
+        .content p {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #555;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            color: #ffffff;
+            background-color: #4CAF50;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            color: #888;
+            border-top: 1px solid #ddd;
+            margin-top: 20px;
+        }
+        .image-container {
+            text-align: center;
+        }
+        .image-container img {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Encabezado -->
+    <div class="header">
+        <h1>&iexcl;Esperamos que el peludito encuentre su hogar!</h1>
+    </div>
+
+    <!-- Contenido del mensaje -->
+    <div class="content">
+        <p> Apreciamos que utilices Adoptr para ayudar a reunir a mascotas y due&ntilde;os. Tu publicaci&oacute;n
+            <strong th:text="${title}">Title</strong> ya est&aacute; activa
+            en nuestra plataforma, sabemos lo importante que es contar con el apoyo de la
+            comunidad en estos momentos, y estamos aca para ayudarte.</p>
+        <p>Puedes ver tu publicacion aqui: </p>
+        <a th:href="@{${publicationUrl}}">Ver publicaci&oacute;n</a>
+        <p>&iexcl;Gracias por ser parte de nuestra comunidad y recorda que el amor no se compra, se adota!</p>
+    </div>
+
+    <div class="image-container">
+        <img src="cid:lost-image" alt="Perdida">
+    </div>
+
+    <!-- Pie de página -->
+    <div class="footer">
+        <p>&copy; 2024 Adoptr. Todos los derechos reservados.</p>
+    </div>
+</div>
+</body>
+</html>
