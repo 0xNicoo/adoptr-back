@@ -77,10 +77,20 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public List<PublicationChatDTO> getAllGroupByPublication() {
+    public List<PublicationChatDTO> getAllGroupByPublication(ChatFilterType chatFilterType) {
         Long userId = AuthSupport.getUserId();
         List<Chat> chats = chatRepository.findByAdopterUserIdOrPublicationUserId(userId, userId);
-        List<Publication> publications = new ArrayList<>(chats.stream()
+
+        List<Chat> filteredChats = chats;
+        if (chatFilterType != null && chatFilterType != ChatFilterType.ALL) {
+            filteredChats = chats.stream()
+                    .filter(chat -> {
+                        boolean isOwner = chat.getPublicationUserId().equals(userId);
+                        return (chatFilterType == ChatFilterType.MINE) == isOwner;
+                    })
+                    .toList();
+        }
+        List<Publication> publications = new ArrayList<>(filteredChats.stream()
                 .map(Chat::getPublication)
                 .distinct()
                 .toList());
@@ -128,7 +138,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Transactional
-    private Chat createChat(Publication publication, Long adopterUserId) {
+    public Chat createChat(Publication publication, Long adopterUserId) {
         Chat chat = new Chat();
         chat.setPublication(publication);
         chat.setPublicationUserId(publication.getUser().getId());

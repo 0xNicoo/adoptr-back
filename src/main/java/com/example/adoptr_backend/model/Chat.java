@@ -28,6 +28,10 @@ public class Chat {
     @Column
     private Long publicationUserId;
 
+    @Enumerated(EnumType.STRING)
+    private ChatFilterType chatFilterType;
+
+
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Message> messages;
 

@@ -1,5 +1,6 @@
 package com.example.adoptr_backend.controller;
 
+import com.example.adoptr_backend.model.ChatFilterType;
 import com.example.adoptr_backend.service.ChatService;
 import com.example.adoptr_backend.service.dto.response.ChatDTO;
 import com.example.adoptr_backend.service.dto.response.PublicationChatDTO;
@@ -9,10 +10,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -47,8 +45,10 @@ public class ChatController {
 
     @GetMapping("/publication/all")
     @Operation(summary = "Obtiene los chat agrupados por publicacion", security = { @SecurityRequirement(name = "bearer-jwt") })
-    public ResponseEntity<List<PublicationChatDTO>> getAllGroupByPublication(){
-        List<PublicationChatDTO> response = chatService.getAllGroupByPublication();
+    public ResponseEntity<List<PublicationChatDTO>> getAllGroupByPublication(
+            @RequestParam(required = false) ChatFilterType chatFilterType
+    ) {
+        List<PublicationChatDTO> response = chatService.getAllGroupByPublication(chatFilterType);
         return ResponseEntity.ok(response);
     }
 
