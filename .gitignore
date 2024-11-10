@@ -37,4 +37,5 @@ out/
 .vscode/
 
 .env
-email.properties
+src/main/resources/email.properties
+src/main/resources/fcm/fcm-adoptr-firebase.json

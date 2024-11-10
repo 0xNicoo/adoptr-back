@@ -29,6 +29,7 @@ public enum Error implements ErrorCode {
     USER_CAN_NOT_REPORT_POST("0025", "El usuario no puede reportar este post"),
 
     CONTACT_USER_NOT_FOUND("0026", "No se encontró al usuario contactante"),
+    USER_NOT_HAVE_FIREBASE_TOKEN("0027", "El usuario no tiene token de firebase")
     ;
 
     private final String code;
