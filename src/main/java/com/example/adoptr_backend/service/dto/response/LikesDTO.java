@@ -7,6 +7,6 @@ import java.time.LocalDateTime;
 public class LikesDTO {
     private Long id;
     private Long userId;
-    private Long postId;
+    private PostDTO post;
     private LocalDateTime date;
 }

@@ -3,19 +3,24 @@ package com.example.adoptr_backend.service.impl;
 import com.example.adoptr_backend.exception.custom.BadRequestException;
 import com.example.adoptr_backend.exception.error.Error;
 import com.example.adoptr_backend.model.FirebaseToken;
+import com.example.adoptr_backend.model.Notification;
 import com.example.adoptr_backend.model.Post;
 import com.example.adoptr_backend.repository.FirebaseTokenRepository;
+import com.example.adoptr_backend.repository.NotificationRepository;
 import com.example.adoptr_backend.repository.PostRepository;
 import com.example.adoptr_backend.service.NotificationService;
 import com.example.adoptr_backend.service.dto.request.TokenDTO;
 import com.example.adoptr_backend.service.dto.response.FirebaseTokenDTO;
+import com.example.adoptr_backend.service.dto.response.NotificationDTO;
 import com.example.adoptr_backend.service.mapper.FirebaseTokenMapper;
+import com.example.adoptr_backend.service.mapper.NotificationMapper;
 import com.example.adoptr_backend.util.AuthSupport;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -25,10 +30,19 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final PostRepository postRepository;
 
+    private final NotificationRepository notificationRepository;
+
     public NotificationServiceImpl(FirebaseTokenRepository firebaseTokenRepository,
-                                   PostRepository postRepository) {
+                                   PostRepository postRepository,
+                                   NotificationRepository notificationRepository) {
         this.firebaseTokenRepository = firebaseTokenRepository;
         this.postRepository = postRepository;
+        this.notificationRepository = notificationRepository;
+    }
+
+    @Override
+    public void save(Notification notification) {
+        notificationRepository.save(notification);
     }
 
     @Override
@@ -71,6 +85,20 @@ public class NotificationServiceImpl implements NotificationService {
         }
         FirebaseToken firebaseToken = saveFirebaseToken(dto.getToken(), userId);
         return FirebaseTokenMapper.MAPPER.toDto(firebaseToken);
+    }
+
+    @Override
+    public void deleteNotification() {
+        Long userId = AuthSupport.getUserId();
+        notificationRepository.deleteByUserId(userId);
+    }
+
+    //TODO: Paginar esto
+    @Override
+    public List<NotificationDTO> getAll() {
+        Long userId = AuthSupport.getUserId();
+        List<Notification> notifications = notificationRepository.getAllByUserId(userId);
+        return NotificationMapper.MAPPER.toDto(notifications);
     }
 
     private FirebaseToken saveFirebaseToken(String token, Long userId) {

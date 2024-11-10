@@ -15,7 +15,6 @@ public interface LikesMapper extends EntityMapper<LikesDTO, Likes>{
     Likes toEntity(LikesDTOin dto);
     @Override
     @Mapping(source = "user.id", target = "userId")
-    @Mapping(source = "post.id", target = "postId")
     LikesDTO toDto(Likes entity);
 
     @Mapping(ignore = true, target = "id")
