@@ -1,27 +1,28 @@
 package com.example.adoptr_backend.util;
 
 import com.example.adoptr_backend.model.Post;
-import com.example.adoptr_backend.model.Profile;
 import com.example.adoptr_backend.model.Publication;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ReportSupport {
+public class UrlSupport {
     private static String adoptionUrl;
     private static String lostUrl;
     private static String serviceUrl;
     private  static String profileUrl;
     private  static String postUrl;
 
-    public ReportSupport(@Value("${publication.adoption.url}") String adoptionUrl,
-                         @Value("${publication.lost.url}") String lostUrl,
-                         @Value("${publication.service.url}") String serviceUrl,
-                         @Value("${profile.url}") String profileUrl) {
-        ReportSupport.adoptionUrl = adoptionUrl;
-        ReportSupport.lostUrl = lostUrl;
-        ReportSupport.serviceUrl = serviceUrl;
-        ReportSupport.profileUrl = profileUrl;
+    public UrlSupport(@Value("${publication.adoption.url}") String adoptionUrl,
+                      @Value("${publication.lost.url}") String lostUrl,
+                      @Value("${publication.service.url}") String serviceUrl,
+                      @Value("${profile.url}") String profileUrl,
+                      @Value("${post.url}") String postUrl) {
+        UrlSupport.adoptionUrl = adoptionUrl;
+        UrlSupport.lostUrl = lostUrl;
+        UrlSupport.serviceUrl = serviceUrl;
+        UrlSupport.profileUrl = profileUrl;
+        UrlSupport.postUrl= postUrl;
     }
 
     public static String buildPublicationURL(Publication publication){
@@ -36,7 +37,7 @@ public class ReportSupport {
         return profileUrl + userId;
     }
 
-    public static String buildPostURL(Post post) {
-        return postUrl + post.getId();
+    public static String buildPostURL(Long postId) {
+        return postUrl + postId;
     }
 }

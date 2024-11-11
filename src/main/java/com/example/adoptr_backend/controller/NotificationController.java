@@ -49,7 +49,7 @@ public class NotificationController {
     @Operation(summary = "test", security = { @SecurityRequirement(name = "bearer-jwt") })
     @PostMapping("/test")
     public ResponseEntity<String> test(@RequestBody Long postId) {
-        notificationService.sendLikeNotification(postId);
+        notificationService.sendLikeNotification(postId, "TEST");
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

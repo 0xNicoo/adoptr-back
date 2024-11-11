@@ -12,4 +12,6 @@ public class NotificationDTO {
     private LocalDateTime createdAt;
     private Long modelId;
     private NotificationModelType modelType;
+    private String url;
+    private String userName;
 }

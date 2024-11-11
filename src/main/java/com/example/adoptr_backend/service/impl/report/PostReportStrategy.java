@@ -11,7 +11,7 @@ import com.example.adoptr_backend.service.dto.response.*;
 import com.example.adoptr_backend.service.mapper.ReportMapper;
 import com.example.adoptr_backend.service.mapper.UserMapper;
 import com.example.adoptr_backend.util.AuthSupport;
-import com.example.adoptr_backend.util.ReportSupport;
+import com.example.adoptr_backend.util.UrlSupport;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -128,7 +128,7 @@ public class PostReportStrategy implements ReportStrategy{
 
         if(relatedReports != null){
             dto.setReportCount((long) relatedReports.size());
-            dto.setUrl(ReportSupport.buildPostURL(pos));
+            dto.setUrl(UrlSupport.buildPostURL(pos.getId()));
             List<ReportDTO> reportDTOs = relatedReports.stream().map(ReportMapper.MAPPER::toDto).toList();
             dto.setReports(reportDTOs);
             PostDTO postDTO = getPostDTO(pos);

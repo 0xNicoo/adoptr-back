@@ -26,6 +26,9 @@ public class Notification {
     @Column
     private NotificationModelType modelType;
 
+    @Column
+    private String userName;
+
     @PrePersist
     public void prePersist(){
         this.createdAt = LocalDateTime.now();

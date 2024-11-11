@@ -11,7 +11,7 @@ public interface NotificationService {
 
     void save(Notification notification);
 
-    void sendLikeNotification(Long postId);
+    void sendLikeNotification(Long postId, String userName);
 
     FirebaseTokenDTO addUserToken(TokenDTO dto);
 

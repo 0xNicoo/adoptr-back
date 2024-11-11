@@ -9,13 +9,12 @@ import com.example.adoptr_backend.model.ReportReason;
 import com.example.adoptr_backend.repository.PublicationRepository;
 import com.example.adoptr_backend.repository.ReportReasonRepository;
 import com.example.adoptr_backend.repository.ReportRepository;
-import com.example.adoptr_backend.service.PublicationService;
 import com.example.adoptr_backend.service.dto.request.ReportDTOin;
 import com.example.adoptr_backend.service.dto.response.*;
 import com.example.adoptr_backend.service.mapper.ReportMapper;
 import com.example.adoptr_backend.service.mapper.UserMapper;
 import com.example.adoptr_backend.util.AuthSupport;
-import com.example.adoptr_backend.util.ReportSupport;
+import com.example.adoptr_backend.util.UrlSupport;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -134,7 +133,7 @@ public class PublicationReportStrategy implements ReportStrategy{
 
         if(relatedReports != null){
             dto.setReportCount((long) relatedReports.size());
-            dto.setUrl(ReportSupport.buildPublicationURL(pub));
+            dto.setUrl(UrlSupport.buildPublicationURL(pub));
             List<ReportDTO> reportDTOs = relatedReports.stream().map(ReportMapper.MAPPER::toDto).toList();
             dto.setReports(reportDTOs);
             PublicationDTO publicationDTO = getPublicationDTO(pub);
