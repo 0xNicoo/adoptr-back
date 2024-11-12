@@ -30,8 +30,8 @@ public class StatisticsServiceImpl implements StatisticsService {
         Long publicationsCount = publicationRepository.count();
         Long profilesCount = profileRepository.count();
         Long postCount = postRepository.count();
-        Long adoptionPublicationsCount = adoptionRepository.countByAdoptionStatusType(AdoptionStatusType.ADOPTED);
-        Long adoptedPetsCount = adoptionRepository.countByAdoptionStatusType(AdoptionStatusType.FOR_ADOPTION);
+        Long adoptionPublicationsCount = adoptionRepository.countByAdoptionStatusType(AdoptionStatusType.FOR_ADOPTION);
+        Long adoptedPetsCount = adoptionRepository.countByAdoptionStatusType(AdoptionStatusType.ADOPTED);
         Long servicePublicationsCount = serviceRepository.count();
         Long lostPublicationsCount = lostRepository.count();
         return new SummaryDTO(
