@@ -76,6 +76,7 @@ public class NotificationServiceImpl implements NotificationService {
         try {
             FirebaseMessaging.getInstance().send(message);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             System.out.println("Se rompio la notificacion :/");
         }
     }

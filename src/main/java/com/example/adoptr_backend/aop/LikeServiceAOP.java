@@ -48,14 +48,14 @@ public class LikeServiceAOP {
 
     private Notification getNotification(LikesDTO likesDTO) {
         Notification notification = new Notification();
-        User user = getUser(likesDTO);
-        if(notification.getUser().getId().equals(user.getId())){
+        User userToNotify = getUser(likesDTO);
+        if(likesDTO.getUserId().equals(userToNotify.getId())){
             throw new BadRequestException(Error.NOTIFICATION_SAME_USER);
         }
         Profile profile = getProfile(likesDTO);
         notification.setModelId(likesDTO.getId());
         notification.setModelType(NotificationModelType.LIKE);
-        notification.setUser(user);
+        notification.setUser(userToNotify);
         notification.setUserName(profile.getFirstName() + " " + profile.getLastName());
         return notification;
     }
