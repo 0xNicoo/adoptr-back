@@ -53,7 +53,7 @@ public class LikeServiceAOP {
             throw new BadRequestException(Error.NOTIFICATION_SAME_USER);
         }
         Profile profile = getProfile(likesDTO);
-        notification.setModelId(likesDTO.getId());
+        notification.setModelId(likesDTO.getPost().getId());
         notification.setModelType(NotificationModelType.LIKE);
         notification.setUser(userToNotify);
         notification.setUserName(profile.getFirstName() + " " + profile.getLastName());
