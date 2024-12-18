@@ -53,7 +53,7 @@ public class AdoptionController {
     }
 
     @GetMapping
-    @Operation(summary = "Obtiene publicaciones de adopcion, con filtro", security = { @SecurityRequirement(name = "bearer-jwt") })
+    @Operation(summary = "Obtiene publicaciones de adopcion, con filtro")
     public ResponseEntity<List<AdoptionDTO>> getAll(@ParameterObject AdoptionFilterDTO filterDTO, @ParameterObject Pageable pageable){
         Page<AdoptionDTO> response = adoptionService.getAll(filterDTO, pageable);
         HttpHeaders headers = PaginationUtil.setTotalCountPageHttpHeaders(response);
@@ -61,7 +61,7 @@ public class AdoptionController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Obtiene una publicacionde adopcion por id", security = { @SecurityRequirement(name = "bearer-jwt") })
+    @Operation(summary = "Obtiene una publicacion de adopcion por id")
     public ResponseEntity<AdoptionDTO> getById(@PathVariable Long id) {
         AdoptionDTO response = adoptionService.getById(id);
         return ResponseEntity.ok(response);

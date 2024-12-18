@@ -49,7 +49,7 @@ public class ServiceController {
     }
 
     @GetMapping
-    @Operation(summary = "Obtiene publicaciones de servicio, con filtro", security = { @SecurityRequirement(name = "bearer-jwt") })
+    @Operation(summary = "Obtiene publicaciones de servicio, con filtro")
     public ResponseEntity<List<ServiceDTO>> getAll(@ParameterObject ServiceFilterDTO filterDTO, @ParameterObject Pageable pageable){
         Page<ServiceDTO> response = servicesService.getAll(filterDTO, pageable);
         HttpHeaders headers = PaginationUtil.setTotalCountPageHttpHeaders(response);
@@ -57,7 +57,7 @@ public class ServiceController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Obtiene una publicacion de servicio por id", security = { @SecurityRequirement(name = "bearer-jwt") })
+    @Operation(summary = "Obtiene una publicacion de servicio por id")
     public ResponseEntity<ServiceDTO> getById(@PathVariable Long id) {
         ServiceDTO response = servicesService.getById(id);
         return ResponseEntity.ok(response);
