@@ -48,7 +48,8 @@ public class SecurityConfig {
         httpSecurity.authorizeHttpRequests(
                 authorizeHttpRequests -> authorizeHttpRequests
                         .requestMatchers("/auth/login","/auth/register","/province/**","/province","/locality/**","/locality","/ws/**",
-                                        "/serviceType/**","/serviceType","/donation","/donation/**")
+                                        "/serviceType/**","/serviceType","/donation","/donation/**","/adoption","/adoption/**", "/service","/service/**",
+                                        "/profile/**","/lost","/lost/**")
                         .permitAll()
                         .requestMatchers(SWAGGER_WHITELIST)
                         .permitAll()

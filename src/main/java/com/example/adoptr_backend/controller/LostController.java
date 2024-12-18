@@ -54,7 +54,7 @@ public class LostController {
     }
 
     @GetMapping
-    @Operation(summary = "Obtiene publicaciones de perdidos, con filtro", security = { @SecurityRequirement(name = "bearer-jwt") })
+    @Operation(summary = "Obtiene publicaciones de perdidos, con filtro")
     public ResponseEntity<List<LostDTO>> getAll(@ParameterObject LostFilterDTO filterDTO, @ParameterObject Pageable pageable){
         Page<LostDTO> response = lostService.getAll(filterDTO, pageable);
         HttpHeaders headers = PaginationUtil.setTotalCountPageHttpHeaders(response);
@@ -62,7 +62,7 @@ public class LostController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Obtiene una publicacionde perdidos por id", security = { @SecurityRequirement(name = "bearer-jwt") })
+    @Operation(summary = "Obtiene una publicacionde perdidos por id")
     public ResponseEntity<LostDTO> getById(@PathVariable Long id) {
         LostDTO response = lostService.getById(id);
         return ResponseEntity.ok(response);

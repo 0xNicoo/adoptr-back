@@ -46,7 +46,7 @@ public class ProfileController {
     }
 
     @GetMapping("/user/{userid}")
-    @Operation(summary = "Obtiene un perfil por user id", security = { @SecurityRequirement(name = "bearer-jwt") })
+    @Operation(summary = "Obtiene un perfil por user id")
     public ResponseEntity<ProfileDTO> getByUserId(@PathVariable Long userid) {
         ProfileDTO response = profileService.getByUserId(userid);
         return ResponseEntity.ok(response);
