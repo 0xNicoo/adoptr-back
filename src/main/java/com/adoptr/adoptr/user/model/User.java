@@ -1,5 +1,6 @@
 package com.adoptr.adoptr.user.model;
 
+import com.adoptr.adoptr.profile.model.Profile;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -18,4 +19,12 @@ public class User {
     private String email;
     private String name;
     private LocalDateTime createdAt;
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private Profile profile;
+
+    @PrePersist
+    public void prePersist(){
+        this.createdAt = LocalDateTime.now();
+    }
+
 }

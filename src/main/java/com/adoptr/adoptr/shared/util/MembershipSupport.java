@@ -7,14 +7,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class MembershipSupport {
 
-    public String getUserId() {
+    public Long getUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
         if (auth == null) {
             throw new IllegalStateException("Authentication is null — no user logged in.");
         }
 
-        return (String) auth.getPrincipal();
+        return (Long) auth.getPrincipal();
     }
 
 }
