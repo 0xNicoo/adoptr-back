@@ -22,6 +22,14 @@ public class SecurityConfig {
         this.jwtFilter = jwtFilter;
     }
 
+    private static final String[] SWAGGER_WHITELIST = {
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/v3/api-docs/**",
+            "/v3/api-docs",
+            "/swagger-resources/**"
+    };
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity){
         httpSecurity
@@ -30,6 +38,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(request -> {
                     request.requestMatchers("/auth/**").permitAll();
+                    request.requestMatchers(SWAGGER_WHITELIST).permitAll();
                     request.anyRequest().authenticated();
                 })
                 .oauth2Login(AbstractHttpConfigurer::disable)
