@@ -1,0 +1,12 @@
+# Allow only build inputs. Excludes .git, .gradle, build, env files and docs.
+**
+!Dockerfile
+!.dockerignore
+!gradlew
+!build.gradle
+!settings.gradle
+!gradle/
+!gradle/**
+!src/
+!src/main/
+!src/main/**

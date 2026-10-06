@@ -1,0 +1,39 @@
+# Local development: backend and PostgreSQL in separate containers.
+services:
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: adoptr
+      POSTGRES_USER: ${SPRING_DATASOURCE_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:?Completar SPRING_DATASOURCE_PASSWORD en .env.local}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    # No host port: does not conflict with a locally installed PostgreSQL.
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      # Ignore the host URL from .env.local: db is the Compose service hostname.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/adoptr
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:?Completar SPRING_DATASOURCE_PASSWORD en .env.local}
+      SECURITY_JWT_SECRET: ${SECURITY_JWT_SECRET:?Completar SECURITY_JWT_SECRET en .env.local}
+      SECURITY_JWT_EXPIRATION: ${SECURITY_JWT_EXPIRATION:-3600000}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
+      PORT: "8081"
+    ports:
+      - "127.0.0.1:${PORT:-8081}:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
