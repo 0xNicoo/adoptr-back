@@ -26,8 +26,7 @@ esac
 
 env_file=".env.$environment"
 if [[ ! -f "$env_file" ]]; then
-  printf 'Falta %s. Copiá %s.example a %s y completá sus valores.\n' \
-    "$env_file" "$env_file" "$env_file" >&2
+  printf 'Falta %s. Crealo con las variables indicadas en README.md.\n' "$env_file" >&2
   exit 1
 fi
 
