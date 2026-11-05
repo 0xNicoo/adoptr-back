@@ -7,7 +7,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -41,6 +40,9 @@ public class SecurityConfig {
                     request.requestMatchers(SWAGGER_WHITELIST).permitAll();
                     request.anyRequest().authenticated();
                 })
+                .exceptionHandling(handling -> handling
+                        .authenticationEntryPoint(ApiErrorHandlers.authenticationEntryPoint())
+                        .accessDeniedHandler(ApiErrorHandlers.accessDeniedHandler()))
                 .oauth2Login(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable);

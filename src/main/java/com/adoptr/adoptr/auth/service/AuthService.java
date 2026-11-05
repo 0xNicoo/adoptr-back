@@ -37,7 +37,7 @@ public class AuthService {
         UserDTOin userDTOin = new UserDTOin(provider, authUser.providerUserId(), authUser.email(), authUser.name());
         User user = userOptional.orElseGet(() -> userService.createUser(userDTOin));
         UserDTO userDTO = UserMapper.MAPPER.toDto(user);
-        String jwt = jwtUtil.generateToken(user.getName(), user.getId());
+        String jwt = jwtUtil.generateToken(user.getId());
         return new AuthDTO(jwt, userDTO);
     }
 

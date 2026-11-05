@@ -4,7 +4,7 @@ import com.adoptr.adoptr.shared.exception.error.ErrorCode;
 
 public enum PublicationError implements ErrorCode {
 
-    NOT_FOUND("001", "PUBLICATION","No se encontró");
+    NOT_FOUND("PUBLICATION_NOT_FOUND", "PUBLICATION", "No se encontró la publicación");
 
     private final String code;
 

@@ -3,6 +3,7 @@ package com.adoptr.adoptr.auth.controller;
 import com.adoptr.adoptr.auth.dto.request.AuthRequestDTO;
 import com.adoptr.adoptr.auth.dto.response.AuthDTO;
 import com.adoptr.adoptr.auth.service.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,7 +21,7 @@ public class AuthController {
     }
 
     @PostMapping("/oauth")
-    public ResponseEntity<AuthDTO> authLogin(@RequestBody AuthRequestDTO request) {
+    public ResponseEntity<AuthDTO> authLogin(@Valid @RequestBody AuthRequestDTO request) {
         AuthDTO response = authService.authenticate(request.provider(), request.token());
         return ResponseEntity.ok(response);
     }

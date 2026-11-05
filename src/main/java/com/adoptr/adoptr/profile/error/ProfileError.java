@@ -4,7 +4,7 @@ import com.adoptr.adoptr.shared.exception.error.ErrorCode;
 
 public enum ProfileError implements ErrorCode {
 
-    NOT_FOUND("001", "PROFILE","No se encontro");
+    NOT_FOUND("PROFILE_NOT_FOUND", "PROFILE", "No se encontró el perfil");
 
     private final String code;
 
