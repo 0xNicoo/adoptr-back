@@ -6,7 +6,7 @@ import com.adoptr.adoptr.profile.mapper.ProfileMapper;
 import com.adoptr.adoptr.profile.model.Profile;
 import com.adoptr.adoptr.profile.repository.ProfileRepository;
 import com.adoptr.adoptr.profile.service.ProfileService;
-import com.adoptr.adoptr.shared.exception.custom.BadRequestException;
+import com.adoptr.adoptr.shared.exception.custom.NotFoundException;
 import com.adoptr.adoptr.shared.util.MembershipSupport;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +30,6 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     private Profile getById(Long id){
-        return profileRepository.findByUserId(id).orElseThrow(() -> new BadRequestException(ProfileError.NOT_FOUND));
+        return profileRepository.findByUserId(id).orElseThrow(() -> new NotFoundException(ProfileError.NOT_FOUND));
     }
 }

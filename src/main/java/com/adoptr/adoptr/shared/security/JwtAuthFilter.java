@@ -11,9 +11,16 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Optional;
 
+/**
+ * Si el request trae un Bearer válido, deja como principal el id interno
+ * del usuario ({@link Long}). Si no, sigue sin autenticar y decide Spring Security.
+ */
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
+
+    private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtUtil jwtUtil;
 
@@ -25,28 +32,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
+        if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
+            Optional<Long> userId = jwtUtil.extractUserId(authHeader.substring(BEARER_PREFIX.length()));
+            userId.ifPresent(id -> SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(id, null, Collections.emptyList())));
         }
-
-        String token = authHeader.substring(7);
-
-        if (!jwtUtil.isTokenValid(token)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        String userId = jwtUtil.extractUsername(token);
-
-        UsernamePasswordAuthenticationToken auth =
-                new UsernamePasswordAuthenticationToken(
-                        userId,              // principal
-                        null,                // credentials
-                        Collections.emptyList()
-                );
-
-        SecurityContextHolder.getContext().setAuthentication(auth);
 
         filterChain.doFilter(request, response);
     }

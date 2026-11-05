@@ -7,10 +7,6 @@ public class ApiError {
     private String code;
     private String message;
 
-    public ApiError(String message) {
-        this(message, "0");
-    }
-
     public ApiError(ErrorCode errorCode) {
         this(errorCode.getMessage(), errorCode.getCode());
     }

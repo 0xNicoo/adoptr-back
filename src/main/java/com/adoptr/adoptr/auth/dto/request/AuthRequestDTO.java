@@ -1,3 +1,8 @@
 package com.adoptr.adoptr.auth.dto.request;
 
-public record AuthRequestDTO (String provider, String token){}
+import jakarta.validation.constraints.NotBlank;
+
+public record AuthRequestDTO(
+        @NotBlank(message = "es obligatorio") String provider,
+        @NotBlank(message = "es obligatorio") String token) {
+}

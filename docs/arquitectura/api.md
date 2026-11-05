@@ -4,11 +4,27 @@ Contrato inferido de los controllers y `SecurityConfig` en esta versión del rep
 
 | Método / ruta | Autenticación | Request | Respuesta / límites |
 | --- | --- | --- | --- |
-| `POST /auth/oauth` | No | JSON `{ "provider": "google", "token": "<Google ID token>" }` | 200 `{ "token": "<JWT Adoptr>", "user": { "id": number, "provider": string, "providerUserId": string, "email": string, "name": string, "profile": null/object, "createdAt": string } }`. No hay validación de input ni control confiable del provider; fallos de validación suelen llegar a 500. |
-| `GET /profile` | `Authorization: Bearer <JWT Adoptr>` | Sin cuerpo | **Bloqueado con un JWT emitido por el flujo actual:** el filtro coloca el `sub` (nombre, `String`) como principal y `MembershipSupport` lo castea a `Long`; falla antes de buscar el perfil. `ProfileDTO` declara `id`, `firstName`, `lastName`, `genderType`, `description`, `locality` (esta última es una entidad JPA, no un contrato JSON estabilizado). Solo después de corregir y probar el principal podría alcanzarse el caso «sin perfil», que hoy lanza `BadRequestException` 400 `{ "code":"001", "message":"No se encontro" }`. |
+| `POST /auth/oauth` | No | JSON `{ "provider": "google", "token": "<Google ID token>" }`. `provider` y `token` son obligatorios y no pueden estar en blanco. | 200 `{ "token": "<JWT Adoptr>", "user": { "id": number, "provider": string, "providerUserId": string, "email": string, "name": string, "profile": null/object, "createdAt": string } }`. 400 `VALIDATION_ERROR` si falta un campo y 400 `MALFORMED_REQUEST` si el JSON está mal formado. Un ID token de Google inválido o vencido **todavía llega como 500** (el validador lanza `RuntimeException`); pendiente de mapear a 401. No hay control confiable del `provider`. |
+| `GET /profile` | `Authorization: Bearer <JWT Adoptr>` | Sin cuerpo | 200 con `ProfileDTO` del usuario del token: `id`, `firstName`, `lastName`, `genderType`, `description`, `locality` (esta última es una entidad JPA, no un contrato JSON estabilizado). 404 `{ "code":"PROFILE_NOT_FOUND", "message":"No se encontró el perfil" }` si el usuario todavía no tiene perfil. 401 si el token falta o no es válido. |
 | `POST /profile` | Bearer JWT | Acepta `ProfileDTOin`: `firstName`, `lastName`, `genderType`, `description`, `localityId` | **Stub:** el controller devuelve 200 con cuerpo nulo sin llamar al servicio; no persiste ni valida el DTO. No consumir como operación funcional. |
 
-Reglas globales: cualquier otra ruta (incluso futuras publicaciones) exige autenticación salvo cambio de configuración. Un request sin JWT válido cae en Spring Security; su estado y formato de error no están armonizados explícitamente con `ApiError`. No asumir un 401 ni un JSON uniforme sin una prueba de contrato compartida. El handler MVC global retorna 400 para `BadRequestException`, 401 para `UnauthorizedException` y 500 para excepciones genéricas (`{code:"0", message: mensaje interno}`); no hay mapeo 404 específico. Distinguir errores de filtro/seguridad, JSON/validación de entrada y excepciones del controller: no todos pasan por el mismo handler ni está probada una respuesta uniforme. No reenviar mensajes internos o credenciales en errores nuevos.
+## Formato de errores
+
+Todos los errores tienen el cuerpo `{ "code": string, "message": string }`, tanto los del filtro de seguridad como los de los controllers. **`code` es un texto estable y único en toda la API** (`MAYÚSCULAS_CON_GUIONES`): el front decide por `code`, no por `message`, que puede cambiar de redacción. Los errores de un módulo llevan su prefijo (`PROFILE_…`, `PUBLICATION_…`); los de `CommonError` son transversales:
+
+| Estado | `code` | Cuándo |
+| --- | --- | --- |
+| 401 | `UNAUTHENTICATED` | Token ausente, inválido, vencido o firmado con otro secreto (lo emite `AuthenticationEntryPoint`, no el handler MVC). |
+| 403 | `ACCESS_DENIED` | Autenticado sin permiso (lo emite `AccessDeniedHandler`). Hoy ninguna ruta lo produce: no hay roles. |
+| 400 | `VALIDATION_ERROR` | Falla de validación de un DTO; el mensaje lista `campo: motivo` de cada campo. |
+| 400 | `MALFORMED_REQUEST` | Cuerpo ilegible o JSON mal formado. |
+| 404 | `ROUTE_NOT_FOUND` | Ruta inexistente. |
+| 405 | `METHOD_NOT_ALLOWED` | Método HTTP no permitido en la ruta. |
+| 500 | `INTERNAL_ERROR` | Error inesperado. El mensaje es genérico; el detalle solo va al log del servidor. |
+
+Errores de dominio vigentes: 404 `PROFILE_NOT_FOUND` y 404 `PUBLICATION_NOT_FOUND` (este último sin endpoint que lo exponga todavía). Los recursos de dominio inexistentes responden 404 (`NotFoundException`); reglas de negocio incumplidas responden 400 (`BadRequestException`). Al agregar un error nuevo, usar el prefijo del módulo y registrarlo acá.
+
+Reglas globales: cualquier otra ruta (incluso futuras publicaciones) exige autenticación salvo cambio de configuración. El JWT de Adoptr lleva como `sub` el **id interno del usuario** (numérico) y, como principal, el filtro deja ese mismo `Long`; los servicios lo obtienen con `MembershipSupport`. Los JWT emitidos antes de este cambio (con el nombre como `sub`) dejan de ser válidos. No reenviar mensajes internos o credenciales en errores nuevos.
 
 ### Límite de confianza actual (bloqueo para producción)
 
