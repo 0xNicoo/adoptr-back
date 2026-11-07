@@ -8,7 +8,16 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 - **Responsable:** persona u organización que publica y gestiona consultas sobre una mascota; por definir si puede transferir titularidad o colaborar con otros usuarios.
 - **Publicación de adopción:** anuncio de una mascota con ubicación, información y estado; por definir atributos obligatorios, imágenes, visibilidad y transiciones.
 - **Persona interesada/solicitud:** quien expresa interés en adoptar; por definir identidad requerida, datos compartidos, canal de contacto y resolución de la solicitud.
-- **Ubicación:** provincia/localidad para búsqueda y contacto; por definir granularidad pública y fuente de datos.
+- **Ubicación:** provincia/localidad para búsqueda y contacto; por definir la granularidad pública. Fuente de datos decidida (ver abajo).
+
+### Decisión: catálogo de provincias y localidades (Dolores, 2026-11-05)
+
+- **Fuente:** Servicio Georef (datos.gob.ar), elaborado con datos de IGN, BAHRA e INDEC. Se guarda una copia en el repositorio (`src/main/resources/data/georef/locations.json`, descargada el 2026-11-05) y el backend la importa al arrancar si la tabla de provincias está vacía. No se consulta Georef en tiempo de ejecución.
+- **Licencia:** CC BY 4.0. **Toda interfaz que muestre provincias o localidades debe citar la fuente** como «Servicio Georef – argentina.gob.ar/georef» o con un enlace a ese sitio.
+- **Alcance:** las 24 provincias y las localidades simples y componentes de localidades compuestas. Se descartan las «Entidad» (subdivisiones de otra localidad, que duplicaban nombres como Mar del Plata), salvo en CABA, que se ofrece por sus 48 barrios más «Ciudad de Buenos Aires». Total: 3.398 localidades.
+- **Ids:** el código oficial de Georef como número; no cambia al reimportar.
+- **Nombres repetidos:** hay pueblos distintos con el mismo nombre en una provincia (por ejemplo, cuatro San Pedro en Santiago del Estero). No se filtran: el nombre para mostrar agrega el departamento solo en esos casos («San Pedro (Choya)»).
+- **Actualización:** una copia nueva no se aplica sola sobre una base ya cargada; actualizar el catálogo queda pendiente hasta tener migraciones.
 
 `LOST` y `SERVICE` son otras categorías contempladas por el modelo de publicaciones, pero su alcance respecto del MVP debe definirse explícitamente.
 
@@ -17,7 +26,7 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 | Pieza | Lo que existe | Lo que **no** se puede inferir |
 | --- | --- | --- |
 | Identidad | `User` guarda proveedor, ID externo, email y nombre; `POST /auth/oauth` busca o crea el usuario y emite JWT. | Google como única opción futura, cuentas verificadas, vinculación de cuentas o autorización para publicar. La validación de identidad actual tiene riesgos; ver [API](../arquitectura/api.md). |
-| Perfil y ubicación | `Profile` se relaciona 1:1 con `User` y N:1 con `Locality`; `Locality` pertenece a `Province`. El enum `Gender` (`FEMALE`, `MALE`) pertenece al **perfil humano**, no a la mascota. | Alta de perfil operativa: `POST /profile` no persiste (`GET /profile` ya funciona y devuelve 404 si no hay perfil). Tampoco hay catálogo HTTP de localidades. |
+| Perfil y ubicación | `Profile` se relaciona 1:1 con `User` y N:1 con `Locality`; `Locality` pertenece a `Province`. Provincias y localidades se importan de Georef al arrancar y se consultan con `GET /provinces` y `GET /provinces/{id}/localities?q=`. El enum `Gender` (`FEMALE`, `MALE`) pertenece al **perfil humano**, no a la mascota. | Alta de perfil operativa: `POST /profile` no persiste (`GET /profile` ya funciona y devuelve 404 si no hay perfil). |
 | Publicación | Entidad `Publication` con título, descripción, fecha, usuario obligatorio, `imageId` singular, localidad opcional y tipo `ADOPTION`, `LOST` o `SERVICE`; usa herencia JPA `JOINED`. | Ficha de mascota, fotos operativas, estado/visibilidad, subtipos concretos, autorización de dueño ni endpoint de publicación. `imageId` no define almacenamiento ni política de imágenes. |
 | Adopción | No hay entidad ni endpoint para solicitud, conversación o resultado. | No hay recorrido de adopción implementado por tener una entidad `Publication` o un servicio interno de lectura por ID. |
 

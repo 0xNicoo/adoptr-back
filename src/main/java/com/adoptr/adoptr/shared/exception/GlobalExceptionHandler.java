@@ -14,6 +14,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.stream.Collectors;
@@ -58,6 +59,12 @@ public class GlobalExceptionHandler {
         String message = detail.isEmpty()
                 ? CommonError.VALIDATION_ERROR.getMessage()
                 : CommonError.VALIDATION_ERROR.getMessage() + " (" + detail + ")";
+        return build(HttpStatus.BAD_REQUEST, new ApiError(message, CommonError.VALIDATION_ERROR.getCode()));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> typeMismatch(MethodArgumentTypeMismatchException ex) {
+        String message = CommonError.VALIDATION_ERROR.getMessage() + " (" + ex.getName() + ": formato inválido)";
         return build(HttpStatus.BAD_REQUEST, new ApiError(message, CommonError.VALIDATION_ERROR.getCode()));
     }
 
