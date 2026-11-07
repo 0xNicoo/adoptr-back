@@ -7,8 +7,41 @@ Contrato inferido de los controllers y `SecurityConfig` en esta versión del rep
 | `POST /auth/oauth` | No | JSON `{ "provider": "google", "token": "<Google ID token>" }`. `provider` y `token` son obligatorios y no pueden estar en blanco. | 200 `{ "token": "<JWT Adoptr>", "user": { "id": number, "provider": string, "providerUserId": string, "email": string, "name": string, "profile": null/object, "createdAt": string } }`. 400 `VALIDATION_ERROR` si falta un campo y 400 `MALFORMED_REQUEST` si el JSON está mal formado. Un ID token de Google inválido o vencido **todavía llega como 500** (el validador lanza `RuntimeException`); pendiente de mapear a 401. No hay control confiable del `provider`. |
 | `GET /provinces` | Bearer JWT | Sin cuerpo | 200 `[{ "id": number, "name": string }]`, las 24 provincias ordenadas por nombre. El `id` es el código oficial de Georef como número (`"06"` → `6`). 401 si el token falta o no es válido. |
 | `GET /provinces/{provinceId}/localities?q=texto` | Bearer JWT | `q`: texto a buscar, entre 2 y 100 caracteres. Se ignoran mayúsculas, tildes y espacios de más. | 200 `[{ "id": number, "name": string, "displayName": string }]`, hasta 20 localidades de la provincia cuyo nombre contiene el texto: primero las que empiezan con él y después el resto, por nombre. `id` es el código oficial de Georef como número. `displayName` es el texto a mostrar: igual a `name`, salvo que el nombre se repita en la provincia, en cuyo caso agrega el departamento entre paréntesis (`"San Pedro (Choya)"`). 400 `VALIDATION_ERROR` si `q` falta, es corto o largo, o si `provinceId` no es numérico. 404 `PROVINCE_NOT_FOUND` si la provincia no existe. 401 sin token válido. |
-| `GET /profile` | `Authorization: Bearer <JWT Adoptr>` | Sin cuerpo | 200 con `ProfileDTO` del usuario del token: `id`, `firstName`, `lastName`, `genderType`, `description`, `locality` (esta última es una entidad JPA, no un contrato JSON estabilizado: con el catálogo de ubicaciones también expone `displayName`, `searchName`, `departmentName` y `province`; se reemplaza por un DTO en el cambio de alta de perfil). 404 `{ "code":"PROFILE_NOT_FOUND", "message":"No se encontró el perfil" }` si el usuario todavía no tiene perfil. 401 si el token falta o no es válido. |
-| `POST /profile` | Bearer JWT | Acepta `ProfileDTOin`: `firstName`, `lastName`, `genderType`, `description`, `localityId` | **Stub:** el controller devuelve 200 con cuerpo nulo sin llamar al servicio; no persiste ni valida el DTO. No consumir como operación funcional. |
+| `GET /profile` | `Authorization: Bearer <JWT Adoptr>` | Sin cuerpo | 200 con el `ProfileDTO` del usuario del token (forma abajo). 404 `{ "code":"PROFILE_NOT_FOUND", "message":"No se encontró el perfil" }` si el usuario todavía no tiene perfil. 401 si el token falta o no es válido. |
+| `POST /profile` | Bearer JWT | `ProfileDTOin` (abajo). El dueño es siempre el usuario del token. | 201 con el `ProfileDTO` creado. 400 `VALIDATION_ERROR` si falta un campo obligatorio o un dato es inválido (el mensaje lista `campo: motivo`). 400 `MALFORMED_REQUEST` si `profileType` o `genderType` no son valores válidos. 400 `LOCALITY_NOT_FOUND` si `localityId` no existe. 409 `PROFILE_ALREADY_EXISTS` si el usuario ya tiene perfil (editarlo será otra operación). 401 sin token válido. |
+
+### Perfil
+
+Hay un perfil por usuario, de tipo `PERSON` u `ORGANIZATION`. En los dos casos se puede adoptar y publicar: solo cambian los datos.
+
+**`ProfileDTOin`** (request de `POST /profile`). Los textos se recortan; un texto en blanco cuenta como ausente. Los campos del otro tipo se ignoran y no se guardan.
+
+| Campo | Tipo | Obligatorio | Límite |
+| --- | --- | --- | --- |
+| `profileType` | `"PERSON"` \| `"ORGANIZATION"` | Siempre | |
+| `description` | string | Siempre | 500 |
+| `localityId` | number (id de Georef) | Siempre | Debe existir |
+| `firstName`, `lastName` | string | Persona | 100 c/u |
+| `genderType` | `"FEMALE"` \| `"MALE"` \| `"X"` | Persona | |
+| `organizationName` | string | Organización | 150 |
+| `instagram`, `facebook` | string libre (usuario, link o nombre de página) | No | 100 c/u |
+| `website` | string, empieza con `http://` o `https://` | No | 255 |
+
+**`ProfileDTO`** (respuesta de `GET` y `POST /profile`, y `user.profile` en `POST /auth/oauth`, que es `null` si el usuario no tiene perfil):
+
+```json
+{
+  "id": 1,
+  "profileType": "PERSON",
+  "description": "string",
+  "locality": { "id": 6441030, "name": "La Plata", "displayName": "La Plata" },
+  "province": { "id": 6, "name": "Buenos Aires" },
+  "firstName": "string", "lastName": "string", "genderType": "X",
+  "organizationName": null, "instagram": null, "facebook": null, "website": null
+}
+```
+
+Los campos de persona vienen en `null` en un perfil de organización y viceversa: el front decide por `profileType`.
 
 ## Formato de errores
 
@@ -24,7 +57,7 @@ Todos los errores tienen el cuerpo `{ "code": string, "message": string }`, tant
 | 405 | `METHOD_NOT_ALLOWED` | Método HTTP no permitido en la ruta. |
 | 500 | `INTERNAL_ERROR` | Error inesperado. El mensaje es genérico; el detalle solo va al log del servidor. |
 
-Errores de dominio vigentes: 404 `PROFILE_NOT_FOUND`, 404 `PROVINCE_NOT_FOUND` y 404 `PUBLICATION_NOT_FOUND` (este último sin endpoint que lo exponga todavía). Los recursos de dominio inexistentes responden 404 (`NotFoundException`); reglas de negocio incumplidas responden 400 (`BadRequestException`). Al agregar un error nuevo, usar el prefijo del módulo y registrarlo acá.
+Errores de dominio vigentes: 404 `PROFILE_NOT_FOUND`, 409 `PROFILE_ALREADY_EXISTS`, 404 `PROVINCE_NOT_FOUND`, 400 `LOCALITY_NOT_FOUND` (una localidad inexistente enviada en un body) y 404 `PUBLICATION_NOT_FOUND` (este último sin endpoint que lo exponga todavía). Los recursos de dominio inexistentes responden 404 (`NotFoundException`); reglas de negocio incumplidas o referencias inválidas en el body responden 400 (`BadRequestException`); un choque con el estado actual, como un recurso que ya existe, responde 409 (`ConflictException`). Al agregar un error nuevo, usar el prefijo del módulo y registrarlo acá.
 
 Reglas globales: cualquier otra ruta (incluso futuras publicaciones) exige autenticación salvo cambio de configuración. El JWT de Adoptr lleva como `sub` el **id interno del usuario** (numérico) y, como principal, el filtro deja ese mismo `Long`; los servicios lo obtienen con `MembershipSupport`. Los JWT emitidos antes de este cambio (con el nombre como `sub`) dejan de ser válidos. No reenviar mensajes internos o credenciales en errores nuevos.
 

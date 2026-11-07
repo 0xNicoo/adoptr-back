@@ -3,10 +3,12 @@ package com.adoptr.adoptr.shared.security;
 import com.adoptr.adoptr.auth.controller.AuthController;
 import com.adoptr.adoptr.auth.service.AuthService;
 import com.adoptr.adoptr.profile.controller.ProfileController;
-import com.adoptr.adoptr.profile.model.Profile;
+import com.adoptr.adoptr.location.repository.LocalityRepository;
+import com.adoptr.adoptr.profile.model.PersonProfile;
 import com.adoptr.adoptr.profile.repository.ProfileRepository;
 import com.adoptr.adoptr.profile.service.impl.ProfileServiceImpl;
 import com.adoptr.adoptr.shared.util.MembershipSupport;
+import com.adoptr.adoptr.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -56,6 +58,12 @@ class SecurityAndErrorsWebTest {
     private ProfileRepository profileRepository;
 
     @MockitoBean
+    private LocalityRepository localityRepository;
+
+    @MockitoBean
+    private UserRepository userRepository;
+
+    @MockitoBean
     private AuthService authService;
 
     private String bearer(Long userId) {
@@ -102,7 +110,7 @@ class SecurityAndErrorsWebTest {
 
     @Test
     void tokenValidoBuscaElPerfilDelUsuarioDelToken() throws Exception {
-        Profile profile = new Profile();
+        PersonProfile profile = new PersonProfile();
         profile.setId(1L);
         profile.setFirstName("Dolores");
         profile.setLastName("Dominguez");

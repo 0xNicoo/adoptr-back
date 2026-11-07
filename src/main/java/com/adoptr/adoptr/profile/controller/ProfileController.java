@@ -3,6 +3,8 @@ package com.adoptr.adoptr.profile.controller;
 import com.adoptr.adoptr.profile.dto.request.ProfileDTOin;
 import com.adoptr.adoptr.profile.dto.response.ProfileDTO;
 import com.adoptr.adoptr.profile.service.ProfileService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,7 +25,8 @@ public class ProfileController {
     }
 
     @PostMapping("")
-    public ResponseEntity<ProfileDTO> create(@RequestBody ProfileDTOin request) {
-        return ResponseEntity.ok(null);
+    @ResponseStatus(HttpStatus.CREATED)
+    public ProfileDTO create(@Valid @RequestBody ProfileDTOin request) {
+        return profileService.create(request);
     }
 }

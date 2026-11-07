@@ -1,6 +1,7 @@
 package com.adoptr.adoptr.shared.exception;
 
 import com.adoptr.adoptr.shared.exception.custom.BadRequestException;
+import com.adoptr.adoptr.shared.exception.custom.ConflictException;
 import com.adoptr.adoptr.shared.exception.custom.NotFoundException;
 import com.adoptr.adoptr.shared.exception.custom.ServiceException;
 import com.adoptr.adoptr.shared.exception.custom.UnauthorizedException;
@@ -43,6 +44,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ApiError> handleNotFoundException(NotFoundException ex) {
         return build(HttpStatus.NOT_FOUND, new ApiError(ex.getMessage(), ex.getCode()));
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ApiError> conflict(ConflictException ex) {
+        return build(HttpStatus.CONFLICT, new ApiError(ex.getMessage(), ex.getCode()));
     }
 
     @ExceptionHandler(UnauthorizedException.class)

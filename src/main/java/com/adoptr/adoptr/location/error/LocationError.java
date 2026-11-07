@@ -4,7 +4,8 @@ import com.adoptr.adoptr.shared.exception.error.ErrorCode;
 
 public enum LocationError implements ErrorCode {
 
-    PROVINCE_NOT_FOUND("PROVINCE_NOT_FOUND", "LOCATION", "No se encontró la provincia");
+    PROVINCE_NOT_FOUND("PROVINCE_NOT_FOUND", "LOCATION", "No se encontró la provincia"),
+    LOCALITY_NOT_FOUND("LOCALITY_NOT_FOUND", "LOCATION", "No se encontró la localidad");
 
     private final String code;
 
