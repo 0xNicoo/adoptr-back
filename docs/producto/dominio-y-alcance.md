@@ -4,7 +4,7 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 
 ## Conceptos de dominio
 
-- **Usuario/perfil:** identidad y datos de la persona; por definir si hay roles o verificaciones para particulares y refugios.
+- **Usuario/perfil:** identidad y datos de quien usa la plataforma. Tipos de perfil decididos (ver abajo); por definir si hay verificaciones para refugios.
 - **Responsable:** persona u organización que publica y gestiona consultas sobre una mascota; por definir si puede transferir titularidad o colaborar con otros usuarios.
 - **Publicación de adopción:** anuncio de una mascota con ubicación, información y estado; por definir atributos obligatorios, imágenes, visibilidad y transiciones.
 - **Persona interesada/solicitud:** quien expresa interés en adoptar; por definir identidad requerida, datos compartidos, canal de contacto y resolución de la solicitud.
@@ -19,6 +19,16 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 - **Nombres repetidos:** hay pueblos distintos con el mismo nombre en una provincia (por ejemplo, cuatro San Pedro en Santiago del Estero). No se filtran: el nombre para mostrar agrega el departamento solo en esos casos («San Pedro (Choya)»).
 - **Actualización:** una copia nueva no se aplica sola sobre una base ya cargada; actualizar el catálogo queda pendiente hasta tener migraciones.
 
+### Decisión: perfil de persona u organización (Dolores, 2026-11-05)
+
+- **Un perfil por usuario**, de una **persona** o de una **organización** (refugio, grupo de rescate u ONG). Los dos tipos pueden adoptar y publicar: no hay limitaciones por tipo, solo cambian los datos que se piden. La pregunta en la interfaz es «¿Quién crea este perfil?», no «¿Cómo vas a usar Adoptr?».
+- **Persona** (todo obligatorio): nombre, apellido, género (Femenino, Masculino o X), descripción y localidad.
+- **Organización:** nombre de la organización, descripción y localidad obligatorios; Instagram, Facebook y sitio web opcionales. Las redes son texto libre (usuario, link o nombre de página); el sitio web debe empezar con `http://` o `https://`.
+- **Para más adelante**, porque dependen de decisiones abiertas: teléfono/WhatsApp y email de contacto (según cómo se resuelva el contacto), dirección física del refugio (riesgo de abandono de animales en la puerta; si se agrega, opcional y no pública), CUIT o personería (solo si se verifican organizaciones) y persona responsable.
+- **Modelo:** herencia JPA `JOINED` (`PersonProfile`, `OrganizationProfile`), porque se espera que los datos de cada tipo crezcan bastante.
+- **Cuándo se pide:** inmediatamente después del login, si el usuario no tiene perfil. Se puede postergar («Completar más tarde»), pero al intentar publicar, contactar o guardar una publicación se lo redirige al alta y, al terminar, vuelve a lo que estaba haciendo. Pendiente: si el backend también rechaza esas acciones sin perfil.
+- **Un perfil existente no se reemplaza con otra alta** (409): la edición es una operación aparte.
+
 `LOST` y `SERVICE` son otras categorías contempladas por el modelo de publicaciones, pero su alcance respecto del MVP debe definirse explícitamente.
 
 ## Estado observado del código (no requisitos aprobados)
@@ -26,7 +36,7 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 | Pieza | Lo que existe | Lo que **no** se puede inferir |
 | --- | --- | --- |
 | Identidad | `User` guarda proveedor, ID externo, email y nombre; `POST /auth/oauth` busca o crea el usuario y emite JWT. | Google como única opción futura, cuentas verificadas, vinculación de cuentas o autorización para publicar. La validación de identidad actual tiene riesgos; ver [API](../arquitectura/api.md). |
-| Perfil y ubicación | `Profile` se relaciona 1:1 con `User` y N:1 con `Locality`; `Locality` pertenece a `Province`. Provincias y localidades se importan de Georef al arrancar y se consultan con `GET /provinces` y `GET /provinces/{id}/localities?q=`. El enum `Gender` (`FEMALE`, `MALE`) pertenece al **perfil humano**, no a la mascota. | Alta de perfil operativa: `POST /profile` no persiste (`GET /profile` ya funciona y devuelve 404 si no hay perfil). |
+| Perfil y ubicación | `Profile` (abstracta, herencia `JOINED` en `PersonProfile` y `OrganizationProfile`) se relaciona 1:1 con `User` (único por usuario) y N:1 con `Locality`; `Locality` pertenece a `Province`. `POST /profile` crea el perfil y `GET /profile` lo devuelve. Provincias y localidades se importan de Georef al arrancar y se consultan con `GET /provinces` y `GET /provinces/{id}/localities?q=`. El enum `Gender` (`FEMALE`, `MALE`, `X`) pertenece al **perfil de persona**, no a la mascota. | Edición de perfil, visibilidad pública de los datos del perfil ni verificación de organizaciones. |
 | Publicación | Entidad `Publication` con título, descripción, fecha, usuario obligatorio, `imageId` singular, localidad opcional y tipo `ADOPTION`, `LOST` o `SERVICE`; usa herencia JPA `JOINED`. | Ficha de mascota, fotos operativas, estado/visibilidad, subtipos concretos, autorización de dueño ni endpoint de publicación. `imageId` no define almacenamiento ni política de imágenes. |
 | Adopción | No hay entidad ni endpoint para solicitud, conversación o resultado. | No hay recorrido de adopción implementado por tener una entidad `Publication` o un servicio interno de lectura por ID. |
 
