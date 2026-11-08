@@ -437,9 +437,20 @@ class AdoptionControllerWebTest {
     void catalogoConEspecieInvalidaDevuelve400ValidationError() throws Exception {
         mockMvc.perform(get("/adoptions").param("species", "PEZ"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value(
+                        "Los datos enviados no son válidos (species: formato inválido)"));
 
         verifyNoInteractions(adoptionRepository);
+    }
+
+    @Test
+    void catalogoConProvinciaNoNumericaNoExponeClasesInternas() throws Exception {
+        mockMvc.perform(get("/adoptions").param("provinceId", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value(
+                        "Los datos enviados no son válidos (provinceId: formato inválido)"));
     }
 
     @Test
