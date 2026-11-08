@@ -2,6 +2,7 @@ package com.adoptr.adoptr.shared.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -38,6 +39,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request -> {
                     request.requestMatchers("/auth/**").permitAll();
                     request.requestMatchers(SWAGGER_WHITELIST).permitAll();
+                    // Catálogo oficial de ubicaciones: sin datos personales, lo usan visitantes anónimos.
+                    request.requestMatchers(HttpMethod.GET, "/provinces", "/provinces/**").permitAll();
                     request.anyRequest().authenticated();
                 })
                 .exceptionHandling(handling -> handling
