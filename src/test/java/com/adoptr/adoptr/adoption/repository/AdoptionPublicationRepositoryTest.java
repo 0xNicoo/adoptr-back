@@ -13,6 +13,7 @@ import com.adoptr.adoptr.publication.model.PublicationType;
 import com.adoptr.adoptr.user.model.User;
 import com.adoptr.adoptr.user.repository.UserRepository;
 import jakarta.persistence.EntityManager;
+import org.hibernate.Hibernate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -154,5 +155,20 @@ class AdoptionPublicationRepositoryTest {
 
         assertThat(page.getContent()).extracting(AdoptionPublication::getPetName).containsExactly("Nueva", "Vieja");
         assertThat(page.getTotalElements()).isEqualTo(2);
+    }
+
+    @Test
+    void mineTraeUbicacionPeroNoCargaAutorNiPerfil() {
+        publication(owner, "Luna", AdoptionStatus.AVAILABLE, T0);
+        entityManager.flush();
+        entityManager.clear();
+
+        AdoptionPublication read = repository.findByAuthorIdAndDeletedAtIsNull(
+                owner.getId(), PageRequest.of(0, 20, NEWEST_FIRST)).getContent().getFirst();
+
+        assertThat(Hibernate.isInitialized(read.getLocality())).isTrue();
+        assertThat(Hibernate.isInitialized(read.getLocality().getProvince())).isTrue();
+        assertThat(Hibernate.isInitialized(read.getAuthor())).isFalse();
+        assertThat(read.getAuthor().getId()).isEqualTo(owner.getId());
     }
 }
