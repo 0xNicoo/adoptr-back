@@ -21,13 +21,12 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 
 ### Decisión: perfil de persona u organización (Dolores, 2026-11-05)
 
-- **Un perfil por usuario**, de una **persona** o de una **organización** (refugio, grupo de rescate u ONG). Los dos tipos pueden adoptar y publicar: no hay limitaciones por tipo, solo cambian los datos que se piden. La pregunta en la interfaz es «¿Quién crea este perfil?», no «¿Cómo vas a usar Adoptr?».
+- **Un perfil por usuario**, de una **persona** o de una **organización** (refugio, grupo de rescate u ONG). Los dos tipos pueden adoptar y publicar: no hay limitaciones por tipo, solo cambian los datos que se piden. 
 - **Persona** (todo obligatorio): nombre, apellido, género (Femenino, Masculino o X), descripción y localidad.
 - **Organización:** nombre de la organización, descripción y localidad obligatorios; Instagram, Facebook y sitio web opcionales. Las redes son texto libre (usuario, link o nombre de página); el sitio web debe empezar con `http://` o `https://`.
-- **Para más adelante**, porque dependen de decisiones abiertas: teléfono/WhatsApp y email de contacto (según cómo se resuelva el contacto), dirección física del refugio (riesgo de abandono de animales en la puerta; si se agrega, opcional y no pública), CUIT o personería (solo si se verifican organizaciones) y persona responsable.
+- **Para más adelante**, porque dependen de decisiones abiertas: teléfono/WhatsApp y email de contacto (según cómo se resuelva el contacto), dirección física del refugio, CUIT o personería (solo si se verifican organizaciones) y persona responsable.
 - **Modelo:** herencia JPA `JOINED` (`PersonProfile`, `OrganizationProfile`), porque se espera que los datos de cada tipo crezcan bastante.
-- **Cuándo se pide:** inmediatamente después del login, si el usuario no tiene perfil. Se puede postergar («Completar más tarde»), pero al intentar publicar, contactar o guardar una publicación se lo redirige al alta y, al terminar, vuelve a lo que estaba haciendo. Pendiente: si el backend también rechaza esas acciones sin perfil.
-- **Un perfil existente no se reemplaza con otra alta** (409): la edición es una operación aparte.
+- **Cuándo se pide:** inmediatamente después del login, si el usuario no tiene perfil. Se puede postergar («Completar más tarde»), pero al intentar publicar, contactar o guardar una publicación se lo redirige al alta.
 
 `LOST` y `SERVICE` son otras categorías contempladas por el modelo de publicaciones, pero su alcance respecto del MVP debe definirse explícitamente.
 
@@ -54,7 +53,7 @@ Como hipótesis para un MVP (no contrato aprobado): una persona responsable publ
 
 ## Decisiones que habilitan implementación (pendientes)
 
-- **Identidad y acceso:** acordar proveedores admitidos, uso de email verificado, duplicados/vinculación de cuentas y si la lectura del catálogo será anónima. La configuración actual exige JWT para toda ruta futura excepto `/auth/**` y Swagger: habilitar catálogo público requeriría cambiarla y probarlo; no basta con dibujar una pantalla pública.
+- **Identidad y acceso:** acordar proveedores admitidos, uso de email verificado, duplicados/vinculación de cuentas y si la lectura del catálogo será anónima. La configuración actual exige JWT para toda ruta futura excepto `/auth/**`, Swagger y la lectura de provincias y localidades (pública por decisión de Dolores, 2026-11-07, para que visitantes anónimos puedan filtrar por ubicación): habilitar catálogo público requeriría cambiarla y probarlo; no basta con dibujar una pantalla pública.
 - **Perfil y datos personales:** acordar cuándo se exige completar perfil, qué campos son necesarios, quién los puede consultar y si la localidad del perfil difiere de la de la publicación. Decidir fuente/actualización de provincias y localidades y precisión de la ubicación mostrada; no copiar datos de contacto al DTO público por comodidad.
 - **Publicación y titularidad:** decidir datos de mascota, imágenes (almacenamiento, consentimiento y retención), quién puede crear/editar/cerrar y qué estados/transiciones existen. La relación `Publication.user` no verifica permisos por sí sola. Definir qué pasa con consultas pendientes al cerrar o adoptar.
 - **Interés y resolución:** decidir si la interacción es formulario, contacto externo o mensajería; quién ve qué datos, notificaciones, moderación, consentimiento, retención y resultado. No crear estados ni endpoints de solicitud antes de acordarlo.

@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -60,20 +61,46 @@ class LocationControllerWebTest {
     }
 
     @Test
-    void provinciasSinTokenDevuelve401() throws Exception {
+    void provinciasSinTokenDevuelve200() throws Exception {
+        when(provinceRepository.findAllByOrderByNameAsc()).thenReturn(List.of(province(6, "Buenos Aires")));
+
         mockMvc.perform(get("/provinces"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(6))
+                .andExpect(jsonPath("$[0].name").value("Buenos Aires"));
+    }
+
+    @Test
+    void localidadesSinTokenDevuelve200() throws Exception {
+        Locality locality = new Locality();
+        locality.setId(6441030L);
+        locality.setName("La Plata");
+        locality.setDisplayName("La Plata");
+        when(provinceRepository.existsById(6L)).thenReturn(true);
+        when(localityRepository.search(eq(6L), eq("la plata"), any(Pageable.class))).thenReturn(List.of(locality));
+
+        mockMvc.perform(get("/provinces/6/localities").param("q", "la plata"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(6441030L))
+                .andExpect(jsonPath("$[0].displayName").value("La Plata"));
+    }
+
+    @Test
+    void provinciasConTokenInvalidoSiguenPublicas() throws Exception {
+        when(provinceRepository.findAllByOrderByNameAsc()).thenReturn(List.of(province(6, "Buenos Aires")));
+
+        mockMvc.perform(get("/provinces").header("Authorization", "Bearer basura"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Buenos Aires"));
+    }
+
+    @Test
+    void escribirEnProvinciasSigueRequiriendoToken() throws Exception {
+        mockMvc.perform(post("/provinces"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
 
         verifyNoInteractions(provinceRepository);
-    }
-
-    @Test
-    void localidadesSinTokenDevuelve401() throws Exception {
-        mockMvc.perform(get("/provinces/6/localities").param("q", "la plata"))
-                .andExpect(status().isUnauthorized());
-
-        verifyNoInteractions(localityRepository);
     }
 
     @Test
