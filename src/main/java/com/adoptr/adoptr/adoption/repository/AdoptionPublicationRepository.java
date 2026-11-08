@@ -5,10 +5,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.Optional;
 
-public interface AdoptionPublicationRepository extends JpaRepository<AdoptionPublication, Long> {
+public interface AdoptionPublicationRepository extends JpaRepository<AdoptionPublication, Long>,
+        JpaSpecificationExecutor<AdoptionPublication> {
 
     /** La publicación si existe y no fue dada de baja. */
     Optional<AdoptionPublication> findByIdAndDeletedAtIsNull(Long id);
