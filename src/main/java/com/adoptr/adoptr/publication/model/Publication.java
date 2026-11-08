@@ -3,41 +3,47 @@ package com.adoptr.adoptr.publication.model;
 import com.adoptr.adoptr.location.model.Locality;
 import com.adoptr.adoptr.user.model.User;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/**
+ * Base común de las publicaciones (adopción y, más adelante, perdidas y servicios).
+ * Las fechas y el tipo los decide la capa de servicio; no hay valores por defecto en la entidad.
+ */
 @Entity
-@Data
 @Inheritance(strategy = InheritanceType.JOINED)
-public class Publication {
+@Getter
+@Setter
+public abstract class Publication {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column
-    private String title;
-
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private PublicationType type;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String description;
 
-    @Column
-    private LocalDateTime creationDate;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false, referencedColumnName = "id")
-    private User user;
-
-
-    @Column
-    private Long imageId;
+    /** Quien publica. La columna sigue siendo {@code user_id} para no romper bases existentes. */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User author;
 
     @ManyToOne
     @JoinColumn(name = "locality_id")
     private Locality locality;
 
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    /** {@code null} mientras la publicación está activa; con valor, fue dada de baja (borrado lógico). */
+    private LocalDateTime deletedAt;
 }
