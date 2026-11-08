@@ -1,0 +1,24 @@
+package com.adoptr.adoptr.shared.exception;
+
+import com.adoptr.adoptr.profile.error.ProfileError;
+import com.adoptr.adoptr.shared.exception.custom.ForbiddenException;
+import com.adoptr.adoptr.shared.exception.error.ApiError;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+class GlobalExceptionHandlerTest {
+
+    private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+
+    @Test
+    void forbiddenExceptionDevuelve403ConSuCodigo() {
+        ResponseEntity<ApiError> response = handler.forbidden(new ForbiddenException(ProfileError.REQUIRED));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getBody().getCode()).isEqualTo("PROFILE_REQUIRED");
+        assertThat(response.getBody().getMessage()).isEqualTo("Necesitás crear tu perfil para realizar esta acción");
+    }
+}

@@ -5,7 +5,8 @@ import com.adoptr.adoptr.shared.exception.error.ErrorCode;
 public enum ProfileError implements ErrorCode {
 
     NOT_FOUND("PROFILE_NOT_FOUND", "PROFILE", "No se encontró el perfil"),
-    ALREADY_EXISTS("PROFILE_ALREADY_EXISTS", "PROFILE", "El usuario ya tiene un perfil");
+    ALREADY_EXISTS("PROFILE_ALREADY_EXISTS", "PROFILE", "El usuario ya tiene un perfil"),
+    REQUIRED("PROFILE_REQUIRED", "PROFILE", "Necesitás crear tu perfil para realizar esta acción");
 
     private final String code;
 
