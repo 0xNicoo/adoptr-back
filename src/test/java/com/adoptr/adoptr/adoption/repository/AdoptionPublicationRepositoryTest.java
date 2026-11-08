@@ -321,4 +321,31 @@ class AdoptionPublicationRepositoryTest {
         assertThat(Hibernate.isInitialized(read.getLocality().getProvince())).isTrue();
         assertThat(Hibernate.isInitialized(read.getAuthor())).isFalse();
     }
+
+    @Test
+    void paginaFueraDeRangoDevuelveVacia() {
+        available("Uno", p -> { });
+        available("Dos", p -> { });
+        available("Tres", p -> { });
+        entityManager.flush();
+        entityManager.clear();
+
+        Page<AdoptionPublication> page = repository.findAll(AdoptionSpec.catalog(new AdoptionFilterDTO(), CURRENT),
+                PageRequest.of(5, 2, NEWEST_FIRST));
+
+        assertThat(page.getContent()).isEmpty();
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        assertThat(page.getTotalPages()).isEqualTo(2);
+    }
+
+    @Test
+    void ordenDescendentePorFechaYId() {
+        available("Vieja", p -> p.setCreatedAt(T0.minusDays(1)));
+        available("EmpatePrimera", p -> { });
+        available("EmpateSegunda", p -> { });
+        available("Nueva", p -> p.setCreatedAt(T0.plusDays(1)));
+
+        assertThat(catalog(new AdoptionFilterDTO()))
+                .containsExactly("Nueva", "EmpateSegunda", "EmpatePrimera", "Vieja");
+    }
 }

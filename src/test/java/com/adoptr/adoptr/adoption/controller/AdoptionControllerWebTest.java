@@ -30,6 +30,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -402,5 +403,61 @@ class AdoptionControllerWebTest {
                 .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(adoptionRepository);
+    }
+
+    // ---- Catálogo público ----
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void catalogoSinTokenDevuelve200() throws Exception {
+        AdoptionPublication p = existing();
+        when(adoptionRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(p), PageRequest.of(0, 20), 1));
+
+        mockMvc.perform(get("/adoptions").param("species", "DOG").param("lifeStage", "ADULT").param("provinceId", "6"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].petName").value("Luna"))
+                .andExpect(jsonPath("$.items[0].description").doesNotExist())
+                .andExpect(jsonPath("$.items[0].owner").doesNotExist())
+                .andExpect(jsonPath("$.items[0].viewerIsOwner").doesNotExist())
+                .andExpect(jsonPath("$.totalItems").value(1));
+    }
+
+    @Test
+    void catalogoConTokenInvalidoSiguePublico() throws Exception {
+        when(adoptionRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+
+        mockMvc.perform(get("/adoptions").header("Authorization", "Bearer basura"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isEmpty());
+    }
+
+    @Test
+    void catalogoConEspecieInvalidaDevuelve400ValidationError() throws Exception {
+        mockMvc.perform(get("/adoptions").param("species", "PEZ"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+
+        verifyNoInteractions(adoptionRepository);
+    }
+
+    @Test
+    void catalogoConPageSize51Devuelve400() throws Exception {
+        mockMvc.perform(get("/adoptions").param("pageSize", "51"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void mineSigueRequiriendoToken() throws Exception {
+        mockMvc.perform(get("/adoptions/mine"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void publicarSigueRequiriendoToken() throws Exception {
+        mockMvc.perform(post("/adoptions").contentType(MediaType.APPLICATION_JSON).content(DOG_JSON))
+                .andExpect(status().isUnauthorized());
     }
 }

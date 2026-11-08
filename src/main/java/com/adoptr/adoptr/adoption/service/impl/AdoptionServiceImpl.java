@@ -1,6 +1,7 @@
 package com.adoptr.adoptr.adoption.service.impl;
 
 import com.adoptr.adoptr.adoption.dto.request.AdoptionDTOin;
+import com.adoptr.adoptr.adoption.dto.request.AdoptionFilterDTO;
 import com.adoptr.adoptr.adoption.dto.request.AdoptionStatusDTOin;
 import com.adoptr.adoptr.adoption.dto.response.AdoptionDTO;
 import com.adoptr.adoptr.adoption.dto.response.AdoptionSummaryDTO;
@@ -12,6 +13,7 @@ import com.adoptr.adoptr.adoption.model.AdoptionStatus;
 import com.adoptr.adoptr.adoption.model.Species;
 import com.adoptr.adoptr.adoption.repository.AdoptionPublicationRepository;
 import com.adoptr.adoptr.adoption.service.AdoptionService;
+import com.adoptr.adoptr.adoption.spec.AdoptionSpec;
 import com.adoptr.adoptr.location.error.LocationError;
 import com.adoptr.adoptr.location.model.Locality;
 import com.adoptr.adoptr.location.repository.LocalityRepository;
@@ -130,6 +132,15 @@ public class AdoptionServiceImpl implements AdoptionService {
         YearMonth current = YearMonth.now(clock);
         return PageDTO.from(
                 adoptionRepository.findByAuthorIdAndDeletedAtIsNull(userId, Paging.pageable(page, pageSize, NEWEST_FIRST)),
+                publication -> AdoptionMapper.toSummary(publication, current));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageDTO<AdoptionSummaryDTO> search(AdoptionFilterDTO filter, int page, int pageSize) {
+        YearMonth current = YearMonth.now(clock);
+        return PageDTO.from(
+                adoptionRepository.findAll(AdoptionSpec.catalog(filter, current), Paging.pageable(page, pageSize, NEWEST_FIRST)),
                 publication -> AdoptionMapper.toSummary(publication, current));
     }
 
