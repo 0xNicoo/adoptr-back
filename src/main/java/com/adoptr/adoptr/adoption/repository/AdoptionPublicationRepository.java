@@ -1,0 +1,19 @@
+package com.adoptr.adoptr.adoption.repository;
+
+import com.adoptr.adoptr.adoption.model.AdoptionPublication;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface AdoptionPublicationRepository extends JpaRepository<AdoptionPublication, Long> {
+
+    /** La publicación si existe y no fue dada de baja. */
+    Optional<AdoptionPublication> findByIdAndDeletedAtIsNull(Long id);
+
+    /** Publicaciones activas de un autor, en cualquier estado, con localidad y provincia en la misma consulta. */
+    @EntityGraph(attributePaths = {"locality", "locality.province"})
+    Page<AdoptionPublication> findByAuthorIdAndDeletedAtIsNull(Long authorId, Pageable pageable);
+}

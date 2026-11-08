@@ -28,6 +28,21 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 - **Modelo:** herencia JPA `JOINED` (`PersonProfile`, `OrganizationProfile`), porque se espera que los datos de cada tipo crezcan bastante.
 - **Cuándo se pide:** inmediatamente después del login, si el usuario no tiene perfil. Se puede postergar («Completar más tarde»), pero al intentar publicar, contactar o guardar una publicación se lo redirige al alta.
 
+### Decisión: publicación de adopción (Dolores, 2026-11-07)
+
+- **Acceso:** el detalle de una publicación es público, sin login (el catálogo también lo será; llega en el PR siguiente). Publicar, editar, cambiar el estado y dar de baja requieren login. Contactar y guardar publicaciones, en el módulo siguiente, también.
+- **Perfil obligatorio para publicar:** el backend rechaza el alta sin perfil (403 `PROFILE_REQUIRED`), además de la redirección del front. La misma regla valdrá para contactar y guardar.
+- **Ficha** (todo obligatorio salvo el tamaño): nombre de la mascota (no un «título»), descripción, especie (perro o gato), sexo (macho, hembra o indeterminado), fecha de nacimiento estimada (mes y año), vacunado, desparasitado, castrado y localidad. La localidad se precarga con la del perfil pero se puede cambiar.
+- **Tamaño:** solo para perros. Obligatorio para perros; no se carga para gatos.
+- **Salud:** vacunado, desparasitado y castrado son **sí o no**. No existe la opción «no sé»: si no se sabe, se carga «no», por seguridad.
+- **Edad:** se guarda la fecha de nacimiento estimada; la edad y la etapa de vida se calculan. Etapas: cachorro (menos de 1 año), adulto (de 1 a 7) y mayor (8 o más). La fecha no puede ser futura ni de hace más de 30 años.
+- **Estados:** en adopción y adoptada. Toda publicación nace en adopción. Solo quien publicó cambia el estado, en los dos sentidos (para corregir un error o una adopción que no funcionó). Más adelante pueden sumarse pausada, reservada o borrador.
+- **Catálogo y detalle:** el catálogo mostrará solo las publicaciones en adopción. El detalle de una adoptada sigue siendo público y muestra su estado, para que un link viejo compartido en redes diga «ya fue adoptada» y corte las consultas.
+- **Edición:** se puede editar en cualquier estado. Quien publicó también puede editar desde el detalle: el detalle informa si quien mira es el dueño.
+- **Baja:** lógica. La publicación desaparece del detalle y de «mis publicaciones», pero queda guardada.
+- **Responsable visible:** nombre y apellido de la persona, o nombre de la organización, y el tipo de perfil. Nunca el email.
+- **Para más adelante:** quién adoptó (depende del módulo de contacto), fotos (requiere acordar almacenamiento), raza, color, compatibilidad con chicos y otros animales, y el listado público por responsable.
+
 `LOST` y `SERVICE` son otras categorías contempladas por el modelo de publicaciones, pero su alcance respecto del MVP debe definirse explícitamente.
 
 ## Estado observado del código (no requisitos aprobados)
@@ -36,18 +51,18 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 | --- | --- | --- |
 | Identidad | `User` guarda proveedor, ID externo, email y nombre; `POST /auth/oauth` busca o crea el usuario y emite JWT. | Google como única opción futura, cuentas verificadas, vinculación de cuentas o autorización para publicar. La validación de identidad actual tiene riesgos; ver [API](../arquitectura/api.md). |
 | Perfil y ubicación | `Profile` (abstracta, herencia `JOINED` en `PersonProfile` y `OrganizationProfile`) se relaciona 1:1 con `User` (único por usuario) y N:1 con `Locality`; `Locality` pertenece a `Province`. `POST /profile` crea el perfil y `GET /profile` lo devuelve. Provincias y localidades se importan de Georef al arrancar y se consultan con `GET /provinces` y `GET /provinces/{id}/localities?q=`. El enum `Gender` (`FEMALE`, `MALE`, `X`) pertenece al **perfil de persona**, no a la mascota. | Edición de perfil, visibilidad pública de los datos del perfil ni verificación de organizaciones. |
-| Publicación | Entidad abstracta `Publication` (herencia JPA `JOINED`) con tipo `ADOPTION`, `LOST` o `SERVICE`, descripción, autor obligatorio, localidad opcional y fechas de alta, modificación y baja lógica. No tiene subtipos todavía. | Ficha de mascota, fotos, estado/visibilidad, autorización de dueño ni endpoint de publicación. |
-| Adopción | No hay entidad ni endpoint para solicitud, conversación o resultado. | No hay recorrido de adopción implementado por tener una entidad `Publication` o un servicio interno de lectura por ID. |
+| Publicación | Entidad abstracta `Publication` (herencia JPA `JOINED`) con tipo `ADOPTION`, `LOST` o `SERVICE`, descripción, autor obligatorio, localidad opcional y fechas de alta, modificación y baja lógica. Su único subtipo es `AdoptionPublication`. | Fotos ni publicaciones de perdidas o servicios. |
+| Adopción | `AdoptionPublication` con la ficha y el estado. `POST /adoptions`, `GET /adoptions/{id}` (público, con `viewerIsOwner`), `PUT`, `PATCH /{id}/status`, `DELETE` (baja lógica) y `GET /adoptions/mine`, con permisos por dueño y perfil obligatorio para publicar. | Catálogo público con filtros (llega en el PR siguiente), solicitud o contacto, registro de quién adoptó ni fotos. |
 
-Fuentes de este inventario: `src/main/java/com/adoptr/adoptr/{user,profile,location,publication}/model/`, `auth/service/AuthService.java`, `profile/controller/ProfileController.java` y [contrato HTTP observado](../arquitectura/api.md). Revisarlo al cambiar código: un enum, DTO o asociación JPA no aprueba una regla de negocio.
+Fuentes de este inventario: `src/main/java/com/adoptr/adoptr/{user,profile,location,publication,adoption}/model/`, `auth/service/AuthService.java`, `profile/controller/ProfileController.java`, `adoption/controller/AdoptionController.java` y [contrato HTTP observado](../arquitectura/api.md). Revisarlo al cambiar código: un enum, DTO o asociación JPA no aprueba una regla de negocio.
 
 ## Recorrido de producto a definir con el equipo
 
 Como hipótesis para un MVP (no contrato aprobado): una persona responsable publica una mascota; visitantes la descubren y consultan; alguien interesado inicia una solicitud; la persona responsable responde y se registra un resultado. Antes de construirlo, cerrar estas preguntas:
 
-1. ¿Quiénes pueden publicar: particulares, refugios o ambos? ¿Requiere verificación? ¿Pueden consultar el catálogo personas no autenticadas?
-2. ¿Qué atributos de la mascota y fotos son obligatorios? ¿Quién almacena las imágenes y por cuánto tiempo? ¿Qué datos personales pueden mostrarse públicamente?
-3. ¿Qué estados necesita la publicación (borrador, activa, pausada, adoptada, etc.) y quién autoriza cada transición? ¿Cómo se evita recibir solicitudes de una publicación cerrada?
+1. ¿Requiere verificación publicar como organización? (Resuelto: publican personas y organizaciones con perfil, y el catálogo es público; ver la decisión de publicación de adopción.)
+2. ¿Qué fotos son obligatorias? ¿Quién almacena las imágenes y por cuánto tiempo? (Resuelto: atributos de la ficha y datos visibles del responsable.)
+3. ¿Cómo se evita recibir solicitudes de una publicación adoptada? (Resuelto: estados en adopción y adoptada, que cambia solo quien publicó.)
 4. ¿Qué es una solicitud de adopción: formulario, contacto externo o conversación? ¿Quién la ve, cómo se notifica, se modera y se cierra?
 5. ¿Qué ubicación mostrar y con qué precisión? ¿Qué políticas aplican a animales perdidos y servicios si se incorporan al alcance?
 
