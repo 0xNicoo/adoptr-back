@@ -1,6 +1,7 @@
 package com.adoptr.adoptr.adoption.service;
 
 import com.adoptr.adoptr.adoption.dto.request.AdoptionDTOin;
+import com.adoptr.adoptr.adoption.dto.request.AdoptionFilterDTO;
 import com.adoptr.adoptr.adoption.dto.request.AdoptionStatusDTOin;
 import com.adoptr.adoptr.adoption.dto.response.AdoptionDTO;
 import com.adoptr.adoptr.adoption.dto.response.AdoptionSummaryDTO;
@@ -19,4 +20,7 @@ public interface AdoptionService {
     void delete(Long id);
 
     PageDTO<AdoptionSummaryDTO> mine(int page, int pageSize);
+
+    /** Catálogo público: solo publicaciones en adopción, con los filtros que vengan. */
+    PageDTO<AdoptionSummaryDTO> search(AdoptionFilterDTO filter, int page, int pageSize);
 }

@@ -43,8 +43,8 @@ public class SecurityConfig {
                     request.requestMatchers(HttpMethod.GET, "/provinces", "/provinces/**").permitAll();
                     // Va antes que /adoptions/{id}: si no, "mine" se tomaría como un id público.
                     request.requestMatchers(HttpMethod.GET, "/adoptions/mine").authenticated();
-                    // Detalle público; con un JWT válido el filtro igual carga el usuario (viewerIsOwner).
-                    request.requestMatchers(HttpMethod.GET, "/adoptions/{id}").permitAll();
+                    // Catálogo y detalle públicos; con un JWT válido el filtro igual carga el usuario (viewerIsOwner).
+                    request.requestMatchers(HttpMethod.GET, "/adoptions", "/adoptions/{id}").permitAll();
                     request.anyRequest().authenticated();
                 })
                 .exceptionHandling(handling -> handling

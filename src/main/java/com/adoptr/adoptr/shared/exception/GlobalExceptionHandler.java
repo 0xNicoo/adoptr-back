@@ -65,7 +65,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> validation(MethodArgumentNotValidException ex) {
         String detail = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                // Un valor que no se pudo convertir (enum o número) trae el texto técnico de Spring: no reenviarlo.
+                .map(error -> error.getField() + ": "
+                        + (error.isBindingFailure() ? "formato inválido" : error.getDefaultMessage()))
                 .sorted()
                 .collect(Collectors.joining("; "));
         String message = detail.isEmpty()

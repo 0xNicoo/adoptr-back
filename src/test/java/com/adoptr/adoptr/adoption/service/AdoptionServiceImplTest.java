@@ -1,6 +1,7 @@
 package com.adoptr.adoptr.adoption.service;
 
 import com.adoptr.adoptr.adoption.dto.request.AdoptionDTOin;
+import com.adoptr.adoptr.adoption.dto.request.AdoptionFilterDTO;
 import com.adoptr.adoptr.adoption.dto.request.AdoptionStatusDTOin;
 import com.adoptr.adoptr.adoption.dto.response.AdoptionDTO;
 import com.adoptr.adoptr.adoption.dto.response.AdoptionSummaryDTO;
@@ -35,6 +36,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -601,6 +603,38 @@ class AdoptionServiceImplTest {
         loggedAs(USER_ID);
 
         assertThatThrownBy(() -> service.mine(0, 51))
+                .isInstanceOf(BadRequestException.class)
+                .hasFieldOrPropertyWithValue("code", "VALIDATION_ERROR");
+    }
+
+    // ---- Catálogo ----
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void buscarUsaOrdenDescendenteYPaginacion() {
+        anonymous();
+        AdoptionPublication p = existing(owner, AdoptionStatus.AVAILABLE);
+        when(adoptionRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(p), org.springframework.data.domain.PageRequest.of(1, 5), 6));
+        AdoptionFilterDTO filter = new AdoptionFilterDTO();
+        filter.setSpecies(Species.DOG);
+
+        PageDTO<AdoptionSummaryDTO> result = service.search(filter, 1, 5);
+
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        verify(adoptionRepository).findAll(any(Specification.class), captor.capture());
+        assertThat(captor.getValue().getPageNumber()).isEqualTo(1);
+        assertThat(captor.getValue().getPageSize()).isEqualTo(5);
+        assertThat(captor.getValue().getSort())
+                .isEqualTo(Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
+        assertThat(result.items()).extracting(AdoptionSummaryDTO::getPetName).containsExactly("Original");
+        assertThat(result.totalItems()).isEqualTo(6);
+        assertThat(result.totalPages()).isEqualTo(2);
+    }
+
+    @Test
+    void buscarConPaginaNegativaFalla() {
+        assertThatThrownBy(() -> service.search(new AdoptionFilterDTO(), -1, 20))
                 .isInstanceOf(BadRequestException.class)
                 .hasFieldOrPropertyWithValue("code", "VALIDATION_ERROR");
     }

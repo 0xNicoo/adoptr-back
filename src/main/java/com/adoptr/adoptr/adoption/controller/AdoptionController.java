@@ -1,6 +1,7 @@
 package com.adoptr.adoptr.adoption.controller;
 
 import com.adoptr.adoptr.adoption.dto.request.AdoptionDTOin;
+import com.adoptr.adoptr.adoption.dto.request.AdoptionFilterDTO;
 import com.adoptr.adoptr.adoption.dto.request.AdoptionStatusDTOin;
 import com.adoptr.adoptr.adoption.dto.response.AdoptionDTO;
 import com.adoptr.adoptr.adoption.dto.response.AdoptionSummaryDTO;
@@ -13,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,6 +33,14 @@ public class AdoptionController {
 
     public AdoptionController(AdoptionService adoptionService) {
         this.adoptionService = adoptionService;
+    }
+
+    /** Público: catálogo de publicaciones en adopción, de la más nueva a la más vieja. */
+    @GetMapping("")
+    public PageDTO<AdoptionSummaryDTO> search(@ModelAttribute AdoptionFilterDTO filter,
+                                              @RequestParam(defaultValue = "0") int page,
+                                              @RequestParam(defaultValue = "" + Paging.DEFAULT_PAGE_SIZE) int pageSize) {
+        return adoptionService.search(filter, page, pageSize);
     }
 
     @PostMapping("")

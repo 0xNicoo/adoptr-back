@@ -29,12 +29,16 @@ public abstract class Publication {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String description;
 
-    /** Quien publica. La columna sigue siendo {@code user_id} para no romper bases existentes. */
-    @ManyToOne(optional = false)
+    /**
+     * Quien publica. La columna sigue siendo {@code user_id} para no romper bases existentes.
+     * LAZY: los listados no necesitan el usuario (ni su perfil, que el usuario trae EAGER).
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User author;
 
-    @ManyToOne
+    /** LAZY: las consultas que la muestran la traen con fetch o con un entity graph. */
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "locality_id")
     private Locality locality;
 
