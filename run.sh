@@ -45,7 +45,7 @@ if [[ "$environment" == local ]]; then
     printf 'El modo local usa --network host en Linux. En otros sistemas adaptá la conexión al host.\n' >&2
     exit 1
   fi
-  network_args=(--network host)
+  network_args=(--network host --env IMAGE_STORAGE=local --volume "$PWD/local-images:/app/local-images")
 else
   # Remote database: only expose the backend on the local machine.
   network_args=(-p "127.0.0.1:$port:$port")

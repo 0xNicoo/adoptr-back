@@ -3,6 +3,7 @@ package com.adoptr.adoptr.shared.storage;
 import com.adoptr.adoptr.shared.exception.custom.ServiceUnavailableException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -12,6 +13,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Slf4j
 @Service
+@ConditionalOnProperty(name = "app.images.storage", havingValue = "s3", matchIfMissing = true)
 public class S3ImageStorage implements ImageStorage {
 
     /** Cada archivo tiene una key única y no cambia nunca: se puede cachear sin vencimiento práctico. */
