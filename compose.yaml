@@ -28,15 +28,15 @@ services:
       SECURITY_JWT_SECRET: ${SECURITY_JWT_SECRET:?Completar SECURITY_JWT_SECRET en .env.local}
       SECURITY_JWT_EXPIRATION: ${SECURITY_JWT_EXPIRATION:-3600000}
       SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
-      # Optional: without them the app starts and only image uploads fail.
-      AWS_REGION: ${AWS_REGION:-sa-east-1}
-      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-}
-      AWS_S3_PUBLIC_BASE_URL: ${AWS_S3_PUBLIC_BASE_URL:-}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      # Images go to ./local-images: AWS credentials never reach this container.
+      IMAGE_STORAGE: local
+      # The browser reaches the published port, which may differ from the container's.
+      IMAGE_LOCAL_BASE_URL: http://localhost:${PORT:-8081}/local-images
       PORT: "8081"
     ports:
       - "127.0.0.1:${PORT:-8081}:8081"
+    volumes:
+      - ./local-images:/app/local-images
     depends_on:
       db:
         condition: service_healthy

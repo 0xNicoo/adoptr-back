@@ -39,3 +39,6 @@ out/
 ### Local secrets ###
 .env
 .env.*
+
+### Images uploaded during local development ###
+/local-images/

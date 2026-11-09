@@ -45,7 +45,7 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 
 ### Decisión: imágenes de publicaciones y perfiles (kralsito, 2026-11-08)
 
-- **Almacenamiento:** AWS S3, en un bucket público de lectura (se puede leer un archivo con su URL, pero no listar el bucket). Un bucket por entorno.
+- **Almacenamiento:** AWS S3, en un bucket público de lectura (se puede leer un archivo con su URL, pero no listar el bucket). Un bucket por entorno. En desarrollo local se usa una carpeta del proyecto, sin credenciales de AWS.
 - **Referencia:** en la base se guarda la `key`, no la URL completa; la API devuelve la URL armada. Pasar a un CDN solo requiere cambiar una variable.
 - **Subida:** a través del backend, no directa desde el navegador, para garantizar en el servidor que no lleguen a S3 los metadatos ni la ubicación GPS de las fotos de celular.
 - **Formato:** se aceptan JPEG, PNG y WebP de hasta 5 MB y 40 megapíxeles. Siempre se guarda JPEG de hasta 1600 px por lado.

@@ -16,13 +16,9 @@ SECURITY_JWT_SECRET=<generá-un-secreto-nuevo>
 SECURITY_JWT_EXPIRATION=3600000
 SPRING_JPA_HIBERNATE_DDL_AUTO=update
 PORT=8081
-
-# Opcional: sin estas variables la app arranca y solo fallan las subidas de imágenes (503).
-AWS_REGION=sa-east-1
-AWS_S3_BUCKET=<tu-bucket>
-AWS_ACCESS_KEY_ID=<clave-del-usuario-iam>
-AWS_SECRET_ACCESS_KEY=<clave-secreta-del-usuario-iam>
 ```
+
+No hacen falta credenciales de AWS: en local las imágenes se guardan en la carpeta `local-images/` del proyecto, ignorada por Git. Si tu `.env.local` tiene variables `AWS_*`, borralas.
 
 Reemplazá los valores entre `<...>`. La contraseña es para la base que Docker va a crear. Para generar el secreto JWT:
 
@@ -49,9 +45,24 @@ Los datos quedan guardados en un volumen. **No usar `down -v` salvo que quieras 
 
 Si el puerto 8081 está ocupado, detené el backend anterior o cambiá `PORT` en `.env.local`.
 
-## Imágenes en AWS S3
+**En Linux,** antes del primer arranque creá la carpeta de imágenes para el usuario del contenedor: `mkdir -p local-images && sudo chown 10001:10001 local-images`. Si la crea Docker queda como root y las subidas responden 503.
 
-Las fotos de publicaciones y perfiles se guardan en un bucket público de lectura; en la base queda solo la `key`. Usá un bucket por entorno.
+La carpeta y la base van juntas: si borrás `local-images/` y conservás la base, esas imágenes quedan rotas.
+
+## Imágenes
+
+`IMAGE_STORAGE` elige dónde se guardan. En la base queda solo la `key` en ambos casos.
+
+| Valor | Dónde | Quién lo usa |
+|---|---|---|
+| `s3` o sin definir | Bucket de AWS S3 | Servidor y `./run.sh develop` |
+| `local` | Carpeta `local-images/`, servida en `/local-images` | `docker compose` y `./run.sh local`, ya configurados |
+
+Sin definir usa S3 a propósito: si falta configuración en un servidor, las subidas responden 503 en vez de guardarse en su disco. `local` es solo para desarrollo.
+
+### AWS S3
+
+Las fotos de publicaciones y perfiles se guardan en un bucket público de lectura. Usá un bucket por entorno.
 
 1. **Bucket:** ACLs deshabilitadas. En *Block Public Access* mantené bloqueadas las dos opciones de ACLs y destildá las dos de *bucket policies*.
 2. **Lectura pública** (*Permissions → Bucket policy*): permite leer un archivo si se conoce su URL, no listar el bucket.
@@ -66,15 +77,15 @@ Las fotos de publicaciones y perfiles se guardan en un bucket público de lectur
    { "Version": "2012-10-17", "Statement": [{ "Effect": "Allow", "Action": ["s3:PutObject", "s3:DeleteObject"], "Resource": "arn:aws:s3:::TU-BUCKET/*" }] }
    ```
 
-4. **Variables:** cargá las de `AWS_*` en `.env.local`, con la región del bucket. `AWS_S3_PUBLIC_BASE_URL` es opcional: si queda vacía se usa la URL pública del bucket; sirve para pasar a un CDN sin tocar la base.
+4. **Variables:** cargá en el servidor (o en `.env.develop`) `AWS_REGION`, con la región del bucket, `AWS_S3_BUCKET`, `AWS_ACCESS_KEY_ID` y `AWS_SECRET_ACCESS_KEY`. `AWS_S3_PUBLIC_BASE_URL` es opcional: si queda vacía se usa la URL pública del bucket; sirve para pasar a un CDN sin tocar la base.
 
 Como el bucket no permite listar, un archivo que no existe responde 403, no 404.
 
 ## Otras formas de ejecutar
 
 - **PostgreSQL instalado en el host (Linux):** usá sus credenciales en `.env.local`, la URL con `localhost` y ejecutá `./run.sh local`. Solo levanta el backend, usando la red del host.
-- **Base remota:** creá `.env.develop` con las mismas variables, pero con URL JDBC, usuario y contraseña de esa base; ejecutá `./run.sh develop`. Corre Docker localmente, no realiza despliegues remotos.
-- **Sin Docker:** necesitás JDK 25 y PostgreSQL. Exportá las variables en tu terminal y ejecutá `./gradlew bootRun`. Gradle no carga los archivos `.env` automáticamente.
+- **Base remota:** creá `.env.develop` con las mismas variables, pero con URL JDBC, usuario y contraseña de esa base, más las `AWS_*` de su bucket: la base y las imágenes tienen que ser del mismo entorno. Ejecutá `./run.sh develop`. Corre Docker localmente, no realiza despliegues remotos.
+- **Sin Docker:** necesitás JDK 25 y PostgreSQL. Exportá las variables en tu terminal, incluida `IMAGE_STORAGE=local`, y ejecutá `./gradlew bootRun`. Gradle no carga los archivos `.env` automáticamente.
 
 Los scripts construyen el mismo Dockerfile multietapa con JDK/JRE 25 y usuario sin privilegios. No incluyen secretos en la imagen. `ddl-auto=update` es para desarrollo; para producción se requieren migraciones y revisión de seguridad. Los secretos anteriormente versionados deben rotarse: borrarlos del archivo no los elimina del historial. Consultar las limitaciones de autenticación en el [contrato HTTP](docs/arquitectura/api.md).
 

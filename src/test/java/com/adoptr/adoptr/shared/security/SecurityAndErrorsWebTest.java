@@ -81,6 +81,14 @@ class SecurityAndErrorsWebTest {
         return "Bearer " + jwtUtil.generateToken(userId);
     }
 
+    // ---- Con S3 (por defecto) la carpeta de desarrollo no se sirve ----
+
+    @Test
+    void conS3LaRutaDeImagenesLocalesResponde404() throws Exception {
+        mockMvc.perform(get("/local-images/adoptions/1/a.jpg"))
+                .andExpect(status().isNotFound());
+    }
+
     // ---- Autenticación: 401 con formato ApiError ----
 
     @Test
