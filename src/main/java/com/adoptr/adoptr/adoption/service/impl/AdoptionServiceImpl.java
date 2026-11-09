@@ -19,36 +19,53 @@ import com.adoptr.adoptr.location.model.Locality;
 import com.adoptr.adoptr.location.repository.LocalityRepository;
 import com.adoptr.adoptr.profile.error.ProfileError;
 import com.adoptr.adoptr.profile.repository.ProfileRepository;
+import com.adoptr.adoptr.publication.dto.response.PhotoDTO;
+import com.adoptr.adoptr.publication.model.PublicationPhoto;
 import com.adoptr.adoptr.publication.model.PublicationType;
+import com.adoptr.adoptr.publication.repository.PublicationPhotoRepository;
 import com.adoptr.adoptr.shared.dto.PageDTO;
 import com.adoptr.adoptr.shared.exception.custom.BadRequestException;
+import com.adoptr.adoptr.shared.exception.custom.ConflictException;
 import com.adoptr.adoptr.shared.exception.custom.ForbiddenException;
 import com.adoptr.adoptr.shared.exception.custom.NotFoundException;
 import com.adoptr.adoptr.shared.exception.error.CommonError;
+import com.adoptr.adoptr.shared.storage.ImageProcessor;
+import com.adoptr.adoptr.shared.storage.ImageStorage;
+import com.adoptr.adoptr.shared.storage.ProcessedImage;
 import com.adoptr.adoptr.shared.util.MembershipSupport;
 import com.adoptr.adoptr.shared.util.Paging;
 import com.adoptr.adoptr.user.repository.UserRepository;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class AdoptionServiceImpl implements AdoptionService {
 
     static final Sort NEWEST_FIRST = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
     private static final int MAX_AGE_YEARS = 30;
+    static final int MAX_PHOTOS = 5;
 
     private final MembershipSupport membershipSupport;
     private final AdoptionPublicationRepository adoptionRepository;
     private final ProfileRepository profileRepository;
     private final LocalityRepository localityRepository;
     private final UserRepository userRepository;
+    private final PublicationPhotoRepository photoRepository;
+    private final ImageProcessor imageProcessor;
+    private final ImageStorage imageStorage;
     private final Clock clock;
 
     public AdoptionServiceImpl(MembershipSupport membershipSupport,
@@ -56,12 +73,18 @@ public class AdoptionServiceImpl implements AdoptionService {
                                ProfileRepository profileRepository,
                                LocalityRepository localityRepository,
                                UserRepository userRepository,
+                               PublicationPhotoRepository photoRepository,
+                               ImageProcessor imageProcessor,
+                               ImageStorage imageStorage,
                                Clock clock) {
         this.membershipSupport = membershipSupport;
         this.adoptionRepository = adoptionRepository;
         this.profileRepository = profileRepository;
         this.localityRepository = localityRepository;
         this.userRepository = userRepository;
+        this.photoRepository = photoRepository;
+        this.imageProcessor = imageProcessor;
+        this.imageStorage = imageStorage;
         this.clock = clock;
     }
 
@@ -125,23 +148,84 @@ public class AdoptionServiceImpl implements AdoptionService {
         adoptionRepository.save(publication);
     }
 
+    /** Sin transacción: no retiene una conexión de la base mientras procesa la imagen y la sube a S3. */
+    @Override
+    public AdoptionDTO addPhoto(Long id, MultipartFile file) {
+        AdoptionPublication publication = findOwned(id);
+        List<PublicationPhoto> photos = photoRepository.findByPublicationIdOrderBySortOrderAsc(id);
+        if (photos.size() >= MAX_PHOTOS) {
+            throw new ConflictException(AdoptionError.PHOTO_LIMIT_REACHED);
+        }
+        ProcessedImage image = imageProcessor.process(file);
+        String key = "adoptions/" + id + "/" + UUID.randomUUID() + "." + image.extension();
+        imageStorage.upload(key, image);
+
+        LocalDateTime now = LocalDateTime.now(clock);
+        PublicationPhoto photo = new PublicationPhoto();
+        photo.setPublication(publication);
+        photo.setSortOrder(photos.isEmpty() ? 0 : photos.getLast().getSortOrder() + 1);
+        photo.fillFrom(key, image, now);
+        try {
+            photoRepository.saveAndFlush(photo);
+        } catch (DataIntegrityViolationException e) {
+            // Dos subidas simultáneas tomaron el mismo lugar: la restricción única frena a una.
+            imageStorage.delete(key);
+            throw new ConflictException(AdoptionError.PHOTO_CONFLICT);
+        } catch (RuntimeException e) {
+            imageStorage.delete(key);
+            throw e;
+        }
+        publication.setUpdatedAt(now);
+        return toDto(adoptionRepository.save(publication), true);
+    }
+
+    @Override
+    public void deletePhoto(Long id, Long photoId) {
+        AdoptionPublication publication = findOwned(id);
+        PublicationPhoto photo = photoRepository.findByIdAndPublicationId(photoId, id)
+                .orElseThrow(() -> new NotFoundException(AdoptionError.PHOTO_NOT_FOUND));
+        photoRepository.delete(photo);
+        publication.setUpdatedAt(LocalDateTime.now(clock));
+        adoptionRepository.save(publication);
+        imageStorage.delete(photo.getS3Key());
+    }
+
     @Override
     @Transactional(readOnly = true)
     public PageDTO<AdoptionSummaryDTO> mine(int page, int pageSize) {
         Long userId = membershipSupport.getUserId();
-        YearMonth current = YearMonth.now(clock);
-        return PageDTO.from(
-                adoptionRepository.findByAuthorIdAndDeletedAtIsNull(userId, Paging.pageable(page, pageSize, NEWEST_FIRST)),
-                publication -> AdoptionMapper.toSummary(publication, current));
+        return toSummaries(adoptionRepository.findByAuthorIdAndDeletedAtIsNull(
+                userId, Paging.pageable(page, pageSize, NEWEST_FIRST)));
     }
 
     @Override
     @Transactional(readOnly = true)
     public PageDTO<AdoptionSummaryDTO> search(AdoptionFilterDTO filter, int page, int pageSize) {
         YearMonth current = YearMonth.now(clock);
-        return PageDTO.from(
-                adoptionRepository.findAll(AdoptionSpec.catalog(filter, current), Paging.pageable(page, pageSize, NEWEST_FIRST)),
-                publication -> AdoptionMapper.toSummary(publication, current));
+        return toSummaries(adoptionRepository.findAll(
+                AdoptionSpec.catalog(filter, current), Paging.pageable(page, pageSize, NEWEST_FIRST)));
+    }
+
+    private PageDTO<AdoptionSummaryDTO> toSummaries(Page<AdoptionPublication> page) {
+        YearMonth current = YearMonth.now(clock);
+        Map<Long, String> covers = coverUrls(page.getContent());
+        return PageDTO.from(page, publication -> {
+            AdoptionSummaryDTO dto = AdoptionMapper.toSummary(publication, current);
+            dto.setCoverPhotoUrl(covers.get(publication.getId()));
+            return dto;
+        });
+    }
+
+    private Map<Long, String> coverUrls(List<AdoptionPublication> publications) {
+        if (publications.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> ids = publications.stream().map(AdoptionPublication::getId).toList();
+        // Vienen ordenadas: la primera de cada publicación es su portada.
+        return photoRepository.findByPublicationIdInOrderBySortOrderAsc(ids).stream()
+                .collect(Collectors.toMap(photo -> photo.getPublication().getId(),
+                        photo -> imageStorage.publicUrl(photo.getS3Key()),
+                        (cover, other) -> cover));
     }
 
     private AdoptionPublication findActive(Long id) {
@@ -199,6 +283,10 @@ public class AdoptionServiceImpl implements AdoptionService {
         OwnerDTO owner = profileRepository.findByUserId(publication.getAuthor().getId())
                 .map(AdoptionMapper::toOwner)
                 .orElse(null);
-        return AdoptionMapper.toDto(publication, YearMonth.now(clock), owner, viewerIsOwner);
+        AdoptionDTO dto = AdoptionMapper.toDto(publication, YearMonth.now(clock), owner, viewerIsOwner);
+        dto.setPhotos(photoRepository.findByPublicationIdOrderBySortOrderAsc(publication.getId()).stream()
+                .map(photo -> new PhotoDTO(photo.getId(), imageStorage.publicUrl(photo.getS3Key())))
+                .toList());
+        return dto;
     }
 }

@@ -10,22 +10,31 @@ import com.adoptr.adoptr.profile.mapper.ProfileMapper;
 import com.adoptr.adoptr.profile.model.OrganizationProfile;
 import com.adoptr.adoptr.profile.model.PersonProfile;
 import com.adoptr.adoptr.profile.model.Profile;
+import com.adoptr.adoptr.profile.model.ProfilePhoto;
 import com.adoptr.adoptr.profile.model.ProfileType;
+import com.adoptr.adoptr.profile.repository.ProfilePhotoRepository;
 import com.adoptr.adoptr.profile.repository.ProfileRepository;
 import com.adoptr.adoptr.profile.service.ProfileService;
 import com.adoptr.adoptr.shared.exception.custom.BadRequestException;
 import com.adoptr.adoptr.shared.exception.custom.ConflictException;
 import com.adoptr.adoptr.shared.exception.custom.NotFoundException;
 import com.adoptr.adoptr.shared.exception.error.CommonError;
+import com.adoptr.adoptr.shared.storage.ImageProcessor;
+import com.adoptr.adoptr.shared.storage.ImageStorage;
+import com.adoptr.adoptr.shared.storage.ProcessedImage;
 import com.adoptr.adoptr.shared.util.MembershipSupport;
 import com.adoptr.adoptr.user.repository.UserRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 @Service
 public class ProfileServiceImpl implements ProfileService {
@@ -34,23 +43,87 @@ public class ProfileServiceImpl implements ProfileService {
     private final ProfileRepository profileRepository;
     private final LocalityRepository localityRepository;
     private final UserRepository userRepository;
+    private final ProfilePhotoRepository photoRepository;
+    private final ImageProcessor imageProcessor;
+    private final ImageStorage imageStorage;
+    private final Clock clock;
 
     public ProfileServiceImpl(MembershipSupport membershipSupport,
                               ProfileRepository profileRepository,
                               LocalityRepository localityRepository,
-                              UserRepository userRepository) {
+                              UserRepository userRepository,
+                              ProfilePhotoRepository photoRepository,
+                              ImageProcessor imageProcessor,
+                              ImageStorage imageStorage,
+                              Clock clock) {
         this.membershipSupport = membershipSupport;
         this.profileRepository = profileRepository;
         this.localityRepository = localityRepository;
         this.userRepository = userRepository;
+        this.photoRepository = photoRepository;
+        this.imageProcessor = imageProcessor;
+        this.imageStorage = imageStorage;
+        this.clock = clock;
     }
 
     @Override
     public ProfileDTO get() {
-        Long userId = membershipSupport.getUserId();
-        Profile profile = profileRepository.findByUserId(userId)
+        return toDto(findOwn());
+    }
+
+    /** Sin transacción: no retiene una conexión de la base mientras procesa la imagen y la sube a S3. */
+    @Override
+    public ProfileDTO setPhoto(MultipartFile file) {
+        Profile profile = findOwn();
+        ProcessedImage image = imageProcessor.process(file);
+        String key = "profiles/" + profile.getId() + "/" + UUID.randomUUID() + "." + image.extension();
+        imageStorage.upload(key, image);
+
+        ProfilePhoto photo = photoRepository.findByProfileId(profile.getId()).orElseGet(ProfilePhoto::new);
+        String previousKey = photo.getS3Key();
+        photo.setProfile(profile);
+        photo.fillFrom(key, image, LocalDateTime.now(clock));
+        try {
+            photoRepository.saveAndFlush(photo);
+        } catch (DataIntegrityViolationException e) {
+            // Dos primeras subidas simultáneas: la restricción única de profile_id frena a una.
+            imageStorage.delete(key);
+            throw new ConflictException(ProfileError.PHOTO_CONFLICT);
+        } catch (RuntimeException e) {
+            imageStorage.delete(key);
+            throw e;
+        }
+        if (previousKey != null) {
+            imageStorage.delete(previousKey);
+        }
+        return toDto(profile);
+    }
+
+    @Override
+    public void deletePhoto() {
+        Profile profile = findOwn();
+        ProfilePhoto photo = photoRepository.findByProfileId(profile.getId())
+                .orElseThrow(() -> new NotFoundException(ProfileError.PHOTO_NOT_FOUND));
+        photoRepository.delete(photo);
+        imageStorage.delete(photo.getS3Key());
+    }
+
+    @Override
+    public String photoUrl(Long profileId) {
+        return photoRepository.findByProfileId(profileId)
+                .map(photo -> imageStorage.publicUrl(photo.getS3Key()))
+                .orElse(null);
+    }
+
+    private Profile findOwn() {
+        return profileRepository.findByUserId(membershipSupport.getUserId())
                 .orElseThrow(() -> new NotFoundException(ProfileError.NOT_FOUND));
-        return ProfileMapper.toDto(profile);
+    }
+
+    private ProfileDTO toDto(Profile profile) {
+        ProfileDTO dto = ProfileMapper.toDto(profile);
+        dto.setPhotoUrl(photoUrl(profile.getId()));
+        return dto;
     }
 
     @Override
@@ -69,7 +142,7 @@ public class ProfileServiceImpl implements ProfileService {
         profile.setLocality(locality);
         profile.setDescription(clean(request.getDescription()));
         try {
-            return ProfileMapper.toDto(profileRepository.saveAndFlush(profile));
+            return toDto(profileRepository.saveAndFlush(profile));
         } catch (DataIntegrityViolationException e) {
             // Dos altas simultáneas del mismo usuario: la restricción única de user_id gana.
             throw new ConflictException(ProfileError.ALREADY_EXISTS);

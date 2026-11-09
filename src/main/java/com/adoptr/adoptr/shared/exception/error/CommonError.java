@@ -12,7 +12,8 @@ public enum CommonError implements ErrorCode {
     VALIDATION_ERROR("Los datos enviados no son válidos"),
     MALFORMED_REQUEST("El cuerpo de la solicitud no se pudo interpretar"),
     ROUTE_NOT_FOUND("Recurso no encontrado"),
-    METHOD_NOT_ALLOWED("Método no permitido");
+    METHOD_NOT_ALLOWED("Método no permitido"),
+    UNSUPPORTED_MEDIA_TYPE("Tipo de contenido no soportado");
 
     private final String message;
 

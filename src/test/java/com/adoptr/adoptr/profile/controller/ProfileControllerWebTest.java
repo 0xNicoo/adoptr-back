@@ -5,24 +5,36 @@ import com.adoptr.adoptr.location.model.Province;
 import com.adoptr.adoptr.location.repository.LocalityRepository;
 import com.adoptr.adoptr.profile.model.PersonProfile;
 import com.adoptr.adoptr.profile.model.Profile;
+import com.adoptr.adoptr.profile.model.ProfilePhoto;
+import com.adoptr.adoptr.profile.repository.ProfilePhotoRepository;
 import com.adoptr.adoptr.profile.repository.ProfileRepository;
 import com.adoptr.adoptr.profile.service.impl.ProfileServiceImpl;
+import com.adoptr.adoptr.shared.config.ClockConfig;
 import com.adoptr.adoptr.shared.security.JwtAuthFilter;
 import com.adoptr.adoptr.shared.security.JwtUtil;
 import com.adoptr.adoptr.shared.security.SecurityConfig;
+import com.adoptr.adoptr.shared.storage.ImageProcessor;
+import com.adoptr.adoptr.shared.storage.ImageStorage;
 import com.adoptr.adoptr.shared.util.MembershipSupport;
 import com.adoptr.adoptr.user.model.User;
 import com.adoptr.adoptr.user.repository.UserRepository;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.containsString;
@@ -31,14 +43,18 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /** Prueba /profile con la cadena de seguridad real y los repositorios simulados. */
 @WebMvcTest(controllers = ProfileController.class)
-@Import({SecurityConfig.class, JwtAuthFilter.class, JwtUtil.class, ProfileServiceImpl.class, MembershipSupport.class})
+@Import({SecurityConfig.class, JwtAuthFilter.class, JwtUtil.class, ProfileServiceImpl.class, MembershipSupport.class,
+        ClockConfig.class, ImageProcessor.class})
 @TestPropertySource(properties = {
         "security.jwt.secret=test-secret-test-secret-test-secret-123456",
         "security.jwt.expiration=3600000"
@@ -77,6 +93,12 @@ class ProfileControllerWebTest {
 
     @MockitoBean
     private ProfileRepository profileRepository;
+
+    @MockitoBean
+    private ProfilePhotoRepository profilePhotoRepository;
+
+    @MockitoBean
+    private ImageStorage imageStorage;
 
     @MockitoBean
     private LocalityRepository localityRepository;
@@ -235,5 +257,80 @@ class ProfileControllerWebTest {
                 .andExpect(jsonPath("$.locality.name").value("La Plata"))
                 .andExpect(jsonPath("$.locality.province").doesNotExist())
                 .andExpect(jsonPath("$.province.id").value(6));
+    }
+
+    // ---- Foto ----
+
+    private static MockMultipartFile png() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ImageIO.write(new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB), "png", out);
+        return new MockMultipartFile("file", "foto.png", "image/png", out.toByteArray());
+    }
+
+    private static MockMultipartHttpServletRequestBuilder putPhoto(MockMultipartFile file) {
+        return multipart(HttpMethod.PUT, "/profile/photo").file(file);
+    }
+
+    @Test
+    void subirFotoSinTokenDa401() throws Exception {
+        mockMvc.perform(putPhoto(png()))
+                .andExpect(status().isUnauthorized());
+        verifyNoInteractions(imageStorage);
+    }
+
+    @Test
+    void subirFotoDevuelveElPerfilConSuUrl() throws Exception {
+        PersonProfile profile = new PersonProfile();
+        profile.setId(1L);
+        when(profileRepository.findByUserId(USER_ID)).thenReturn(Optional.of(profile));
+        ProfilePhoto photo = new ProfilePhoto();
+        photo.setS3Key("profiles/1/a.jpg");
+        when(profilePhotoRepository.findByProfileId(1L)).thenReturn(Optional.empty(), Optional.of(photo));
+        when(imageStorage.publicUrl("profiles/1/a.jpg")).thenReturn("https://cdn/profiles/1/a.jpg");
+
+        mockMvc.perform(putPhoto(png()).header("Authorization", bearer()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.photoUrl").value("https://cdn/profiles/1/a.jpg"));
+        verify(imageStorage).upload(any(), any());
+    }
+
+    @Test
+    void unArchivoQueNoEsImagenDa400() throws Exception {
+        PersonProfile profile = new PersonProfile();
+        profile.setId(1L);
+        when(profileRepository.findByUserId(USER_ID)).thenReturn(Optional.of(profile));
+        MockMultipartFile text = new MockMultipartFile("file", "foto.png", "image/png", new byte[]{1, 2, 3});
+
+        mockMvc.perform(putPhoto(text).header("Authorization", bearer()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("IMAGE_INVALID"));
+        verifyNoInteractions(imageStorage);
+    }
+
+    @Test
+    void sinElArchivoDa400() throws Exception {
+        mockMvc.perform(multipart(HttpMethod.PUT, "/profile/photo").header("Authorization", bearer()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value(containsString("file: es obligatorio")));
+    }
+
+    @Test
+    void subirFotoConOtroContentTypeDa415() throws Exception {
+        mockMvc.perform(put("/profile/photo").header("Authorization", bearer())
+                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.code").value("UNSUPPORTED_MEDIA_TYPE"));
+    }
+
+    @Test
+    void borrarFotoSinTenerlaDa404() throws Exception {
+        PersonProfile profile = new PersonProfile();
+        profile.setId(1L);
+        when(profileRepository.findByUserId(USER_ID)).thenReturn(Optional.of(profile));
+
+        mockMvc.perform(delete("/profile/photo").header("Authorization", bearer()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("PROFILE_PHOTO_NOT_FOUND"));
     }
 }

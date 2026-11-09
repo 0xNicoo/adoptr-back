@@ -9,12 +9,16 @@ Contrato inferido de los controllers y `SecurityConfig` en esta versión del rep
 | `GET /provinces/{provinceId}/localities?q=texto` | No (pública) | `q`: texto a buscar, entre 2 y 100 caracteres. Se ignoran mayúsculas, tildes y espacios de más. | 200 `[{ "id": number, "name": string, "displayName": string }]`, hasta 20 localidades de la provincia cuyo nombre contiene el texto: primero las que empiezan con él y después el resto, por nombre. `id` es el código oficial de Georef como número. `displayName` es el texto a mostrar: igual a `name`, salvo que el nombre se repita en la provincia, en cuyo caso agrega el departamento entre paréntesis (`"San Pedro (Choya)"`). 400 `VALIDATION_ERROR` si `q` falta, es corto o largo, o si `provinceId` no es numérico. 404 `PROVINCE_NOT_FOUND` si la provincia no existe. Un header `Authorization` inválido se ignora. |
 | `GET /profile` | `Authorization: Bearer <JWT Adoptr>` | Sin cuerpo | 200 con el `ProfileDTO` del usuario del token (forma abajo). 404 `{ "code":"PROFILE_NOT_FOUND", "message":"No se encontró el perfil" }` si el usuario todavía no tiene perfil. 401 si el token falta o no es válido. |
 | `POST /profile` | Bearer JWT | `ProfileDTOin` (abajo). El dueño es siempre el usuario del token. | 201 con el `ProfileDTO` creado. 400 `VALIDATION_ERROR` si falta un campo obligatorio o un dato es inválido (el mensaje lista `campo: motivo`). 400 `MALFORMED_REQUEST` si `profileType` o `genderType` no son valores válidos. 400 `LOCALITY_NOT_FOUND` si `localityId` no existe. 409 `PROFILE_ALREADY_EXISTS` si el usuario ya tiene perfil (editarlo será otra operación). 401 sin token válido. |
+| `PUT /profile/photo` | Bearer JWT | `multipart/form-data` con la parte `file`, con los mismos formatos y límites que las fotos de adopción. Sube la foto o reemplaza la anterior. | 200 `ProfileDTO` con `photoUrl`. 404 `PROFILE_NOT_FOUND`, 409 `PROFILE_PHOTO_CONFLICT` (otra subida simultánea), 400 `VALIDATION_ERROR` sin `file`, 400 `IMAGE_INVALID`, 413 `IMAGE_TOO_LARGE`, 415 `UNSUPPORTED_MEDIA_TYPE`, 503 `IMAGE_STORAGE_UNAVAILABLE`, 401 sin token. |
+| `DELETE /profile/photo` | Bearer JWT | Sin cuerpo | 204. 404 `PROFILE_NOT_FOUND` o `PROFILE_PHOTO_NOT_FOUND`, 401 sin token. |
 | `GET /adoptions?species=&sex=&size=&provinceId=&localityId=&lifeStage=&page=0&pageSize=20` | No (pública) | Filtros opcionales, combinados con Y: `species` (`DOG`/`CAT`), `sex` (`MALE`/`FEMALE`/`UNKNOWN`), `size` (`SMALL`/`MEDIUM`/`LARGE`), `provinceId`, `localityId` (ids de Georef) y `lifeStage` (`PUPPY`/`ADULT`/`SENIOR`). `page` desde 0 (por defecto 0); `pageSize` de 1 a 50 (por defecto 20). Un Bearer inválido se ignora. | 200 `Page<AdoptionSummaryDTO>` solo con publicaciones `AVAILABLE` y no dadas de baja, de la más nueva a la más vieja. Una combinación sin resultados posibles (localidad de otra provincia, `size` con `CAT`) o una página posterior a la última devuelve `items` vacío, no un error. 400 `VALIDATION_ERROR` si un filtro tiene un valor inexistente (`?species=PEZ`) o `page`/`pageSize` están fuera de rango. |
 | `POST /adoptions` | Bearer JWT y perfil creado | `AdoptionDTOin` (abajo). El autor es siempre el usuario del token. | 201 `AdoptionDTO` con `status: "AVAILABLE"`. 400 `VALIDATION_ERROR` (campo faltante o en blanco, largo excedido, tamaño que no corresponde a la especie, fecha futura o de hace más de 30 años); 400 `MALFORMED_REQUEST` (JSON mal formado, enum inexistente, fecha que no es `aaaa-mm`); 400 `LOCALITY_NOT_FOUND`; 403 `PROFILE_REQUIRED` si el usuario no tiene perfil; 401 sin token válido. |
 | `GET /adoptions/{id}` | No (pública) | Sin cuerpo. Un Bearer válido es opcional y solo cambia `viewerIsOwner`; uno inválido o vencido se ignora. | 200 `AdoptionDTO`, también si está `ADOPTED`, con `Cache-Control: private`. 404 `ADOPTION_NOT_FOUND` si no existe o fue dada de baja. |
 | `PUT /adoptions/{id}` | Bearer JWT, solo quien publicó | `AdoptionDTOin`: reemplaza la ficha completa. No cambia estado, autor ni fecha de alta. | 200 `AdoptionDTO`. 404 `ADOPTION_NOT_FOUND`, después 403 `ADOPTION_NOT_OWNER`, después los 400 de `POST`. Un body con campos faltantes da 400 antes de chequear el dueño. 401 sin token válido. |
 | `PATCH /adoptions/{id}/status` | Bearer JWT, solo quien publicó | `{ "status": "AVAILABLE" \| "ADOPTED" }` | 200 `AdoptionDTO`. Cualquier transición entre los dos estados; si ya tenía ese estado devuelve 200 sin cambiar `updatedAt`. 400 `VALIDATION_ERROR` sin `status`, 400 `MALFORMED_REQUEST` con un estado inexistente, 404 `ADOPTION_NOT_FOUND`, 403 `ADOPTION_NOT_OWNER`, 401 sin token. |
 | `DELETE /adoptions/{id}` | Bearer JWT, solo quien publicó | Sin cuerpo | 204. Baja lógica: deja de aparecer en el detalle (404) y en `/adoptions/mine`; repetirla da 404. 403 `ADOPTION_NOT_OWNER`, 401 sin token. |
+| `POST /adoptions/{id}/photos` | Bearer JWT, solo quien publicó | `multipart/form-data` con la parte `file`: JPEG, PNG o WebP, hasta 5 MB y 40 megapíxeles. | 201 `AdoptionDTO` con la foto al final de `photos`. Hasta 5 fotos, opcionales. 404 `ADOPTION_NOT_FOUND`, 403 `ADOPTION_NOT_OWNER`, 409 `ADOPTION_PHOTO_LIMIT_REACHED`, 409 `ADOPTION_PHOTO_CONFLICT` (otra subida simultánea; se puede reintentar), 400 `VALIDATION_ERROR` sin `file`, 400 `IMAGE_INVALID`, 413 `IMAGE_TOO_LARGE`, 415 `UNSUPPORTED_MEDIA_TYPE`, 503 `IMAGE_STORAGE_UNAVAILABLE`, 401 sin token. |
+| `DELETE /adoptions/{id}/photos/{photoId}` | Bearer JWT, solo quien publicó | Sin cuerpo | 204. Si era la portada, pasa a serlo la siguiente. 404 `ADOPTION_NOT_FOUND` o `ADOPTION_PHOTO_NOT_FOUND` (no existe o es de otra publicación), 403 `ADOPTION_NOT_OWNER`, 401 sin token. |
 | `GET /adoptions/mine?page=0&pageSize=20` | Bearer JWT | `page` desde 0 (por defecto 0); `pageSize` de 1 a 50 (por defecto 20). | 200 `Page<AdoptionSummaryDTO>` con todas las publicaciones del usuario del token, en cualquier estado y sin las dadas de baja, de la más nueva a la más vieja. 400 `VALIDATION_ERROR` si `page` o `pageSize` están fuera de rango. 401 sin token. |
 
 ### Perfil
@@ -41,6 +45,7 @@ Hay un perfil por usuario, de tipo `PERSON` u `ORGANIZATION`. En los dos casos s
   "id": 1,
   "profileType": "PERSON",
   "description": "string",
+  "photoUrl": null,
   "locality": { "id": 6441030, "name": "La Plata", "displayName": "La Plata" },
   "province": { "id": 6, "name": "Buenos Aires" },
   "firstName": "string", "lastName": "string", "genderType": "X",
@@ -48,7 +53,7 @@ Hay un perfil por usuario, de tipo `PERSON` u `ORGANIZATION`. En los dos casos s
 }
 ```
 
-Los campos de persona vienen en `null` en un perfil de organización y viceversa: el front decide por `profileType`.
+Los campos de persona vienen en `null` en un perfil de organización y viceversa: el front decide por `profileType`. `photoUrl` es `null` si el perfil no tiene foto.
 
 ### Publicación de adopción
 
@@ -86,6 +91,8 @@ Decisiones de producto en [dominio](../producto/dominio-y-alcance.md). Fechas co
   "locality": { "id": 6441030, "name": "La Plata", "displayName": "La Plata" },
   "province": { "id": 6, "name": "Buenos Aires" },
   "owner": { "displayName": "Refugio Patitas", "profileType": "ORGANIZATION" },
+  "photos": [{ "id": 1, "url": "https://adoptr.s3.sa-east-1.amazonaws.com/adoptions/12/a1b2c3.jpg" }],
+  "coverPhotoUrl": null,
   "viewerIsOwner": false,
   "createdAt": "2026-11-07T12:00:00",
   "updatedAt": "2026-11-07T12:00:00"
@@ -94,9 +101,10 @@ Decisiones de producto en [dominio](../producto/dominio-y-alcance.md). Fechas co
 
 - `lifeStage` se calcula con los meses cumplidos hasta el mes actual: `PUPPY` menos de 12, `ADULT` de 12 a menos de 96 (8 años), `SENIOR` 96 o más.
 - `owner` es el responsable: nombre y apellido de una persona o nombre de la organización, más el tipo de perfil. Nunca incluye email, ids de proveedor ni el id interno del usuario.
+- `photos` viene en orden y vacía si no hay fotos: la primera es la portada. Las URLs son públicas y no vencen. Una imagen subida siempre se guarda como JPEG de hasta 1600 px por lado, sin metadatos (se descarta la ubicación GPS) y con la orientación ya aplicada. El detalle no completa `coverPhotoUrl`: usar `photos`.
 - `viewerIsOwner` es `true` solo si el request trae un JWT válido de quien publicó. Sirve para que la interfaz muestre «Editar», «Marcar como adoptada» o «Dar de baja»; los permisos reales los verifica el backend en cada operación. Como la respuesta cambia según quién mira, el detalle sale con `Cache-Control: private` y **no debe cachearse compartido entre usuarios**.
 
-**`AdoptionSummaryDTO`** (tarjeta de `GET /adoptions` y `GET /adoptions/mine`): los mismos campos que `AdoptionDTO` sin `description`, `owner` ni `viewerIsOwner`.
+**`AdoptionSummaryDTO`** (tarjeta de `GET /adoptions` y `GET /adoptions/mine`): los mismos campos que `AdoptionDTO` sin `description`, `owner`, `photos` ni `viewerIsOwner`, con `coverPhotoUrl` (`null` si no tiene fotos).
 
 **`Page<T>`** (listados paginados):
 
@@ -116,9 +124,10 @@ Todos los errores tienen el cuerpo `{ "code": string, "message": string }`, tant
 | 400 | `MALFORMED_REQUEST` | Cuerpo ilegible o JSON mal formado. |
 | 404 | `ROUTE_NOT_FOUND` | Ruta inexistente. |
 | 405 | `METHOD_NOT_ALLOWED` | Método HTTP no permitido en la ruta. |
+| 415 | `UNSUPPORTED_MEDIA_TYPE` | `Content-Type` que la ruta no acepta. |
 | 500 | `INTERNAL_ERROR` | Error inesperado. El mensaje es genérico; el detalle solo va al log del servidor. |
 
-Errores de dominio vigentes: 404 `PROFILE_NOT_FOUND`, 409 `PROFILE_ALREADY_EXISTS`, 403 `PROFILE_REQUIRED` (la acción exige tener perfil, por ejemplo publicar), 404 `PROVINCE_NOT_FOUND`, 400 `LOCALITY_NOT_FOUND` (una localidad inexistente enviada en un body), 404 `ADOPTION_NOT_FOUND` (no existe o fue dada de baja), 403 `ADOPTION_NOT_OWNER` (la publicación es de otra persona) y 404 `PUBLICATION_NOT_FOUND` (sin endpoint que lo exponga todavía). Los recursos de dominio inexistentes responden 404 (`NotFoundException`); reglas de negocio incumplidas o referencias inválidas en el body responden 400 (`BadRequestException`); un choque con el estado actual, como un recurso que ya existe, responde 409 (`ConflictException`); una operación que la persona autenticada no puede hacer responde 403 (`ForbiddenException`). Al agregar un error nuevo, usar el prefijo del módulo y registrarlo acá.
+Errores de dominio vigentes: 404 `PROFILE_NOT_FOUND`, 409 `PROFILE_ALREADY_EXISTS`, 403 `PROFILE_REQUIRED` (la acción exige tener perfil, por ejemplo publicar), 404 `PROVINCE_NOT_FOUND`, 400 `LOCALITY_NOT_FOUND` (una localidad inexistente enviada en un body), 404 `ADOPTION_NOT_FOUND` (no existe o fue dada de baja), 403 `ADOPTION_NOT_OWNER` (la publicación es de otra persona) 404 `ADOPTION_PHOTO_NOT_FOUND`, 409 `ADOPTION_PHOTO_LIMIT_REACHED` (ya tiene 5 fotos), 409 `ADOPTION_PHOTO_CONFLICT` y 409 `PROFILE_PHOTO_CONFLICT` (subidas simultáneas), 404 `PROFILE_PHOTO_NOT_FOUND`, 400 `IMAGE_INVALID` (el contenido no es un JPEG, PNG o WebP válido, sin importar lo que declare el cliente), 413 `IMAGE_TOO_LARGE`, 503 `IMAGE_STORAGE_UNAVAILABLE` (S3 no disponible o sin configurar) y 404 `PUBLICATION_NOT_FOUND` (sin endpoint que lo exponga todavía). Los recursos de dominio inexistentes responden 404 (`NotFoundException`); reglas de negocio incumplidas o referencias inválidas en el body responden 400 (`BadRequestException`); un choque con el estado actual, como un recurso que ya existe, responde 409 (`ConflictException`); una operación que la persona autenticada no puede hacer responde 403 (`ForbiddenException`); un contenido que supera los límites responde 413 (`PayloadTooLargeException`); un servicio externo caído responde 503 (`ServiceUnavailableException`). Al agregar un error nuevo, usar el prefijo del módulo y registrarlo acá.
 
 Reglas globales: son públicas `/auth/**`, Swagger, las lecturas `GET /provinces` y `GET /provinces/**` (catálogo oficial sin datos personales), el catálogo `GET /adoptions` y el detalle `GET /adoptions/{id}`; `GET /adoptions/mine` requiere token (la regla está antes que la de `{id}`); cualquier otra ruta, u otro método sobre esas rutas, exige autenticación salvo cambio de configuración. El JWT de Adoptr lleva como `sub` el **id interno del usuario** (numérico) y, como principal, el filtro deja ese mismo `Long`; los servicios lo obtienen con `MembershipSupport`. Los JWT emitidos antes de este cambio (con el nombre como `sub`) dejan de ser válidos. No reenviar mensajes internos o credenciales en errores nuevos.
 

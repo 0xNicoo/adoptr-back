@@ -6,6 +6,7 @@ import com.adoptr.adoptr.adoption.dto.request.AdoptionStatusDTOin;
 import com.adoptr.adoptr.adoption.dto.response.AdoptionDTO;
 import com.adoptr.adoptr.adoption.dto.response.AdoptionSummaryDTO;
 import com.adoptr.adoptr.shared.dto.PageDTO;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface AdoptionService {
 
@@ -18,6 +19,11 @@ public interface AdoptionService {
     AdoptionDTO changeStatus(Long id, AdoptionStatusDTOin request);
 
     void delete(Long id);
+
+    /** Agrega una foto al final; la primera que queda es la portada. */
+    AdoptionDTO addPhoto(Long id, MultipartFile file);
+
+    void deletePhoto(Long id, Long photoId);
 
     PageDTO<AdoptionSummaryDTO> mine(int page, int pageSize);
 

@@ -16,6 +16,12 @@ SECURITY_JWT_SECRET=<generá-un-secreto-nuevo>
 SECURITY_JWT_EXPIRATION=3600000
 SPRING_JPA_HIBERNATE_DDL_AUTO=update
 PORT=8081
+
+# Opcional: sin estas variables la app arranca y solo fallan las subidas de imágenes (503).
+AWS_REGION=sa-east-1
+AWS_S3_BUCKET=<tu-bucket>
+AWS_ACCESS_KEY_ID=<clave-del-usuario-iam>
+AWS_SECRET_ACCESS_KEY=<clave-secreta-del-usuario-iam>
 ```
 
 Reemplazá los valores entre `<...>`. La contraseña es para la base que Docker va a crear. Para generar el secreto JWT:
@@ -42,6 +48,27 @@ docker compose --env-file .env.local down
 Los datos quedan guardados en un volumen. **No usar `down -v` salvo que quieras borrarlos.** Esta base es nueva e independiente de PostgreSQL instalado en tu máquina; no importa sus datos. Compose adapta la URL al servicio `db` y espera a que PostgreSQL acepte conexiones. Cambiar la contraseña en `.env.local` después del primer arranque no cambia la contraseña de la base existente.
 
 Si el puerto 8081 está ocupado, detené el backend anterior o cambiá `PORT` en `.env.local`.
+
+## Imágenes en AWS S3
+
+Las fotos de publicaciones y perfiles se guardan en un bucket público de lectura; en la base queda solo la `key`. Usá un bucket por entorno.
+
+1. **Bucket:** ACLs deshabilitadas. En *Block Public Access* mantené bloqueadas las dos opciones de ACLs y destildá las dos de *bucket policies*.
+2. **Lectura pública** (*Permissions → Bucket policy*): permite leer un archivo si se conoce su URL, no listar el bucket.
+
+   ```json
+   { "Version": "2012-10-17", "Statement": [{ "Sid": "PublicReadImages", "Effect": "Allow", "Principal": "*", "Action": "s3:GetObject", "Resource": "arn:aws:s3:::TU-BUCKET/*" }] }
+   ```
+
+3. **Usuario IAM para el backend**, sin acceso a la consola y con una access key. Nunca uses las claves root.
+
+   ```json
+   { "Version": "2012-10-17", "Statement": [{ "Effect": "Allow", "Action": ["s3:PutObject", "s3:DeleteObject"], "Resource": "arn:aws:s3:::TU-BUCKET/*" }] }
+   ```
+
+4. **Variables:** cargá las de `AWS_*` en `.env.local`, con la región del bucket. `AWS_S3_PUBLIC_BASE_URL` es opcional: si queda vacía se usa la URL pública del bucket; sirve para pasar a un CDN sin tocar la base.
+
+Como el bucket no permite listar, un archivo que no existe responde 403, no 404.
 
 ## Otras formas de ejecutar
 

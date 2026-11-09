@@ -9,12 +9,18 @@ import com.adoptr.adoptr.profile.model.Gender;
 import com.adoptr.adoptr.profile.model.OrganizationProfile;
 import com.adoptr.adoptr.profile.model.PersonProfile;
 import com.adoptr.adoptr.profile.model.Profile;
+import com.adoptr.adoptr.profile.model.ProfilePhoto;
 import com.adoptr.adoptr.profile.model.ProfileType;
+import com.adoptr.adoptr.profile.repository.ProfilePhotoRepository;
 import com.adoptr.adoptr.profile.repository.ProfileRepository;
 import com.adoptr.adoptr.profile.service.impl.ProfileServiceImpl;
+import com.adoptr.adoptr.shared.config.ClockConfig;
 import com.adoptr.adoptr.shared.exception.custom.BadRequestException;
 import com.adoptr.adoptr.shared.exception.custom.ConflictException;
 import com.adoptr.adoptr.shared.exception.custom.NotFoundException;
+import com.adoptr.adoptr.shared.storage.ImageProcessor;
+import com.adoptr.adoptr.shared.storage.ImageStorage;
+import com.adoptr.adoptr.shared.storage.ProcessedImage;
 import com.adoptr.adoptr.shared.util.MembershipSupport;
 import com.adoptr.adoptr.user.model.User;
 import com.adoptr.adoptr.user.repository.UserRepository;
@@ -23,13 +29,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.mock.web.MockMultipartFile;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -39,13 +52,20 @@ class ProfileServiceImplTest {
 
     private static final long USER_ID = 7L;
     private static final long LOCALITY_ID = 6441030L;
+    private static final ProcessedImage IMAGE = new ProcessedImage(new byte[]{1, 2, 3}, "image/jpeg", "jpg");
+    private static final MockMultipartFile FILE =
+            new MockMultipartFile("file", "foto.jpg", "image/jpeg", new byte[]{1});
 
     private final MembershipSupport membershipSupport = mock(MembershipSupport.class);
     private final ProfileRepository profileRepository = mock(ProfileRepository.class);
     private final LocalityRepository localityRepository = mock(LocalityRepository.class);
     private final UserRepository userRepository = mock(UserRepository.class);
-    private final ProfileService service =
-            new ProfileServiceImpl(membershipSupport, profileRepository, localityRepository, userRepository);
+    private final ProfilePhotoRepository photoRepository = mock(ProfilePhotoRepository.class);
+    private final ImageProcessor imageProcessor = mock(ImageProcessor.class);
+    private final ImageStorage imageStorage = mock(ImageStorage.class);
+    private final ProfileService service = new ProfileServiceImpl(membershipSupport, profileRepository,
+            localityRepository, userRepository, photoRepository, imageProcessor, imageStorage,
+            Clock.fixed(Instant.parse("2026-11-07T15:00:00Z"), ClockConfig.ZONE));
 
     private final User user = new User();
 
@@ -53,6 +73,8 @@ class ProfileServiceImplTest {
     void setUp() {
         user.setId(USER_ID);
         when(membershipSupport.getUserId()).thenReturn(USER_ID);
+        when(imageProcessor.process(any())).thenReturn(IMAGE);
+        when(imageStorage.publicUrl(any())).thenAnswer(invocation -> "https://cdn/" + invocation.getArgument(0));
         when(userRepository.getReferenceById(USER_ID)).thenReturn(user);
         when(localityRepository.findById(LOCALITY_ID)).thenReturn(Optional.of(laPlata()));
         when(profileRepository.saveAndFlush(any(Profile.class))).thenAnswer(invocation -> {
@@ -289,5 +311,103 @@ class ProfileServiceImplTest {
         assertThatThrownBy(service::get)
                 .isInstanceOf(NotFoundException.class)
                 .hasFieldOrPropertyWithValue("code", "PROFILE_NOT_FOUND");
+    }
+
+    // ---- Foto ----
+
+    private PersonProfile existingProfile() {
+        PersonProfile profile = new PersonProfile();
+        profile.setId(1L);
+        when(profileRepository.findByUserId(USER_ID)).thenReturn(Optional.of(profile));
+        return profile;
+    }
+
+    private static ProfilePhoto photo(Profile profile, String key) {
+        ProfilePhoto photo = new ProfilePhoto();
+        photo.setId(5L);
+        photo.setProfile(profile);
+        photo.fillFrom(key, IMAGE, LocalDateTime.of(2026, 1, 1, 0, 0));
+        return photo;
+    }
+
+    @Test
+    void laPrimeraFotoSeSubeYSeGuarda() {
+        PersonProfile profile = existingProfile();
+
+        ProfileDTO dto = service.setPhoto(FILE);
+
+        ArgumentCaptor<ProfilePhoto> saved = ArgumentCaptor.forClass(ProfilePhoto.class);
+        verify(photoRepository).saveAndFlush(saved.capture());
+        assertThat(saved.getValue().getProfile()).isSameAs(profile);
+        assertThat(saved.getValue().getS3Key()).startsWith("profiles/1/").endsWith(".jpg");
+        assertThat(saved.getValue().getCreatedAt()).isEqualTo(LocalDateTime.of(2026, 11, 7, 12, 0));
+        verify(imageStorage).upload(saved.getValue().getS3Key(), IMAGE);
+        verify(imageStorage, never()).delete(any());
+        assertThat(dto.getId()).isEqualTo(1L);
+    }
+
+    @Test
+    void reemplazarLaFotoBorraLaAnteriorDespuesDeGuardar() {
+        PersonProfile profile = existingProfile();
+        ProfilePhoto current = photo(profile, "profiles/1/vieja.jpg");
+        when(photoRepository.findByProfileId(1L)).thenReturn(Optional.of(current));
+
+        service.setPhoto(FILE);
+
+        assertThat(current.getS3Key()).isNotEqualTo("profiles/1/vieja.jpg");
+        InOrder order = inOrder(photoRepository, imageStorage);
+        order.verify(photoRepository).saveAndFlush(current);
+        order.verify(imageStorage).delete("profiles/1/vieja.jpg");
+    }
+
+    @Test
+    void sinPerfilLaFotoDa404SinSubirNada() {
+        when(profileRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.setPhoto(FILE)).isInstanceOf(NotFoundException.class);
+        verify(imageStorage, never()).upload(any(), any());
+    }
+
+    @Test
+    void siDosSubidasChocanBorraElArchivoNuevoYDa409() {
+        existingProfile();
+        when(photoRepository.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("duplicada"));
+
+        assertThatThrownBy(() -> service.setPhoto(FILE))
+                .isInstanceOfSatisfying(ConflictException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("PROFILE_PHOTO_CONFLICT"));
+        ArgumentCaptor<String> uploaded = ArgumentCaptor.forClass(String.class);
+        verify(imageStorage).upload(uploaded.capture(), eq(IMAGE));
+        verify(imageStorage).delete(uploaded.getValue());
+    }
+
+    @Test
+    void borrarLaFotoLaSacaDeLaBaseYDelAlmacenamiento() {
+        PersonProfile profile = existingProfile();
+        ProfilePhoto current = photo(profile, "profiles/1/a.jpg");
+        when(photoRepository.findByProfileId(1L)).thenReturn(Optional.of(current));
+
+        service.deletePhoto();
+
+        verify(photoRepository).delete(current);
+        verify(imageStorage).delete("profiles/1/a.jpg");
+    }
+
+    @Test
+    void borrarSinFotoDa404() {
+        existingProfile();
+        when(photoRepository.findByProfileId(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.deletePhoto())
+                .isInstanceOfSatisfying(NotFoundException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("PROFILE_PHOTO_NOT_FOUND"));
+    }
+
+    @Test
+    void elPerfilDevuelveLaUrlDeSuFoto() {
+        PersonProfile profile = existingProfile();
+        when(photoRepository.findByProfileId(1L)).thenReturn(Optional.of(photo(profile, "profiles/1/a.jpg")));
+
+        assertThat(service.get().getPhotoUrl()).isEqualTo("https://cdn/profiles/1/a.jpg");
     }
 }

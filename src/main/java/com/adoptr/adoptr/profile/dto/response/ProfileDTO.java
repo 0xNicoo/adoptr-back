@@ -11,6 +11,8 @@ public class ProfileDTO {
     private Long id;
     private ProfileType profileType;
     private String description;
+    /** {@code null} si no tiene foto. */
+    private String photoUrl;
     private LocalityDTO locality;
     private ProvinceDTO province;
 
