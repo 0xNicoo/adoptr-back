@@ -5,8 +5,12 @@ import com.adoptr.adoptr.auth.service.AuthService;
 import com.adoptr.adoptr.profile.controller.ProfileController;
 import com.adoptr.adoptr.location.repository.LocalityRepository;
 import com.adoptr.adoptr.profile.model.PersonProfile;
+import com.adoptr.adoptr.profile.repository.ProfilePhotoRepository;
 import com.adoptr.adoptr.profile.repository.ProfileRepository;
 import com.adoptr.adoptr.profile.service.impl.ProfileServiceImpl;
+import com.adoptr.adoptr.shared.config.ClockConfig;
+import com.adoptr.adoptr.shared.storage.ImageProcessor;
+import com.adoptr.adoptr.shared.storage.ImageStorage;
 import com.adoptr.adoptr.shared.util.MembershipSupport;
 import com.adoptr.adoptr.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -38,7 +42,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * sin base de datos: el repositorio de perfiles y el servicio de login están simulados.
  */
 @WebMvcTest(controllers = {ProfileController.class, AuthController.class})
-@Import({SecurityConfig.class, JwtAuthFilter.class, JwtUtil.class, ProfileServiceImpl.class, MembershipSupport.class})
+@Import({SecurityConfig.class, JwtAuthFilter.class, JwtUtil.class, ProfileServiceImpl.class, MembershipSupport.class,
+        ClockConfig.class, ImageProcessor.class})
 @TestPropertySource(properties = {
         "security.jwt.secret=test-secret-test-secret-test-secret-123456",
         "security.jwt.expiration=3600000"
@@ -56,6 +61,12 @@ class SecurityAndErrorsWebTest {
 
     @MockitoBean
     private ProfileRepository profileRepository;
+
+    @MockitoBean
+    private ProfilePhotoRepository profilePhotoRepository;
+
+    @MockitoBean
+    private ImageStorage imageStorage;
 
     @MockitoBean
     private LocalityRepository localityRepository;

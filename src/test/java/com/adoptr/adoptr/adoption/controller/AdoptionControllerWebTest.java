@@ -12,14 +12,21 @@ import com.adoptr.adoptr.location.model.Province;
 import com.adoptr.adoptr.location.repository.LocalityRepository;
 import com.adoptr.adoptr.profile.model.OrganizationProfile;
 import com.adoptr.adoptr.profile.repository.ProfileRepository;
+import com.adoptr.adoptr.publication.model.PublicationPhoto;
 import com.adoptr.adoptr.publication.model.PublicationType;
+import com.adoptr.adoptr.publication.repository.PublicationPhotoRepository;
 import com.adoptr.adoptr.shared.config.ClockConfig;
+import com.adoptr.adoptr.shared.exception.custom.ServiceUnavailableException;
 import com.adoptr.adoptr.shared.security.JwtAuthFilter;
 import com.adoptr.adoptr.shared.security.JwtUtil;
 import com.adoptr.adoptr.shared.security.SecurityConfig;
+import com.adoptr.adoptr.shared.storage.ImageError;
+import com.adoptr.adoptr.shared.storage.ImageProcessor;
+import com.adoptr.adoptr.shared.storage.ImageStorage;
 import com.adoptr.adoptr.shared.util.MembershipSupport;
 import com.adoptr.adoptr.user.model.User;
 import com.adoptr.adoptr.user.repository.UserRepository;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,10 +39,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -45,12 +56,14 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -61,7 +74,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /** Prueba /adoptions con la cadena de seguridad real, el servicio real y los repositorios simulados. */
 @WebMvcTest(controllers = AdoptionController.class)
 @Import({SecurityConfig.class, JwtAuthFilter.class, JwtUtil.class, AdoptionServiceImpl.class,
-        MembershipSupport.class, AdoptionControllerWebTest.FixedClock.class})
+        MembershipSupport.class, AdoptionControllerWebTest.FixedClock.class, ImageProcessor.class})
 @TestPropertySource(properties = {
         "security.jwt.secret=test-secret-test-secret-test-secret-123456",
         "security.jwt.expiration=3600000"
@@ -103,6 +116,12 @@ class AdoptionControllerWebTest {
 
     @MockitoBean
     private AdoptionPublicationRepository adoptionRepository;
+
+    @MockitoBean
+    private PublicationPhotoRepository photoRepository;
+
+    @MockitoBean
+    private ImageStorage imageStorage;
 
     @MockitoBean
     private ProfileRepository profileRepository;
@@ -470,5 +489,103 @@ class AdoptionControllerWebTest {
     void publicarSigueRequiriendoToken() throws Exception {
         mockMvc.perform(post("/adoptions").contentType(MediaType.APPLICATION_JSON).content(DOG_JSON))
                 .andExpect(status().isUnauthorized());
+    }
+
+    // ---- Fotos ----
+
+    private static MockMultipartFile png() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ImageIO.write(new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB), "png", out);
+        return new MockMultipartFile("file", "foto.png", "image/png", out.toByteArray());
+    }
+
+    @Test
+    void subirFotoSinTokenDa401() throws Exception {
+        mockMvc.perform(multipart("/adoptions/1/photos").file(png()))
+                .andExpect(status().isUnauthorized());
+        verifyNoInteractions(imageStorage);
+    }
+
+    @Test
+    void subirFotoAPublicacionAjenaDa403() throws Exception {
+        existing();
+
+        mockMvc.perform(multipart("/adoptions/1/photos").file(png()).header("Authorization", bearer(OTHER_ID)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ADOPTION_NOT_OWNER"));
+        verifyNoInteractions(imageStorage);
+    }
+
+    @Test
+    void subirFotoDevuelve201ConElDetalle() throws Exception {
+        existing();
+        PublicationPhoto photo = new PublicationPhoto();
+        photo.setId(10L);
+        photo.setS3Key("adoptions/1/a.jpg");
+        when(photoRepository.findByPublicationIdOrderBySortOrderAsc(1L)).thenReturn(List.of(), List.of(photo));
+        when(imageStorage.publicUrl("adoptions/1/a.jpg")).thenReturn("https://cdn/adoptions/1/a.jpg");
+
+        mockMvc.perform(multipart("/adoptions/1/photos").file(png()).header("Authorization", bearer(OWNER_ID)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.photos[0].id").value(10))
+                .andExpect(jsonPath("$.photos[0].url").value("https://cdn/adoptions/1/a.jpg"));
+        verify(imageStorage).upload(any(), any());
+    }
+
+    @Test
+    void unArchivoQueNoEsImagenDa400SinSubirNada() throws Exception {
+        existing();
+        MockMultipartFile text = new MockMultipartFile("file", "foto.png", "image/png", new byte[]{1, 2, 3});
+
+        mockMvc.perform(multipart("/adoptions/1/photos").file(text).header("Authorization", bearer(OWNER_ID)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("IMAGE_INVALID"));
+        verifyNoInteractions(imageStorage);
+    }
+
+    @Test
+    void siElAlmacenamientoNoEstaDisponibleDa503() throws Exception {
+        existing();
+        doThrow(new ServiceUnavailableException(ImageError.STORAGE_UNAVAILABLE))
+                .when(imageStorage).upload(any(), any());
+
+        mockMvc.perform(multipart("/adoptions/1/photos").file(png()).header("Authorization", bearer(OWNER_ID)))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("IMAGE_STORAGE_UNAVAILABLE"));
+        verify(photoRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void borrarFotoSinTokenDa401() throws Exception {
+        mockMvc.perform(delete("/adoptions/1/photos/10"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void borrarFotoDevuelve204() throws Exception {
+        existing();
+        PublicationPhoto photo = new PublicationPhoto();
+        photo.setS3Key("adoptions/1/a.jpg");
+        when(photoRepository.findByIdAndPublicationId(10L, 1L)).thenReturn(Optional.of(photo));
+
+        mockMvc.perform(delete("/adoptions/1/photos/10").header("Authorization", bearer(OWNER_ID)))
+                .andExpect(status().isNoContent());
+        verify(imageStorage).delete("adoptions/1/a.jpg");
+    }
+
+    @Test
+    void elCatalogoPublicoIncluyeLaPortada() throws Exception {
+        AdoptionPublication publication = existing();
+        when(adoptionRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(publication)));
+        PublicationPhoto photo = new PublicationPhoto();
+        photo.setPublication(publication);
+        photo.setS3Key("adoptions/1/a.jpg");
+        when(photoRepository.findByPublicationIdInOrderBySortOrderAsc(List.of(1L))).thenReturn(List.of(photo));
+        when(imageStorage.publicUrl("adoptions/1/a.jpg")).thenReturn("https://cdn/adoptions/1/a.jpg");
+
+        mockMvc.perform(get("/adoptions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].coverPhotoUrl").value("https://cdn/adoptions/1/a.jpg"));
     }
 }

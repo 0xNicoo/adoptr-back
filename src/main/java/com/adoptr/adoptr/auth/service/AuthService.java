@@ -3,6 +3,7 @@ package com.adoptr.adoptr.auth.service;
 import com.adoptr.adoptr.auth.dto.response.AuthDTO;
 import com.adoptr.adoptr.auth.service.validator.Validator;
 import com.adoptr.adoptr.auth.util.AuthUser;
+import com.adoptr.adoptr.profile.service.ProfileService;
 import com.adoptr.adoptr.shared.security.JwtUtil;
 import com.adoptr.adoptr.user.dto.request.UserDTOin;
 import com.adoptr.adoptr.user.dto.response.UserDTO;
@@ -23,12 +24,16 @@ public class AuthService {
 
     private final UserService userService;
 
+    private final ProfileService profileService;
+
     public AuthService(Validator validator,
                        JwtUtil jwtUtil,
-                       UserService userService) {
+                       UserService userService,
+                       ProfileService profileService) {
         this.validator = validator;
         this.jwtUtil = jwtUtil;
         this.userService = userService;
+        this.profileService = profileService;
     }
 
     public AuthDTO authenticate(String provider, String token) {
@@ -37,6 +42,9 @@ public class AuthService {
         UserDTOin userDTOin = new UserDTOin(provider, authUser.providerUserId(), authUser.email(), authUser.name());
         User user = userOptional.orElseGet(() -> userService.createUser(userDTOin));
         UserDTO userDTO = UserMapper.MAPPER.toDto(user);
+        if (userDTO.getProfile() != null) {
+            userDTO.getProfile().setPhotoUrl(profileService.photoUrl(userDTO.getProfile().getId()));
+        }
         String jwt = jwtUtil.generateToken(user.getId());
         return new AuthDTO(jwt, userDTO);
     }

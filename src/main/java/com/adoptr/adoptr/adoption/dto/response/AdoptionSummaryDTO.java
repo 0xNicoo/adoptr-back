@@ -30,6 +30,8 @@ public class AdoptionSummaryDTO {
     private boolean dewormed;
     private boolean neutered;
     private AdoptionStatus status;
+    /** {@code null} si no tiene fotos. */
+    private String coverPhotoUrl;
     private LocalityDTO locality;
     private ProvinceDTO province;
     private LocalDateTime createdAt;

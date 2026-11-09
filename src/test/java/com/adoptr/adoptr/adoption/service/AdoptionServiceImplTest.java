@@ -20,23 +20,32 @@ import com.adoptr.adoptr.profile.model.OrganizationProfile;
 import com.adoptr.adoptr.profile.model.PersonProfile;
 import com.adoptr.adoptr.profile.model.ProfileType;
 import com.adoptr.adoptr.profile.repository.ProfileRepository;
+import com.adoptr.adoptr.publication.dto.response.PhotoDTO;
+import com.adoptr.adoptr.publication.model.PublicationPhoto;
 import com.adoptr.adoptr.publication.model.PublicationType;
+import com.adoptr.adoptr.publication.repository.PublicationPhotoRepository;
 import com.adoptr.adoptr.shared.config.ClockConfig;
 import com.adoptr.adoptr.shared.dto.PageDTO;
 import com.adoptr.adoptr.shared.exception.custom.BadRequestException;
+import com.adoptr.adoptr.shared.exception.custom.ConflictException;
 import com.adoptr.adoptr.shared.exception.custom.ForbiddenException;
 import com.adoptr.adoptr.shared.exception.custom.NotFoundException;
+import com.adoptr.adoptr.shared.storage.ImageProcessor;
+import com.adoptr.adoptr.shared.storage.ImageStorage;
+import com.adoptr.adoptr.shared.storage.ProcessedImage;
 import com.adoptr.adoptr.shared.util.MembershipSupport;
 import com.adoptr.adoptr.user.model.User;
 import com.adoptr.adoptr.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -64,12 +73,18 @@ class AdoptionServiceImplTest {
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-11-07T15:00:00Z"), ClockConfig.ZONE);
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 11, 7, 12, 0);
     private static final LocalDateTime CREATED = LocalDateTime.of(2026, 10, 1, 9, 30);
+    private static final ProcessedImage IMAGE = new ProcessedImage(new byte[]{1, 2, 3}, "image/jpeg", "jpg");
+    private static final MockMultipartFile FILE =
+            new MockMultipartFile("file", "foto.jpg", "image/jpeg", new byte[]{1});
 
     private MembershipSupport membershipSupport;
     private AdoptionPublicationRepository adoptionRepository;
     private ProfileRepository profileRepository;
     private LocalityRepository localityRepository;
     private UserRepository userRepository;
+    private PublicationPhotoRepository photoRepository;
+    private ImageProcessor imageProcessor;
+    private ImageStorage imageStorage;
     private AdoptionService service;
 
     private Locality locality;
@@ -83,8 +98,13 @@ class AdoptionServiceImplTest {
         profileRepository = mock(ProfileRepository.class);
         localityRepository = mock(LocalityRepository.class);
         userRepository = mock(UserRepository.class);
+        photoRepository = mock(PublicationPhotoRepository.class);
+        imageProcessor = mock(ImageProcessor.class);
+        imageStorage = mock(ImageStorage.class);
         service = new AdoptionServiceImpl(membershipSupport, adoptionRepository, profileRepository,
-                localityRepository, userRepository, CLOCK);
+                localityRepository, userRepository, photoRepository, imageProcessor, imageStorage, CLOCK);
+        when(imageProcessor.process(any())).thenReturn(IMAGE);
+        when(imageStorage.publicUrl(any())).thenAnswer(invocation -> "https://cdn/" + invocation.getArgument(0));
 
         Province province = new Province();
         province.setId(6L);
@@ -637,5 +657,170 @@ class AdoptionServiceImplTest {
         assertThatThrownBy(() -> service.search(new AdoptionFilterDTO(), -1, 20))
                 .isInstanceOf(BadRequestException.class)
                 .hasFieldOrPropertyWithValue("code", "VALIDATION_ERROR");
+    }
+
+    // ---- Fotos ----
+
+    private AdoptionPublication publicationWithId(long id, User author) {
+        AdoptionPublication p = new AdoptionPublication();
+        p.setId(id);
+        p.setType(PublicationType.ADOPTION);
+        p.setAuthor(author);
+        p.setLocality(locality);
+        p.setDescription("Descripción");
+        p.setPetName("Luna");
+        p.setSpecies(Species.CAT);
+        p.setSex(PetSex.FEMALE);
+        p.setEstimatedBirthDate(LocalDate.of(2024, 3, 1));
+        p.setStatus(AdoptionStatus.AVAILABLE);
+        p.setCreatedAt(CREATED);
+        p.setUpdatedAt(CREATED);
+        when(adoptionRepository.findByIdAndDeletedAtIsNull(id)).thenReturn(Optional.of(p));
+        return p;
+    }
+
+    private static PublicationPhoto photo(long id, AdoptionPublication publication, int sortOrder) {
+        PublicationPhoto photo = new PublicationPhoto();
+        photo.setId(id);
+        photo.setPublication(publication);
+        photo.setSortOrder(sortOrder);
+        photo.fillFrom("adoptions/" + publication.getId() + "/" + id + ".jpg", IMAGE, CREATED);
+        return photo;
+    }
+
+    @Test
+    void agregarFotoLaSubeYLaGuardaAlFinal() {
+        when(membershipSupport.getUserId()).thenReturn(USER_ID);
+        AdoptionPublication publication = publicationWithId(1L, owner);
+        when(photoRepository.findByPublicationIdOrderBySortOrderAsc(1L))
+                .thenReturn(List.of(photo(10L, publication, 0), photo(11L, publication, 3)));
+
+        service.addPhoto(1L, FILE);
+
+        ArgumentCaptor<PublicationPhoto> saved = ArgumentCaptor.forClass(PublicationPhoto.class);
+        verify(photoRepository).saveAndFlush(saved.capture());
+        assertThat(saved.getValue().getSortOrder()).isEqualTo(4);
+        assertThat(saved.getValue().getS3Key()).startsWith("adoptions/1/").endsWith(".jpg");
+        assertThat(saved.getValue().getSizeBytes()).isEqualTo(3);
+        assertThat(saved.getValue().getCreatedAt()).isEqualTo(NOW);
+        verify(imageStorage).upload(saved.getValue().getS3Key(), IMAGE);
+        assertThat(publication.getUpdatedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void laPrimeraFotoQuedaEnElLugarCero() {
+        when(membershipSupport.getUserId()).thenReturn(USER_ID);
+        publicationWithId(1L, owner);
+
+        service.addPhoto(1L, FILE);
+
+        ArgumentCaptor<PublicationPhoto> saved = ArgumentCaptor.forClass(PublicationPhoto.class);
+        verify(photoRepository).saveAndFlush(saved.capture());
+        assertThat(saved.getValue().getSortOrder()).isZero();
+    }
+
+    @Test
+    void conCincoFotosRechazaLaSextaSinProcesarla() {
+        when(membershipSupport.getUserId()).thenReturn(USER_ID);
+        AdoptionPublication publication = publicationWithId(1L, owner);
+        when(photoRepository.findByPublicationIdOrderBySortOrderAsc(1L)).thenReturn(List.of(
+                photo(1L, publication, 0), photo(2L, publication, 1), photo(3L, publication, 2),
+                photo(4L, publication, 3), photo(5L, publication, 4)));
+
+        assertThatThrownBy(() -> service.addPhoto(1L, FILE))
+                .isInstanceOfSatisfying(ConflictException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("ADOPTION_PHOTO_LIMIT_REACHED"));
+        verify(imageProcessor, never()).process(any());
+    }
+
+    @Test
+    void agregarFotoAPublicacionAjenaDa403SinSubirNada() {
+        when(membershipSupport.getUserId()).thenReturn(USER_ID);
+        publicationWithId(1L, other);
+
+        assertThatThrownBy(() -> service.addPhoto(1L, FILE)).isInstanceOf(ForbiddenException.class);
+        verify(imageStorage, never()).upload(any(), any());
+    }
+
+    @Test
+    void siDosSubidasChocanBorraElArchivoYDa409() {
+        when(membershipSupport.getUserId()).thenReturn(USER_ID);
+        publicationWithId(1L, owner);
+        when(photoRepository.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("duplicada"));
+
+        assertThatThrownBy(() -> service.addPhoto(1L, FILE))
+                .isInstanceOfSatisfying(ConflictException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("ADOPTION_PHOTO_CONFLICT"));
+        ArgumentCaptor<String> uploaded = ArgumentCaptor.forClass(String.class);
+        verify(imageStorage).upload(uploaded.capture(), eq(IMAGE));
+        verify(imageStorage).delete(uploaded.getValue());
+    }
+
+    @Test
+    void siFallaLaBaseBorraElArchivoSubido() {
+        when(membershipSupport.getUserId()).thenReturn(USER_ID);
+        publicationWithId(1L, owner);
+        when(photoRepository.saveAndFlush(any())).thenThrow(new IllegalStateException("base caída"));
+
+        assertThatThrownBy(() -> service.addPhoto(1L, FILE)).isInstanceOf(IllegalStateException.class);
+        ArgumentCaptor<String> uploaded = ArgumentCaptor.forClass(String.class);
+        verify(imageStorage).upload(uploaded.capture(), eq(IMAGE));
+        verify(imageStorage).delete(uploaded.getValue());
+    }
+
+    @Test
+    void borrarFotoLaSacaDeLaBaseYDelAlmacenamiento() {
+        when(membershipSupport.getUserId()).thenReturn(USER_ID);
+        AdoptionPublication publication = publicationWithId(1L, owner);
+        PublicationPhoto photo = photo(10L, publication, 0);
+        when(photoRepository.findByIdAndPublicationId(10L, 1L)).thenReturn(Optional.of(photo));
+
+        service.deletePhoto(1L, 10L);
+
+        verify(photoRepository).delete(photo);
+        verify(imageStorage).delete(photo.getS3Key());
+        assertThat(publication.getUpdatedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void borrarFotoDeOtraPublicacionDa404() {
+        when(membershipSupport.getUserId()).thenReturn(USER_ID);
+        publicationWithId(1L, owner);
+        when(photoRepository.findByIdAndPublicationId(10L, 1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.deletePhoto(1L, 10L))
+                .isInstanceOfSatisfying(NotFoundException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("ADOPTION_PHOTO_NOT_FOUND"));
+        verify(imageStorage, never()).delete(any());
+    }
+
+    @Test
+    void elDetalleDevuelveLasFotosEnOrdenConSuUrl() {
+        AdoptionPublication publication = publicationWithId(1L, owner);
+        when(membershipSupport.findUserId()).thenReturn(Optional.empty());
+        when(photoRepository.findByPublicationIdOrderBySortOrderAsc(1L))
+                .thenReturn(List.of(photo(10L, publication, 0), photo(11L, publication, 1)));
+
+        AdoptionDTO dto = service.get(1L);
+
+        assertThat(dto.getPhotos()).extracting(PhotoDTO::id).containsExactly(10L, 11L);
+        assertThat(dto.getPhotos().getFirst().url()).isEqualTo("https://cdn/adoptions/1/10.jpg");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void elCatalogoDevuelveLaPortadaSinUnaConsultaPorPublicacion() {
+        AdoptionPublication withPhotos = publicationWithId(1L, owner);
+        AdoptionPublication withoutPhotos = publicationWithId(2L, owner);
+        when(adoptionRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(withPhotos, withoutPhotos)));
+        when(photoRepository.findByPublicationIdInOrderBySortOrderAsc(List.of(1L, 2L)))
+                .thenReturn(List.of(photo(10L, withPhotos, 0), photo(11L, withPhotos, 1)));
+
+        PageDTO<AdoptionSummaryDTO> page = service.search(new AdoptionFilterDTO(), 0, 20);
+
+        assertThat(page.items().get(0).getCoverPhotoUrl()).isEqualTo("https://cdn/adoptions/1/10.jpg");
+        assertThat(page.items().get(1).getCoverPhotoUrl()).isNull();
+        verify(photoRepository, never()).findByPublicationIdOrderBySortOrderAsc(any());
     }
 }

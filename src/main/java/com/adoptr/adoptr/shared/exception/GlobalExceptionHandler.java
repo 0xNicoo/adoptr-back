@@ -4,19 +4,26 @@ import com.adoptr.adoptr.shared.exception.custom.BadRequestException;
 import com.adoptr.adoptr.shared.exception.custom.ConflictException;
 import com.adoptr.adoptr.shared.exception.custom.ForbiddenException;
 import com.adoptr.adoptr.shared.exception.custom.NotFoundException;
+import com.adoptr.adoptr.shared.exception.custom.PayloadTooLargeException;
 import com.adoptr.adoptr.shared.exception.custom.ServiceException;
+import com.adoptr.adoptr.shared.exception.custom.ServiceUnavailableException;
 import com.adoptr.adoptr.shared.exception.custom.UnauthorizedException;
 import com.adoptr.adoptr.shared.exception.error.ApiError;
 import com.adoptr.adoptr.shared.exception.error.CommonError;
+import com.adoptr.adoptr.shared.storage.ImageError;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.stream.Collectors;
@@ -60,6 +67,37 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ApiError> unauthorized(UnauthorizedException ex) {
         return build(HttpStatus.UNAUTHORIZED, new ApiError(ex.getMessage(), ex.getCode()));
+    }
+
+    @ExceptionHandler(PayloadTooLargeException.class)
+    public ResponseEntity<ApiError> payloadTooLarge(PayloadTooLargeException ex) {
+        return build(HttpStatus.CONTENT_TOO_LARGE, new ApiError(ex.getMessage(), ex.getCode()));
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<ApiError> serviceUnavailable(ServiceUnavailableException ex) {
+        return build(HttpStatus.SERVICE_UNAVAILABLE, new ApiError(ex.getMessage(), ex.getCode()));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiError> uploadTooLarge(MaxUploadSizeExceededException ex) {
+        return build(HttpStatus.CONTENT_TOO_LARGE, new ApiError(ImageError.TOO_LARGE));
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ApiError> missingPart(MissingServletRequestPartException ex) {
+        String message = CommonError.VALIDATION_ERROR.getMessage() + " (" + ex.getRequestPartName() + ": es obligatorio)";
+        return build(HttpStatus.BAD_REQUEST, new ApiError(message, CommonError.VALIDATION_ERROR.getCode()));
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<ApiError> malformedMultipart(MultipartException ex) {
+        return build(HttpStatus.BAD_REQUEST, new ApiError(CommonError.MALFORMED_REQUEST));
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiError> unsupportedMediaType(HttpMediaTypeNotSupportedException ex) {
+        return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, new ApiError(CommonError.UNSUPPORTED_MEDIA_TYPE));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

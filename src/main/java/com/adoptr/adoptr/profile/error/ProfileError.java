@@ -6,7 +6,9 @@ public enum ProfileError implements ErrorCode {
 
     NOT_FOUND("PROFILE_NOT_FOUND", "PROFILE", "No se encontró el perfil"),
     ALREADY_EXISTS("PROFILE_ALREADY_EXISTS", "PROFILE", "El usuario ya tiene un perfil"),
-    REQUIRED("PROFILE_REQUIRED", "PROFILE", "Necesitás crear tu perfil para realizar esta acción");
+    REQUIRED("PROFILE_REQUIRED", "PROFILE", "Necesitás crear tu perfil para realizar esta acción"),
+    PHOTO_NOT_FOUND("PROFILE_PHOTO_NOT_FOUND", "PROFILE", "El perfil no tiene foto"),
+    PHOTO_CONFLICT("PROFILE_PHOTO_CONFLICT", "PROFILE", "Se está subiendo otra foto de perfil. Probá de nuevo");
 
     private final String code;
 
