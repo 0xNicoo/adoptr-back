@@ -5,6 +5,7 @@ import com.adoptr.adoptr.adoption.dto.request.AdoptionFilterDTO;
 import com.adoptr.adoptr.adoption.dto.request.AdoptionStatusDTOin;
 import com.adoptr.adoptr.adoption.dto.response.AdoptionDTO;
 import com.adoptr.adoptr.adoption.dto.response.AdoptionSummaryDTO;
+import com.adoptr.adoptr.adoption.model.AdoptionStatus;
 import com.adoptr.adoptr.adoption.service.AdoptionService;
 import com.adoptr.adoptr.shared.dto.PageDTO;
 import com.adoptr.adoptr.shared.util.Paging;
@@ -88,9 +89,11 @@ public class AdoptionController {
         adoptionService.deletePhoto(id, photoId);
     }
 
+    /** Publicaciones del usuario del token; sin {@code status}, en cualquier estado. */
     @GetMapping("/mine")
-    public PageDTO<AdoptionSummaryDTO> mine(@RequestParam(defaultValue = "0") int page,
+    public PageDTO<AdoptionSummaryDTO> mine(@RequestParam(required = false) AdoptionStatus status,
+                                            @RequestParam(defaultValue = "0") int page,
                                             @RequestParam(defaultValue = "" + Paging.DEFAULT_PAGE_SIZE) int pageSize) {
-        return adoptionService.mine(page, pageSize);
+        return adoptionService.mine(status, page, pageSize);
     }
 }

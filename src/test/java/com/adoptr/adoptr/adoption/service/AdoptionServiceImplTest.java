@@ -603,7 +603,7 @@ class AdoptionServiceImplTest {
         Page<AdoptionPublication> page = new PageImpl<>(List.of(p), org.springframework.data.domain.PageRequest.of(2, 10), 21);
         when(adoptionRepository.findByAuthorIdAndDeletedAtIsNull(eq(USER_ID), any(Pageable.class))).thenReturn(page);
 
-        PageDTO<AdoptionSummaryDTO> result = service.mine(2, 10);
+        PageDTO<AdoptionSummaryDTO> result = service.mine(null, 2, 10);
 
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
         verify(adoptionRepository).findByAuthorIdAndDeletedAtIsNull(eq(USER_ID), captor.capture());
@@ -616,13 +616,34 @@ class AdoptionServiceImplTest {
         assertThat(result.items().getFirst().getLifeStage()).isEqualTo(LifeStage.ADULT);
         assertThat(result.totalItems()).isEqualTo(21);
         assertThat(result.totalPages()).isEqualTo(3);
+        verify(adoptionRepository, never()).findByAuthorIdAndStatusAndDeletedAtIsNull(any(), any(), any());
+    }
+
+    @Test
+    void mineConEstadoFiltraPorEseEstado() {
+        loggedAs(USER_ID);
+        AdoptionPublication p = existing(owner, AdoptionStatus.AVAILABLE);
+        when(adoptionRepository.findByAuthorIdAndStatusAndDeletedAtIsNull(
+                eq(USER_ID), eq(AdoptionStatus.AVAILABLE), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(p), org.springframework.data.domain.PageRequest.of(0, 20), 1));
+
+        PageDTO<AdoptionSummaryDTO> result = service.mine(AdoptionStatus.AVAILABLE, 0, 20);
+
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        verify(adoptionRepository).findByAuthorIdAndStatusAndDeletedAtIsNull(
+                eq(USER_ID), eq(AdoptionStatus.AVAILABLE), captor.capture());
+        assertThat(captor.getValue().getSort())
+                .isEqualTo(Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
+        verify(adoptionRepository, never()).findByAuthorIdAndDeletedAtIsNull(any(), any());
+        assertThat(result.items()).extracting(AdoptionSummaryDTO::getStatus).containsExactly(AdoptionStatus.AVAILABLE);
+        assertThat(result.totalItems()).isEqualTo(1);
     }
 
     @Test
     void mineConPageSizeInvalidoFalla() {
         loggedAs(USER_ID);
 
-        assertThatThrownBy(() -> service.mine(0, 51))
+        assertThatThrownBy(() -> service.mine(null, 0, 51))
                 .isInstanceOf(BadRequestException.class)
                 .hasFieldOrPropertyWithValue("code", "VALIDATION_ERROR");
     }

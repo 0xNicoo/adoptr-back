@@ -283,6 +283,30 @@ class AdoptionControllerWebTest {
     }
 
     @Test
+    void mineConEstadoFiltraPorEseEstado() throws Exception {
+        AdoptionPublication p = existing();
+        when(adoptionRepository.findByAuthorIdAndStatusAndDeletedAtIsNull(
+                eq(OWNER_ID), eq(AdoptionStatus.ADOPTED), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(p), PageRequest.of(0, 20), 1));
+
+        mockMvc.perform(get("/adoptions/mine").param("status", "ADOPTED").header("Authorization", bearer(OWNER_ID)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].petName").value("Luna"))
+                .andExpect(jsonPath("$.totalItems").value(1));
+
+        verify(adoptionRepository, never()).findByAuthorIdAndDeletedAtIsNull(any(), any());
+    }
+
+    @Test
+    void mineConEstadoInexistenteDevuelve400() throws Exception {
+        mockMvc.perform(get("/adoptions/mine").param("status", "PERDIDO").header("Authorization", bearer(OWNER_ID)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+
+        verifyNoInteractions(adoptionRepository);
+    }
+
+    @Test
     void mineConPageSize51Devuelve400() throws Exception {
         mockMvc.perform(get("/adoptions/mine").param("pageSize", "51").header("Authorization", bearer(OWNER_ID)))
                 .andExpect(status().isBadRequest())

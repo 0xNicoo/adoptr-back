@@ -176,6 +176,32 @@ class AdoptionPublicationRepositoryTest {
     }
 
     @Test
+    void mineFiltraPorEstadoSinBorradasNiAjenas() {
+        publication(owner, "Adoptada", AdoptionStatus.ADOPTED, T0);
+        publication(owner, "Disponible vieja", AdoptionStatus.AVAILABLE, T0.plusDays(1));
+        publication(owner, "Disponible nueva", AdoptionStatus.AVAILABLE, T0.plusDays(2));
+        AdoptionPublication deleted = publication(owner, "Borrada", AdoptionStatus.AVAILABLE, T0.plusDays(3));
+        deleted.setDeletedAt(T0.plusDays(4));
+        repository.save(deleted);
+        publication(other, "Ajena", AdoptionStatus.AVAILABLE, T0.plusDays(5));
+        entityManager.flush();
+        entityManager.clear();
+
+        Page<AdoptionPublication> available = repository.findByAuthorIdAndStatusAndDeletedAtIsNull(
+                owner.getId(), AdoptionStatus.AVAILABLE, PageRequest.of(0, 20, NEWEST_FIRST));
+        Page<AdoptionPublication> adopted = repository.findByAuthorIdAndStatusAndDeletedAtIsNull(
+                owner.getId(), AdoptionStatus.ADOPTED, PageRequest.of(0, 20, NEWEST_FIRST));
+
+        assertThat(available.getContent()).extracting(AdoptionPublication::getPetName)
+                .containsExactly("Disponible nueva", "Disponible vieja");
+        assertThat(available.getTotalElements()).isEqualTo(2);
+        assertThat(adopted.getContent()).extracting(AdoptionPublication::getPetName).containsExactly("Adoptada");
+        AdoptionPublication read = available.getContent().getFirst();
+        assertThat(Hibernate.isInitialized(read.getLocality().getProvince())).isTrue();
+        assertThat(Hibernate.isInitialized(read.getAuthor())).isFalse();
+    }
+
+    @Test
     void mineTraeUbicacionPeroNoCargaAutorNiPerfil() {
         publication(owner, "Luna", AdoptionStatus.AVAILABLE, T0);
         entityManager.flush();
