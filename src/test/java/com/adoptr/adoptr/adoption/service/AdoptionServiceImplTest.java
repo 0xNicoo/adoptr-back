@@ -58,6 +58,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -104,7 +105,7 @@ class AdoptionServiceImplTest {
         imageStorage = mock(ImageStorage.class);
         service = new AdoptionServiceImpl(membershipSupport, adoptionRepository, profileRepository,
                 localityRepository, userRepository, photoRepository, imageProcessor, imageStorage, CLOCK);
-        when(imageProcessor.process(any())).thenReturn(IMAGE);
+        when(imageProcessor.process(any(), eq(4), eq(3))).thenReturn(IMAGE);
         when(imageStorage.publicUrl(any())).thenAnswer(invocation -> "https://cdn/" + invocation.getArgument(0));
 
         Province province = new Province();
@@ -812,7 +813,7 @@ class AdoptionServiceImplTest {
         assertThatThrownBy(() -> service.addPhoto(1L, FILE))
                 .isInstanceOfSatisfying(ConflictException.class,
                         e -> assertThat(e.getCode()).isEqualTo("ADOPTION_PHOTO_LIMIT_REACHED"));
-        verify(imageProcessor, never()).process(any());
+        verify(imageProcessor, never()).process(any(), anyInt(), anyInt());
     }
 
     @Test

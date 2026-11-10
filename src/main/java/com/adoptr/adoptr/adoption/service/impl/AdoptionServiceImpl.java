@@ -59,6 +59,9 @@ public class AdoptionServiceImpl implements AdoptionService {
     static final Sort NEWEST_FIRST = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
     private static final int MAX_AGE_YEARS = 30;
     static final int MAX_PHOTOS = 5;
+    /** Las fotos de adopción se guardan en 4:3, el formato de las tarjetas y del detalle. */
+    static final int PHOTO_RATIO_WIDTH = 4;
+    static final int PHOTO_RATIO_HEIGHT = 3;
 
     private final MembershipSupport membershipSupport;
     private final AdoptionPublicationRepository adoptionRepository;
@@ -158,7 +161,7 @@ public class AdoptionServiceImpl implements AdoptionService {
         if (photos.size() >= MAX_PHOTOS) {
             throw new ConflictException(AdoptionError.PHOTO_LIMIT_REACHED);
         }
-        ProcessedImage image = imageProcessor.process(file);
+        ProcessedImage image = imageProcessor.process(file, PHOTO_RATIO_WIDTH, PHOTO_RATIO_HEIGHT);
         String key = "adoptions/" + id + "/" + UUID.randomUUID() + "." + image.extension();
         imageStorage.upload(key, image);
 
