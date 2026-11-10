@@ -105,7 +105,7 @@ class AdoptionServiceImplTest {
         imageStorage = mock(ImageStorage.class);
         service = new AdoptionServiceImpl(membershipSupport, adoptionRepository, profileRepository,
                 localityRepository, userRepository, photoRepository, imageProcessor, imageStorage, CLOCK);
-        when(imageProcessor.process(any(), eq(4), eq(3))).thenReturn(IMAGE);
+        when(imageProcessor.process(any(), eq(3), eq(4))).thenReturn(IMAGE);
         when(imageStorage.publicUrl(any())).thenAnswer(invocation -> "https://cdn/" + invocation.getArgument(0));
 
         Province province = new Province();

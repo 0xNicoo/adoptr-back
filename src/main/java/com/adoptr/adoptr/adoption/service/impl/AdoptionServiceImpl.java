@@ -59,9 +59,9 @@ public class AdoptionServiceImpl implements AdoptionService {
     static final Sort NEWEST_FIRST = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
     private static final int MAX_AGE_YEARS = 30;
     static final int MAX_PHOTOS = 5;
-    /** Las fotos de adopción se guardan en 4:3, el formato de las tarjetas y del detalle. */
-    static final int PHOTO_RATIO_WIDTH = 4;
-    static final int PHOTO_RATIO_HEIGHT = 3;
+    /** Las fotos de adopción se guardan verticales, en 3:4 (hasta 1200×1600). */
+    static final int PHOTO_RATIO_WIDTH = 3;
+    static final int PHOTO_RATIO_HEIGHT = 4;
 
     private final MembershipSupport membershipSupport;
     private final AdoptionPublicationRepository adoptionRepository;

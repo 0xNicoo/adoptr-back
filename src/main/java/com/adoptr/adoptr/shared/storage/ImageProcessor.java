@@ -54,7 +54,7 @@ public class ImageProcessor {
 
     /**
      * Igual que {@link #process(MultipartFile)}, pero recortada al centro con la proporción
-     * {@code ratioWidth:ratioHeight} (por ejemplo 4:3) si no la tiene. Con 0 no recorta.
+     * {@code ratioWidth:ratioHeight} (por ejemplo 3:4) si no la tiene. Con 0 no recorta.
      */
     public ProcessedImage process(MultipartFile file, int ratioWidth, int ratioHeight) {
         if (file == null || file.isEmpty()) {

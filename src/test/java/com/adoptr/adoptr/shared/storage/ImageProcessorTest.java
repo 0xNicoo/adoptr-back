@@ -180,62 +180,63 @@ class ImageProcessorTest {
                 .isInstanceOf(PayloadTooLargeException.class);
     }
 
-    // ---- Recorte a una proporción (fotos de adopción en 4:3) ----
+    // ---- Recorte a una proporción (fotos de adopción verticales, 3:4) ----
 
     @Test
-    void conProporcionRecortaAlCentroUnaFotoMasAncha() throws IOException {
-        BufferedImage image = rgb(200, 100);
+    void conProporcionRecortaLosCostadosDeUnaFotoApaisada() throws IOException {
+        BufferedImage image = rgb(400, 300);
         Graphics2D graphics = image.createGraphics();
         graphics.setColor(Color.RED);
-        graphics.fillRect(0, 0, 33, 100);
+        graphics.fillRect(0, 0, 87, 300);
         graphics.setColor(Color.BLUE);
-        graphics.fillRect(33, 0, 134, 100);
+        graphics.fillRect(87, 0, 226, 300);
         graphics.setColor(Color.RED);
-        graphics.fillRect(167, 0, 33, 100);
+        graphics.fillRect(313, 0, 87, 300);
         graphics.dispose();
 
-        BufferedImage decoded = decode(processor.process(file(encode(image, "png"), "image/png"), 4, 3));
+        BufferedImage decoded = decode(processor.process(file(encode(image, "png"), "image/png"), 3, 4));
 
-        assertThat(decoded.getWidth()).isEqualTo(133);
-        assertThat(decoded.getHeight()).isEqualTo(100);
+        assertThat(decoded.getWidth()).isEqualTo(225);
+        assertThat(decoded.getHeight()).isEqualTo(300);
         // Quedó el centro azul: los costados rojos se recortaron.
-        Color left = new Color(decoded.getRGB(2, 50));
+        Color left = new Color(decoded.getRGB(2, 150));
         assertThat(left.getBlue()).isGreaterThan(200);
         assertThat(left.getRed()).isLessThan(60);
     }
 
     @Test
-    void conProporcionRecortaArribaYAbajoUnaFotoMasAlta() throws IOException {
-        BufferedImage decoded = decode(processor.process(file(encode(rgb(300, 400), "png"), "image/png"), 4, 3));
+    void conProporcionRecortaArribaYAbajoUnaFotoMuyAlta() throws IOException {
+        BufferedImage decoded = decode(processor.process(file(encode(rgb(300, 600), "png"), "image/png"), 3, 4));
 
         assertThat(decoded.getWidth()).isEqualTo(300);
-        assertThat(decoded.getHeight()).isEqualTo(225);
+        assertThat(decoded.getHeight()).isEqualTo(400);
     }
 
     @Test
     void conProporcionAchicaYDespuesRecorta() throws IOException {
-        BufferedImage decoded = decode(processor.process(file(encode(rgb(2000, 2000), "png"), "image/png"), 4, 3));
+        BufferedImage decoded = decode(processor.process(file(encode(rgb(2000, 2000), "png"), "image/png"), 3, 4));
 
-        assertThat(decoded.getWidth()).isEqualTo(1600);
-        assertThat(decoded.getHeight()).isEqualTo(1200);
+        assertThat(decoded.getWidth()).isEqualTo(1200);
+        assertThat(decoded.getHeight()).isEqualTo(1600);
     }
 
     @Test
     void conProporcionRecortaDespuesDeGirarSegunExif() throws IOException {
-        // 400x300 con orientación 6: girada queda 300x400 (vertical) y el recorte 4:3 la deja en 300x225.
-        BufferedImage decoded = decode(processor.process(file(jpegWithExif(rgb(400, 300)), "image/jpeg"), 4, 3));
+        // 600x300 con orientación 6: girada queda 300x600 (vertical) y el recorte 3:4 la deja en 300x400.
+        // Sin girar primero, el recorte se haría sobre la foto acostada.
+        BufferedImage decoded = decode(processor.process(file(jpegWithExif(rgb(600, 300)), "image/jpeg"), 3, 4));
 
         assertThat(decoded.getWidth()).isEqualTo(300);
-        assertThat(decoded.getHeight()).isEqualTo(225);
+        assertThat(decoded.getHeight()).isEqualTo(400);
     }
 
     @Test
-    void unaFotoYa4x3NoSeRecorta() {
-        BufferedImage exact = rgb(1600, 1200);
-        BufferedImage offByOne = rgb(1601, 1200);
+    void unaFotoYaEnProporcionNoSeRecorta() {
+        BufferedImage exact = rgb(1200, 1600);
+        BufferedImage offByOne = rgb(1200, 1601);
 
-        assertThat(ImageProcessor.cropToRatio(exact, 4, 3)).isSameAs(exact);
-        assertThat(ImageProcessor.cropToRatio(offByOne, 4, 3)).isSameAs(offByOne);
+        assertThat(ImageProcessor.cropToRatio(exact, 3, 4)).isSameAs(exact);
+        assertThat(ImageProcessor.cropToRatio(offByOne, 3, 4)).isSameAs(offByOne);
     }
 
     @Test
