@@ -71,8 +71,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Prueba /adoptions con la cadena de seguridad real, el servicio real y los repositorios simulados. */
-@WebMvcTest(controllers = AdoptionController.class)
+/**
+ * Prueba /adoptions y /profiles/{id}/adoptions con la cadena de seguridad real, el servicio real y los
+ * repositorios simulados.
+ */
+@WebMvcTest(controllers = {AdoptionController.class, ProfileAdoptionsController.class})
 @Import({SecurityConfig.class, JwtAuthFilter.class, JwtUtil.class, AdoptionServiceImpl.class,
         MembershipSupport.class, AdoptionControllerWebTest.FixedClock.class, ImageProcessor.class})
 @TestPropertySource(properties = {
@@ -84,6 +87,7 @@ class AdoptionControllerWebTest {
     private static final long OWNER_ID = 7L;
     private static final long OTHER_ID = 8L;
     private static final long LOCALITY_ID = 6441030L;
+    private static final long PROFILE_ID = 3L;
 
     private static final String DOG_JSON = """
             {
@@ -150,8 +154,11 @@ class AdoptionControllerWebTest {
         locality.setDisplayName("La Plata");
         locality.setProvince(province);
         OrganizationProfile organization = new OrganizationProfile();
+        organization.setId(PROFILE_ID);
+        organization.setUser(owner);
         organization.setOrganizationName("Refugio Patitas");
         when(profileRepository.findByUserId(OWNER_ID)).thenReturn(Optional.of(organization));
+        when(profileRepository.findById(PROFILE_ID)).thenReturn(Optional.of(organization));
         when(profileRepository.existsByUserId(OWNER_ID)).thenReturn(true);
         when(localityRepository.findById(LOCALITY_ID)).thenReturn(Optional.of(locality));
         when(userRepository.getReferenceById(OWNER_ID)).thenReturn(owner);
@@ -237,6 +244,7 @@ class AdoptionControllerWebTest {
                 .andExpect(jsonPath("$.province.name").value("Buenos Aires"))
                 .andExpect(jsonPath("$.owner.displayName").value("Refugio Patitas"))
                 .andExpect(jsonPath("$.owner.profileType").value("ORGANIZATION"))
+                .andExpect(jsonPath("$.owner.profileId").value(PROFILE_ID))
                 .andExpect(jsonPath("$.createdAt").value("2026-10-01T09:30:00"))
                 .andExpect(jsonPath("$.author").doesNotExist())
                 .andExpect(jsonPath("$.userId").doesNotExist())
@@ -311,6 +319,54 @@ class AdoptionControllerWebTest {
         mockMvc.perform(get("/adoptions/mine").param("pageSize", "51").header("Authorization", bearer(OWNER_ID)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    // ---- Publicaciones de un perfil (público) ----
+
+    @Test
+    void deUnPerfilSinTokenEsPublico() throws Exception {
+        AdoptionPublication p = existing();
+        when(adoptionRepository.findByAuthorIdAndDeletedAtIsNull(eq(OWNER_ID), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(p), PageRequest.of(0, 20), 1));
+
+        mockMvc.perform(get("/profiles/" + PROFILE_ID + "/adoptions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].petName").value("Luna"))
+                .andExpect(jsonPath("$.items[0].owner").doesNotExist())
+                .andExpect(jsonPath("$.totalItems").value(1));
+    }
+
+    @Test
+    void deUnPerfilConEstadoYTokenInvalidoFiltraYSiguePublico() throws Exception {
+        when(adoptionRepository.findByAuthorIdAndStatusAndDeletedAtIsNull(
+                eq(OWNER_ID), eq(AdoptionStatus.AVAILABLE), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+
+        mockMvc.perform(get("/profiles/" + PROFILE_ID + "/adoptions").param("status", "AVAILABLE")
+                        .header("Authorization", "Bearer basura"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isEmpty());
+    }
+
+    @Test
+    void deUnPerfilInexistenteDevuelve404() throws Exception {
+        when(profileRepository.findById(99L)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/profiles/99/adoptions"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("PROFILE_NOT_FOUND"));
+    }
+
+    @Test
+    void deUnPerfilConEstadoInexistenteOIdInvalidoDevuelve400() throws Exception {
+        mockMvc.perform(get("/profiles/" + PROFILE_ID + "/adoptions").param("status", "PERDIDO"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+        mockMvc.perform(get("/profiles/abc/adoptions"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+
+        verifyNoInteractions(adoptionRepository);
     }
 
     // ---- Alta ----

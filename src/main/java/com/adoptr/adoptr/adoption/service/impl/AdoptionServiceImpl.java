@@ -18,6 +18,7 @@ import com.adoptr.adoptr.location.error.LocationError;
 import com.adoptr.adoptr.location.model.Locality;
 import com.adoptr.adoptr.location.repository.LocalityRepository;
 import com.adoptr.adoptr.profile.error.ProfileError;
+import com.adoptr.adoptr.profile.model.Profile;
 import com.adoptr.adoptr.profile.repository.ProfileRepository;
 import com.adoptr.adoptr.publication.dto.response.PhotoDTO;
 import com.adoptr.adoptr.publication.model.PublicationPhoto;
@@ -194,8 +195,20 @@ public class AdoptionServiceImpl implements AdoptionService {
     @Override
     @Transactional(readOnly = true)
     public PageDTO<AdoptionSummaryDTO> mine(AdoptionStatus status, int page, int pageSize) {
-        Long userId = membershipSupport.getUserId();
         Pageable pageable = Paging.pageable(page, pageSize, NEWEST_FIRST);
+        return byAuthor(membershipSupport.getUserId(), status, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageDTO<AdoptionSummaryDTO> byProfile(Long profileId, AdoptionStatus status, int page, int pageSize) {
+        Pageable pageable = Paging.pageable(page, pageSize, NEWEST_FIRST);
+        Profile profile = profileRepository.findById(profileId)
+                .orElseThrow(() -> new NotFoundException(ProfileError.NOT_FOUND));
+        return byAuthor(profile.getUser().getId(), status, pageable);
+    }
+
+    private PageDTO<AdoptionSummaryDTO> byAuthor(Long userId, AdoptionStatus status, Pageable pageable) {
         return toSummaries(status == null
                 ? adoptionRepository.findByAuthorIdAndDeletedAtIsNull(userId, pageable)
                 : adoptionRepository.findByAuthorIdAndStatusAndDeletedAtIsNull(userId, status, pageable));

@@ -39,9 +39,11 @@ public final class AdoptionMapper {
         return switch (profile) {
             case null -> null;
             case PersonProfile person ->
-                    new OwnerDTO(person.getFirstName() + " " + person.getLastName(), person.getProfileType());
+                    new OwnerDTO(person.getId(), person.getFirstName() + " " + person.getLastName(),
+                            person.getProfileType());
             case OrganizationProfile organization ->
-                    new OwnerDTO(organization.getOrganizationName(), organization.getProfileType());
+                    new OwnerDTO(organization.getId(), organization.getOrganizationName(),
+                            organization.getProfileType());
             default -> throw new IllegalStateException("Tipo de perfil sin mapeo: " + profile.getClass());
         };
     }
