@@ -45,6 +45,8 @@ public class SecurityConfig {
                     request.requestMatchers(HttpMethod.GET, "/adoptions/mine").authenticated();
                     // Catálogo y detalle públicos; con un JWT válido el filtro igual carga el usuario (viewerIsOwner).
                     request.requestMatchers(HttpMethod.GET, "/adoptions", "/adoptions/{id}").permitAll();
+                    // Perfiles ajenos y sus publicaciones, públicos. El perfil propio (/profile) sigue con token.
+                    request.requestMatchers(HttpMethod.GET, "/profiles/{id}", "/profiles/{id}/adoptions").permitAll();
                     // Imágenes en disco de desarrollo, públicas como las del bucket. Con S3 la ruta responde 404.
                     request.requestMatchers(HttpMethod.GET, "/local-images/**").permitAll();
                     request.anyRequest().authenticated();

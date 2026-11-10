@@ -5,6 +5,7 @@ import com.adoptr.adoptr.location.model.Locality;
 import com.adoptr.adoptr.location.repository.LocalityRepository;
 import com.adoptr.adoptr.profile.dto.request.ProfileDTOin;
 import com.adoptr.adoptr.profile.dto.response.ProfileDTO;
+import com.adoptr.adoptr.profile.dto.response.PublicProfileDTO;
 import com.adoptr.adoptr.profile.error.ProfileError;
 import com.adoptr.adoptr.profile.mapper.ProfileMapper;
 import com.adoptr.adoptr.profile.model.OrganizationProfile;
@@ -69,6 +70,16 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public ProfileDTO get() {
         return toDto(findOwn());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PublicProfileDTO getPublic(Long id) {
+        Profile profile = profileRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ProfileError.NOT_FOUND));
+        PublicProfileDTO dto = ProfileMapper.toPublicDto(profile);
+        dto.setPhotoUrl(photoUrl(profile.getId()));
+        return dto;
     }
 
     /** Sin transacción: no retiene una conexión de la base mientras procesa la imagen y la sube a S3. */

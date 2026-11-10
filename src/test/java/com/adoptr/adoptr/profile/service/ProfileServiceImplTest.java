@@ -5,6 +5,7 @@ import com.adoptr.adoptr.location.model.Province;
 import com.adoptr.adoptr.location.repository.LocalityRepository;
 import com.adoptr.adoptr.profile.dto.request.ProfileDTOin;
 import com.adoptr.adoptr.profile.dto.response.ProfileDTO;
+import com.adoptr.adoptr.profile.dto.response.PublicProfileDTO;
 import com.adoptr.adoptr.profile.model.Gender;
 import com.adoptr.adoptr.profile.model.OrganizationProfile;
 import com.adoptr.adoptr.profile.model.PersonProfile;
@@ -309,6 +310,66 @@ class ProfileServiceImplTest {
         when(profileRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(service::get)
+                .isInstanceOf(NotFoundException.class)
+                .hasFieldOrPropertyWithValue("code", "PROFILE_NOT_FOUND");
+    }
+
+    // ---- Perfil público ----
+
+    @Test
+    void perfilPublicoDePersonaSinGenero() {
+        PersonProfile profile = new PersonProfile();
+        profile.setId(3L);
+        profile.setUser(user);
+        profile.setFirstName("Victoria");
+        profile.setLastName("Miranda");
+        profile.setGenderType(Gender.FEMALE);
+        profile.setDescription("Doy tránsito.");
+        profile.setLocality(laPlata());
+        when(profileRepository.findById(3L)).thenReturn(Optional.of(profile));
+        when(photoRepository.findByProfileId(3L)).thenReturn(Optional.of(photo(profile, "profiles/3/a.jpg")));
+
+        PublicProfileDTO result = service.getPublic(3L);
+
+        assertThat(result.getId()).isEqualTo(3L);
+        assertThat(result.getProfileType()).isEqualTo(ProfileType.PERSON);
+        assertThat(result.getFirstName()).isEqualTo("Victoria");
+        assertThat(result.getLastName()).isEqualTo("Miranda");
+        assertThat(result.getDescription()).isEqualTo("Doy tránsito.");
+        assertThat(result.getLocality().getId()).isEqualTo(LOCALITY_ID);
+        assertThat(result.getProvince().getName()).isEqualTo("Buenos Aires");
+        assertThat(result.getPhotoUrl()).isEqualTo("https://cdn/profiles/3/a.jpg");
+        assertThat(result.getOrganizationName()).isNull();
+    }
+
+    @Test
+    void perfilPublicoDeOrganizacion() {
+        OrganizationProfile profile = new OrganizationProfile();
+        profile.setId(4L);
+        profile.setUser(user);
+        profile.setOrganizationName("Refugio Patitas");
+        profile.setInstagram("@patitas");
+        profile.setWebsite("https://patitas.org");
+        profile.setDescription("Rescatamos.");
+        profile.setLocality(laPlata());
+        when(profileRepository.findById(4L)).thenReturn(Optional.of(profile));
+        when(photoRepository.findByProfileId(4L)).thenReturn(Optional.empty());
+
+        PublicProfileDTO result = service.getPublic(4L);
+
+        assertThat(result.getProfileType()).isEqualTo(ProfileType.ORGANIZATION);
+        assertThat(result.getOrganizationName()).isEqualTo("Refugio Patitas");
+        assertThat(result.getInstagram()).isEqualTo("@patitas");
+        assertThat(result.getWebsite()).isEqualTo("https://patitas.org");
+        assertThat(result.getPhotoUrl()).isNull();
+        assertThat(result.getFirstName()).isNull();
+    }
+
+    @Test
+    void perfilPublicoInexistenteDevuelveNotFound() {
+        when(profileRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getPublic(99L))
                 .isInstanceOf(NotFoundException.class)
                 .hasFieldOrPropertyWithValue("code", "PROFILE_NOT_FOUND");
     }

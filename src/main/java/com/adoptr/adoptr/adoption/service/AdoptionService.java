@@ -29,6 +29,12 @@ public interface AdoptionService {
     /** Publicaciones activas del usuario del token; {@code status} null trae todos los estados. */
     PageDTO<AdoptionSummaryDTO> mine(AdoptionStatus status, int page, int pageSize);
 
+    /**
+     * Publicaciones activas del perfil indicado, públicas; {@code status} null trae todos los estados.
+     * 404 {@code PROFILE_NOT_FOUND} si el perfil no existe.
+     */
+    PageDTO<AdoptionSummaryDTO> byProfile(Long profileId, AdoptionStatus status, int page, int pageSize);
+
     /** Catálogo público: solo publicaciones en adopción, con los filtros que vengan. */
     PageDTO<AdoptionSummaryDTO> search(AdoptionFilterDTO filter, int page, int pageSize);
 }

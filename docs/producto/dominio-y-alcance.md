@@ -41,12 +41,12 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 - **Edición:** se puede editar en cualquier estado. Quien publicó también puede editar desde el detalle: el detalle informa si quien mira es el dueño.
 - **Baja:** lógica. La publicación desaparece del detalle y de «mis publicaciones», pero queda guardada.
 - **Responsable visible:** nombre y apellido de la persona, o nombre de la organización, y el tipo de perfil. Nunca el email.
-- **Para más adelante:** quién adoptó (depende del módulo de contacto), raza, color, compatibilidad con chicos y otros animales, y el listado público por responsable.
+- **Para más adelante:** quién adoptó (depende del módulo de contacto), raza, color, compatibilidad con chicos y otros animales.
 
-### Decisión: perfil propio y perfil de otras personas (Dolores, 2026-11-10)
+### Decisión: perfil propio y perfil de otras personas (Dolores, 2026-11-10; actualizada 2026-11-10)
 
 - **Mi perfil:** quien inició sesión ve sus datos y todas sus publicaciones de adopción, en adopción y adoptadas, cada una con su estado. Puede filtrar para ver solo las que están en adopción. No se muestra la fecha de alta en Adoptr.
-- **Perfil de otra persona (pendiente de implementar):** se puede ver sin iniciar sesión, pero la descripción y la localidad solo se muestran a usuarios con sesión iniciada. Falta definir el resto de los datos visibles, qué publicaciones lista y cómo se llega a él desde una publicación.
+- **Perfil de otra persona:** público, sin iniciar sesión. Muestra todos los datos del perfil, incluidas la descripción y la localidad (reemplaza la decisión anterior, que las reservaba para usuarios con sesión), **salvo el género** de una persona, que no se expone. Lista todas sus publicaciones de adopción con su estado, con el mismo filtro «Todas / En adopción». Se llega desde el responsable en el detalle de una publicación. Si quien mira es el dueño, el front lo lleva a «Mi perfil».
 
 ### Decisión: imágenes de publicaciones y perfiles (kralsito, 2026-11-08)
 
@@ -66,7 +66,7 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 | Pieza | Lo que existe | Lo que **no** se puede inferir |
 | --- | --- | --- |
 | Identidad | `User` guarda proveedor, ID externo, email y nombre; `POST /auth/oauth` busca o crea el usuario y emite JWT. | Google como única opción futura, cuentas verificadas, vinculación de cuentas o autorización para publicar. La validación de identidad actual tiene riesgos; ver [API](../arquitectura/api.md). |
-| Perfil y ubicación | `Profile` (abstracta, herencia `JOINED` en `PersonProfile` y `OrganizationProfile`) se relaciona 1:1 con `User` (único por usuario) y N:1 con `Locality`; `Locality` pertenece a `Province`. `POST /profile` crea el perfil y `GET /profile` lo devuelve. Provincias y localidades se importan de Georef al arrancar y se consultan con `GET /provinces` y `GET /provinces/{id}/localities?q=`. El enum `Gender` (`FEMALE`, `MALE`, `X`) pertenece al **perfil de persona**, no a la mascota. | Edición de perfil, visibilidad pública de los datos del perfil ni verificación de organizaciones. |
+| Perfil y ubicación | `Profile` (abstracta, herencia `JOINED` en `PersonProfile` y `OrganizationProfile`) se relaciona 1:1 con `User` (único por usuario) y N:1 con `Locality`; `Locality` pertenece a `Province`. `POST /profile` crea el perfil y `GET /profile` lo devuelve; `GET /profiles/{id}` y `GET /profiles/{id}/adoptions` muestran públicamente cualquier perfil (sin el género) y sus publicaciones. Provincias y localidades se importan de Georef al arrancar y se consultan con `GET /provinces` y `GET /provinces/{id}/localities?q=`. El enum `Gender` (`FEMALE`, `MALE`, `X`) pertenece al **perfil de persona**, no a la mascota. | Edición de perfil ni verificación de organizaciones. |
 | Publicación | Entidad abstracta `Publication` (herencia JPA `JOINED`) con tipo `ADOPTION`, `LOST` o `SERVICE`, descripción, autor obligatorio, localidad opcional y fechas de alta, modificación y baja lógica. Su único subtipo es `AdoptionPublication`. `PublicationPhoto` guarda la referencia a sus fotos en S3. | Publicaciones de perdidas o servicios. |
 | Adopción | `AdoptionPublication` con la ficha y el estado. `POST /adoptions`, `GET /adoptions` (catálogo público con filtros), `GET /adoptions/{id}` (público, con `viewerIsOwner`), `PUT`, `PATCH /{id}/status`, `DELETE` (baja lógica) y `GET /adoptions/mine` (filtrable por estado), con permisos por dueño y perfil obligatorio para publicar. `POST` y `DELETE /adoptions/{id}/photos` gestionan las fotos. | Solicitud o contacto, registro de quién adoptó, ni filtros por salud o texto. |
 

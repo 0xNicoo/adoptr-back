@@ -62,6 +62,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class AdoptionServiceImplTest {
@@ -583,6 +584,7 @@ class AdoptionServiceImplTest {
         AdoptionDTO personDto = service.get(1L);
 
         OrganizationProfile organization = new OrganizationProfile();
+        organization.setId(4L);
         organization.setOrganizationName("Refugio Patitas");
         when(profileRepository.findByUserId(USER_ID)).thenReturn(Optional.of(organization));
 
@@ -592,6 +594,7 @@ class AdoptionServiceImplTest {
         assertThat(personDto.getOwner().profileType()).isEqualTo(ProfileType.PERSON);
         assertThat(organizationDto.getOwner().displayName()).isEqualTo("Refugio Patitas");
         assertThat(organizationDto.getOwner().profileType()).isEqualTo(ProfileType.ORGANIZATION);
+        assertThat(organizationDto.getOwner().profileId()).isEqualTo(4L);
     }
 
     // ---- Mis publicaciones ----
@@ -637,6 +640,64 @@ class AdoptionServiceImplTest {
         verify(adoptionRepository, never()).findByAuthorIdAndDeletedAtIsNull(any(), any());
         assertThat(result.items()).extracting(AdoptionSummaryDTO::getStatus).containsExactly(AdoptionStatus.AVAILABLE);
         assertThat(result.totalItems()).isEqualTo(1);
+    }
+
+    // ---- Publicaciones de un perfil ----
+
+    private void profileOf(User author, long profileId) {
+        PersonProfile profile = person();
+        profile.setId(profileId);
+        profile.setUser(author);
+        when(profileRepository.findById(profileId)).thenReturn(Optional.of(profile));
+    }
+
+    @Test
+    void deUnPerfilBuscaPorSuAutorSinFiltro() {
+        anonymous();
+        profileOf(other, 9L);
+        AdoptionPublication p = existing(other, AdoptionStatus.ADOPTED);
+        when(adoptionRepository.findByAuthorIdAndDeletedAtIsNull(eq(OTHER_ID), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(p), org.springframework.data.domain.PageRequest.of(0, 20), 1));
+
+        PageDTO<AdoptionSummaryDTO> result = service.byProfile(9L, null, 0, 20);
+
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        verify(adoptionRepository).findByAuthorIdAndDeletedAtIsNull(eq(OTHER_ID), captor.capture());
+        assertThat(captor.getValue().getSort())
+                .isEqualTo(Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
+        assertThat(result.items()).extracting(AdoptionSummaryDTO::getStatus).containsExactly(AdoptionStatus.ADOPTED);
+    }
+
+    @Test
+    void deUnPerfilConEstadoFiltra() {
+        anonymous();
+        profileOf(other, 9L);
+        when(adoptionRepository.findByAuthorIdAndStatusAndDeletedAtIsNull(
+                eq(OTHER_ID), eq(AdoptionStatus.AVAILABLE), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(), org.springframework.data.domain.PageRequest.of(0, 20), 0));
+
+        PageDTO<AdoptionSummaryDTO> result = service.byProfile(9L, AdoptionStatus.AVAILABLE, 0, 20);
+
+        verify(adoptionRepository, never()).findByAuthorIdAndDeletedAtIsNull(any(), any());
+        assertThat(result.items()).isEmpty();
+    }
+
+    @Test
+    void deUnPerfilInexistenteDevuelveNotFound() {
+        when(profileRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.byProfile(99L, null, 0, 20))
+                .isInstanceOf(NotFoundException.class)
+                .hasFieldOrPropertyWithValue("code", "PROFILE_NOT_FOUND");
+        verifyNoInteractions(adoptionRepository);
+    }
+
+    @Test
+    void deUnPerfilConPageSizeInvalidoFallaSinConsultar() {
+        assertThatThrownBy(() -> service.byProfile(9L, null, 0, 51))
+                .isInstanceOf(BadRequestException.class)
+                .hasFieldOrPropertyWithValue("code", "VALIDATION_ERROR");
+        verifyNoInteractions(profileRepository);
     }
 
     @Test
