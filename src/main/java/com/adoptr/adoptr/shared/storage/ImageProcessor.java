@@ -49,6 +49,10 @@ public class ImageProcessor {
     }
 
     public ProcessedImage process(MultipartFile file) {
+        return process(file, 0, 0);
+    }
+
+    public ProcessedImage process(MultipartFile file, int ratioWidth, int ratioHeight) {
         if (file == null || file.isEmpty()) {
             throw new BadRequestException(ImageError.INVALID);
         }
@@ -62,6 +66,9 @@ public class ImageProcessor {
             Thumbnails.Builder<?> builder = Thumbnails.of(new ByteArrayInputStream(original));
             BufferedImage image = (longestSide > MAX_SIDE ? builder.size(MAX_SIDE, MAX_SIDE) : builder.scale(1.0))
                     .asBufferedImage();
+            if (ratioWidth > 0 && ratioHeight > 0) {
+                image = cropToRatio(image, ratioWidth, ratioHeight);
+            }
             return new ProcessedImage(encodeJpeg(onWhiteBackground(image)), "image/jpeg", "jpg");
         } catch (ServiceException e) {
             throw e;
@@ -96,6 +103,24 @@ public class ImageProcessor {
                 reader.dispose();
             }
         }
+    }
+
+    static BufferedImage cropToRatio(BufferedImage image, int ratioWidth, int ratioHeight) {
+        int width = image.getWidth();
+        int height = image.getHeight();
+        long wide = (long) width * ratioHeight;
+        long tall = (long) height * ratioWidth;
+        int targetWidth = width;
+        int targetHeight = height;
+        if (wide > tall) {
+            targetWidth = Math.max(1, (int) Math.round((double) height * ratioWidth / ratioHeight));
+        } else if (tall > wide) {
+            targetHeight = Math.max(1, (int) Math.round((double) width * ratioHeight / ratioWidth));
+        }
+        if (Math.abs(width - targetWidth) <= 1 && Math.abs(height - targetHeight) <= 1) {
+            return image;
+        }
+        return image.getSubimage((width - targetWidth) / 2, (height - targetHeight) / 2, targetWidth, targetHeight);
     }
 
     /** JPEG no tiene transparencia: lo transparente queda blanco en lugar de negro. */

@@ -179,4 +179,66 @@ class ImageProcessorTest {
         assertThatThrownBy(() -> processor.process(file(png, "image/png")))
                 .isInstanceOf(PayloadTooLargeException.class);
     }
+
+    @Test
+    void conProporcionRecortaLosCostadosDeUnaFotoApaisada() throws IOException {
+        BufferedImage image = rgb(400, 300);
+        Graphics2D graphics = image.createGraphics();
+        graphics.setColor(Color.RED);
+        graphics.fillRect(0, 0, 87, 300);
+        graphics.setColor(Color.BLUE);
+        graphics.fillRect(87, 0, 226, 300);
+        graphics.setColor(Color.RED);
+        graphics.fillRect(313, 0, 87, 300);
+        graphics.dispose();
+
+        BufferedImage decoded = decode(processor.process(file(encode(image, "png"), "image/png"), 3, 4));
+
+        assertThat(decoded.getWidth()).isEqualTo(225);
+        assertThat(decoded.getHeight()).isEqualTo(300);
+        Color left = new Color(decoded.getRGB(2, 150));
+        assertThat(left.getBlue()).isGreaterThan(200);
+        assertThat(left.getRed()).isLessThan(60);
+    }
+
+    @Test
+    void conProporcionRecortaArribaYAbajoUnaFotoMuyAlta() throws IOException {
+        BufferedImage decoded = decode(processor.process(file(encode(rgb(300, 600), "png"), "image/png"), 3, 4));
+
+        assertThat(decoded.getWidth()).isEqualTo(300);
+        assertThat(decoded.getHeight()).isEqualTo(400);
+    }
+
+    @Test
+    void conProporcionAchicaYDespuesRecorta() throws IOException {
+        BufferedImage decoded = decode(processor.process(file(encode(rgb(2000, 2000), "png"), "image/png"), 3, 4));
+
+        assertThat(decoded.getWidth()).isEqualTo(1200);
+        assertThat(decoded.getHeight()).isEqualTo(1600);
+    }
+
+    @Test
+    void conProporcionRecortaDespuesDeGirarSegunExif() throws IOException {
+        BufferedImage decoded = decode(processor.process(file(jpegWithExif(rgb(600, 300)), "image/jpeg"), 3, 4));
+
+        assertThat(decoded.getWidth()).isEqualTo(300);
+        assertThat(decoded.getHeight()).isEqualTo(400);
+    }
+
+    @Test
+    void unaFotoYaEnProporcionNoSeRecorta() {
+        BufferedImage exact = rgb(1200, 1600);
+        BufferedImage offByOne = rgb(1200, 1601);
+
+        assertThat(ImageProcessor.cropToRatio(exact, 3, 4)).isSameAs(exact);
+        assertThat(ImageProcessor.cropToRatio(offByOne, 3, 4)).isSameAs(offByOne);
+    }
+
+    @Test
+    void sinProporcionNoRecorta() throws IOException {
+        BufferedImage decoded = decode(processor.process(file(encode(rgb(200, 100), "png"), "image/png")));
+
+        assertThat(decoded.getWidth()).isEqualTo(200);
+        assertThat(decoded.getHeight()).isEqualTo(100);
+    }
 }
