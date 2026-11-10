@@ -52,10 +52,6 @@ public class ImageProcessor {
         return process(file, 0, 0);
     }
 
-    /**
-     * Igual que {@link #process(MultipartFile)}, pero recortada al centro con la proporción
-     * {@code ratioWidth:ratioHeight} (por ejemplo 3:4) si no la tiene. Con 0 no recorta.
-     */
     public ProcessedImage process(MultipartFile file, int ratioWidth, int ratioHeight) {
         if (file == null || file.isEmpty()) {
             throw new BadRequestException(ImageError.INVALID);
@@ -109,10 +105,6 @@ public class ImageProcessor {
         }
     }
 
-    /**
-     * Recorta al centro lo que sobra para llegar a la proporción pedida. Se aplica después de girar
-     * según EXIF y de achicar. Una diferencia de un píxel (redondeo de quien ya recortó) se deja como está.
-     */
     static BufferedImage cropToRatio(BufferedImage image, int ratioWidth, int ratioHeight) {
         int width = image.getWidth();
         int height = image.getHeight();

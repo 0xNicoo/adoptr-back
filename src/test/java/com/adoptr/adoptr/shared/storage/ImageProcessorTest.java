@@ -180,8 +180,6 @@ class ImageProcessorTest {
                 .isInstanceOf(PayloadTooLargeException.class);
     }
 
-    // ---- Recorte a una proporción (fotos de adopción verticales, 3:4) ----
-
     @Test
     void conProporcionRecortaLosCostadosDeUnaFotoApaisada() throws IOException {
         BufferedImage image = rgb(400, 300);
@@ -198,7 +196,6 @@ class ImageProcessorTest {
 
         assertThat(decoded.getWidth()).isEqualTo(225);
         assertThat(decoded.getHeight()).isEqualTo(300);
-        // Quedó el centro azul: los costados rojos se recortaron.
         Color left = new Color(decoded.getRGB(2, 150));
         assertThat(left.getBlue()).isGreaterThan(200);
         assertThat(left.getRed()).isLessThan(60);
@@ -222,8 +219,6 @@ class ImageProcessorTest {
 
     @Test
     void conProporcionRecortaDespuesDeGirarSegunExif() throws IOException {
-        // 600x300 con orientación 6: girada queda 300x600 (vertical) y el recorte 3:4 la deja en 300x400.
-        // Sin girar primero, el recorte se haría sobre la foto acostada.
         BufferedImage decoded = decode(processor.process(file(jpegWithExif(rgb(600, 300)), "image/jpeg"), 3, 4));
 
         assertThat(decoded.getWidth()).isEqualTo(300);
