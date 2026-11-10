@@ -5,6 +5,7 @@ import com.adoptr.adoptr.adoption.dto.request.AdoptionFilterDTO;
 import com.adoptr.adoptr.adoption.dto.request.AdoptionStatusDTOin;
 import com.adoptr.adoptr.adoption.dto.response.AdoptionDTO;
 import com.adoptr.adoptr.adoption.dto.response.AdoptionSummaryDTO;
+import com.adoptr.adoptr.adoption.model.AdoptionStatus;
 import com.adoptr.adoptr.shared.dto.PageDTO;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,7 +26,8 @@ public interface AdoptionService {
 
     void deletePhoto(Long id, Long photoId);
 
-    PageDTO<AdoptionSummaryDTO> mine(int page, int pageSize);
+    /** Publicaciones activas del usuario del token; {@code status} null trae todos los estados. */
+    PageDTO<AdoptionSummaryDTO> mine(AdoptionStatus status, int page, int pageSize);
 
     /** Catálogo público: solo publicaciones en adopción, con los filtros que vengan. */
     PageDTO<AdoptionSummaryDTO> search(AdoptionFilterDTO filter, int page, int pageSize);

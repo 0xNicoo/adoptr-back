@@ -37,6 +37,7 @@ import com.adoptr.adoptr.shared.util.Paging;
 import com.adoptr.adoptr.user.repository.UserRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -192,10 +193,12 @@ public class AdoptionServiceImpl implements AdoptionService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageDTO<AdoptionSummaryDTO> mine(int page, int pageSize) {
+    public PageDTO<AdoptionSummaryDTO> mine(AdoptionStatus status, int page, int pageSize) {
         Long userId = membershipSupport.getUserId();
-        return toSummaries(adoptionRepository.findByAuthorIdAndDeletedAtIsNull(
-                userId, Paging.pageable(page, pageSize, NEWEST_FIRST)));
+        Pageable pageable = Paging.pageable(page, pageSize, NEWEST_FIRST);
+        return toSummaries(status == null
+                ? adoptionRepository.findByAuthorIdAndDeletedAtIsNull(userId, pageable)
+                : adoptionRepository.findByAuthorIdAndStatusAndDeletedAtIsNull(userId, status, pageable));
     }
 
     @Override
