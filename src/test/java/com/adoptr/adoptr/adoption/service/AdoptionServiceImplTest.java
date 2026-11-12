@@ -13,6 +13,7 @@ import com.adoptr.adoptr.adoption.model.PetSize;
 import com.adoptr.adoptr.adoption.model.Species;
 import com.adoptr.adoptr.adoption.repository.AdoptionPublicationRepository;
 import com.adoptr.adoptr.adoption.service.impl.AdoptionServiceImpl;
+import com.adoptr.adoptr.adoption.service.impl.AdoptionSummaries;
 import com.adoptr.adoptr.location.model.Locality;
 import com.adoptr.adoptr.location.model.Province;
 import com.adoptr.adoptr.location.repository.LocalityRepository;
@@ -104,7 +105,8 @@ class AdoptionServiceImplTest {
         imageProcessor = mock(ImageProcessor.class);
         imageStorage = mock(ImageStorage.class);
         service = new AdoptionServiceImpl(membershipSupport, adoptionRepository, profileRepository,
-                localityRepository, userRepository, photoRepository, imageProcessor, imageStorage, CLOCK);
+                localityRepository, userRepository, photoRepository, imageProcessor, imageStorage,
+                new AdoptionSummaries(photoRepository, imageStorage, CLOCK), CLOCK);
         when(imageProcessor.process(any(), eq(3), eq(4))).thenReturn(IMAGE);
         when(imageStorage.publicUrl(any())).thenAnswer(invocation -> "https://cdn/" + invocation.getArgument(0));
 

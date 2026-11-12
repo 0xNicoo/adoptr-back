@@ -37,7 +37,6 @@ import com.adoptr.adoptr.shared.util.MembershipSupport;
 import com.adoptr.adoptr.shared.util.Paging;
 import com.adoptr.adoptr.user.repository.UserRepository;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -49,9 +48,7 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class AdoptionServiceImpl implements AdoptionService {
@@ -70,6 +67,7 @@ public class AdoptionServiceImpl implements AdoptionService {
     private final PublicationPhotoRepository photoRepository;
     private final ImageProcessor imageProcessor;
     private final ImageStorage imageStorage;
+    private final AdoptionSummaries summaries;
     private final Clock clock;
 
     public AdoptionServiceImpl(MembershipSupport membershipSupport,
@@ -80,6 +78,7 @@ public class AdoptionServiceImpl implements AdoptionService {
                                PublicationPhotoRepository photoRepository,
                                ImageProcessor imageProcessor,
                                ImageStorage imageStorage,
+                               AdoptionSummaries summaries,
                                Clock clock) {
         this.membershipSupport = membershipSupport;
         this.adoptionRepository = adoptionRepository;
@@ -89,6 +88,7 @@ public class AdoptionServiceImpl implements AdoptionService {
         this.photoRepository = photoRepository;
         this.imageProcessor = imageProcessor;
         this.imageStorage = imageStorage;
+        this.summaries = summaries;
         this.clock = clock;
     }
 
@@ -211,7 +211,7 @@ public class AdoptionServiceImpl implements AdoptionService {
     }
 
     private PageDTO<AdoptionSummaryDTO> byAuthor(Long userId, AdoptionStatus status, Pageable pageable) {
-        return toSummaries(status == null
+        return summaries.page(status == null
                 ? adoptionRepository.findByAuthorIdAndDeletedAtIsNull(userId, pageable)
                 : adoptionRepository.findByAuthorIdAndStatusAndDeletedAtIsNull(userId, status, pageable));
     }
@@ -220,30 +220,8 @@ public class AdoptionServiceImpl implements AdoptionService {
     @Transactional(readOnly = true)
     public PageDTO<AdoptionSummaryDTO> search(AdoptionFilterDTO filter, int page, int pageSize) {
         YearMonth current = YearMonth.now(clock);
-        return toSummaries(adoptionRepository.findAll(
+        return summaries.page(adoptionRepository.findAll(
                 AdoptionSpec.catalog(filter, current), Paging.pageable(page, pageSize, NEWEST_FIRST)));
-    }
-
-    private PageDTO<AdoptionSummaryDTO> toSummaries(Page<AdoptionPublication> page) {
-        YearMonth current = YearMonth.now(clock);
-        Map<Long, String> covers = coverUrls(page.getContent());
-        return PageDTO.from(page, publication -> {
-            AdoptionSummaryDTO dto = AdoptionMapper.toSummary(publication, current);
-            dto.setCoverPhotoUrl(covers.get(publication.getId()));
-            return dto;
-        });
-    }
-
-    private Map<Long, String> coverUrls(List<AdoptionPublication> publications) {
-        if (publications.isEmpty()) {
-            return Map.of();
-        }
-        List<Long> ids = publications.stream().map(AdoptionPublication::getId).toList();
-        // Vienen ordenadas: la primera de cada publicación es su portada.
-        return photoRepository.findByPublicationIdInOrderBySortOrderAsc(ids).stream()
-                .collect(Collectors.toMap(photo -> photo.getPublication().getId(),
-                        photo -> imageStorage.publicUrl(photo.getS3Key()),
-                        (cover, other) -> cover));
     }
 
     private AdoptionPublication findActive(Long id) {
