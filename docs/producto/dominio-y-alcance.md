@@ -30,7 +30,7 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 
 ### Decisión: publicación de adopción (Dolores, 2026-11-07)
 
-- **Acceso:** el catálogo y el detalle de una publicación son públicos, sin login. Publicar, editar, cambiar el estado y dar de baja requieren login. Contactar y guardar publicaciones, en el módulo siguiente, también.
+- **Acceso:** el catálogo y el detalle de una publicación son públicos, sin login. Publicar, editar, cambiar el estado y dar de baja requieren login. Guardar publicaciones también (ver «Favoritos / Guardadas»); contactar, en un módulo siguiente, también.
 - **Perfil obligatorio para publicar:** el backend rechaza el alta sin perfil (403 `PROFILE_REQUIRED`), además de la redirección del front. La misma regla valdrá para contactar. Guardar no la exige (ver «Favoritos / Guardadas»).
 - **Ficha** (todo obligatorio salvo el tamaño): nombre de la mascota (no un «título»), descripción, especie (perro o gato), sexo (macho, hembra o indeterminado), fecha de nacimiento estimada (mes y año), vacunado, desparasitado, castrado y localidad. La localidad se precarga con la del perfil pero se puede cambiar.
 - **Tamaño:** solo para perros. Obligatorio para perros; no se carga para gatos.

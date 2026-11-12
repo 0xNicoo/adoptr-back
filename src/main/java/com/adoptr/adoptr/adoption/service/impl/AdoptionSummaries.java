@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/** Arma las tarjetas de un listado con su portada, con una sola consulta de fotos por página. */
 @Component
 public class AdoptionSummaries {
 
@@ -44,7 +43,6 @@ public class AdoptionSummaries {
             return Map.of();
         }
         List<Long> ids = publications.stream().map(AdoptionPublication::getId).toList();
-        // Vienen ordenadas: la primera de cada publicación es su portada.
         return photoRepository.findByPublicationIdInOrderBySortOrderAsc(ids).stream()
                 .collect(Collectors.toMap(photo -> photo.getPublication().getId(),
                         photo -> imageStorage.publicUrl(photo.getS3Key()),
