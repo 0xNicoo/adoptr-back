@@ -31,7 +31,7 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 ### Decisión: publicación de adopción (Dolores, 2026-11-07)
 
 - **Acceso:** el catálogo y el detalle de una publicación son públicos, sin login. Publicar, editar, cambiar el estado y dar de baja requieren login. Contactar y guardar publicaciones, en el módulo siguiente, también.
-- **Perfil obligatorio para publicar:** el backend rechaza el alta sin perfil (403 `PROFILE_REQUIRED`), además de la redirección del front. La misma regla valdrá para contactar y guardar.
+- **Perfil obligatorio para publicar:** el backend rechaza el alta sin perfil (403 `PROFILE_REQUIRED`), además de la redirección del front. La misma regla valdrá para contactar. Guardar no la exige (ver «Favoritos / Guardadas»).
 - **Ficha** (todo obligatorio salvo el tamaño): nombre de la mascota (no un «título»), descripción, especie (perro o gato), sexo (macho, hembra o indeterminado), fecha de nacimiento estimada (mes y año), vacunado, desparasitado, castrado y localidad. La localidad se precarga con la del perfil pero se puede cambiar.
 - **Tamaño:** solo para perros. Obligatorio para perros; no se carga para gatos.
 - **Salud:** vacunado, desparasitado y castrado son **sí o no**. No existe la opción «no sé»: si no se sabe, se carga «no», por seguridad.
@@ -42,6 +42,14 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 - **Baja:** lógica. La publicación desaparece del detalle y de «mis publicaciones», pero queda guardada.
 - **Responsable visible:** nombre y apellido de la persona, o nombre de la organización, y el tipo de perfil. Nunca el email.
 - **Para más adelante:** quién adoptó (depende del módulo de contacto), raza, color, compatibilidad con chicos y otros animales.
+
+### Decisión: favoritos / Guardadas (Dolores, 2026-11-12)
+
+- **Qué es:** una persona con sesión marca publicaciones con un corazón y las ve en «Guardadas», a la que se llega desde el menú del usuario. En el código y la API se llama `Favorite` / `/favorites`; en la interfaz, «Guardadas».
+- **Acceso:** alcanza con la sesión; no hace falta tener perfil. Guardar es personal y no le muestra nada a nadie.
+- **Qué se puede guardar:** hoy, publicaciones de adopción en cualquier estado. El modelo apunta a la publicación en general para sumar servicios más adelante. No se pueden guardar las publicaciones propias.
+- **Listado:** de la guardada más reciente a la más vieja, con filtro «Todas / Perros / Gatos». Las adoptadas siguen apareciendo con su estado, en la misma lista: no hay una sección aparte. Las dadas de baja desaparecen. Las tarjetas no muestran cuándo se guardaron.
+- **Quitar:** sacando el corazón, sin confirmación. En «Guardadas» la tarjeta desaparece y un aviso ofrece «Deshacer»; en el resto de las pantallas el corazón cambia sin aviso.
 
 ### Decisión: perfil propio y perfil de otras personas (Dolores, 2026-11-10; actualizada 2026-11-10)
 
@@ -69,8 +77,9 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 | Perfil y ubicación | `Profile` (abstracta, herencia `JOINED` en `PersonProfile` y `OrganizationProfile`) se relaciona 1:1 con `User` (único por usuario) y N:1 con `Locality`; `Locality` pertenece a `Province`. `POST /profile` crea el perfil y `GET /profile` lo devuelve; `GET /profiles/{id}` y `GET /profiles/{id}/adoptions` muestran públicamente cualquier perfil (sin el género) y sus publicaciones. Provincias y localidades se importan de Georef al arrancar y se consultan con `GET /provinces` y `GET /provinces/{id}/localities?q=`. El enum `Gender` (`FEMALE`, `MALE`, `X`) pertenece al **perfil de persona**, no a la mascota. | Edición de perfil ni verificación de organizaciones. |
 | Publicación | Entidad abstracta `Publication` (herencia JPA `JOINED`) con tipo `ADOPTION`, `LOST` o `SERVICE`, descripción, autor obligatorio, localidad opcional y fechas de alta, modificación y baja lógica. Su único subtipo es `AdoptionPublication`. `PublicationPhoto` guarda la referencia a sus fotos en S3. | Publicaciones de perdidas o servicios. |
 | Adopción | `AdoptionPublication` con la ficha y el estado. `POST /adoptions`, `GET /adoptions` (catálogo público con filtros), `GET /adoptions/{id}` (público, con `viewerIsOwner`), `PUT`, `PATCH /{id}/status`, `DELETE` (baja lógica) y `GET /adoptions/mine` (filtrable por estado), con permisos por dueño y perfil obligatorio para publicar. `POST` y `DELETE /adoptions/{id}/photos` gestionan las fotos. | Solicitud o contacto, registro de quién adoptó, ni filtros por salud o texto. |
+| Favoritos | `Favorite` une un usuario con una `Publication` (única por par, con fecha). `GET /favorites/adoptions` (filtrable por especie), `GET /favorites/ids`, `PUT` y `DELETE /favorites/{publicationId}`, todo con sesión; hoy solo acepta publicaciones de adopción ajenas. | Favoritos de servicios o perdidas, ni avisos cuando una favorita cambia de estado. |
 
-Fuentes de este inventario: `src/main/java/com/adoptr/adoptr/{user,profile,location,publication,adoption}/model/`, `auth/service/AuthService.java`, `profile/controller/ProfileController.java`, `adoption/controller/AdoptionController.java` y [contrato HTTP observado](../arquitectura/api.md). Revisarlo al cambiar código: un enum, DTO o asociación JPA no aprueba una regla de negocio.
+Fuentes de este inventario: `src/main/java/com/adoptr/adoptr/{user,profile,location,publication,adoption,favorite}/model/`, `auth/service/AuthService.java`, `profile/controller/ProfileController.java`, `adoption/controller/AdoptionController.java`, `favorite/controller/FavoriteController.java` y [contrato HTTP observado](../arquitectura/api.md). Revisarlo al cambiar código: un enum, DTO o asociación JPA no aprueba una regla de negocio.
 
 ## Recorrido de producto a definir con el equipo
 
