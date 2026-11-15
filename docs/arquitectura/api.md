@@ -127,6 +127,74 @@ Una persona con sesión guarda publicaciones para verlas después («Guardadas»
 | `PUT /favorites/{publicationId}` | Sin body | 204. Idempotente: si ya estaba guardada, o si llegan dos pedidos a la vez, también responde 204 | 404 `PUBLICATION_NOT_FOUND` si no existe, fue dada de baja o no es de adopción; 403 `FAVORITE_OWN_PUBLICATION` si es propia |
 | `DELETE /favorites/{publicationId}` | Sin body | 204, aunque no estuviera guardada o la publicación ya no exista | — |
 
+### Chat
+
+Conversaciones entre quien publicó y una persona interesada, **una por publicación y persona interesada**: contactar al mismo usuario por otra publicación abre otro chat. Hoy solo se inicia desde publicaciones de adopción; la conversación apunta a `Publication` para sumar otros tipos. Decisiones en [dominio](../producto/dominio-y-alcance.md). Los mensajes **se envían por HTTP** y **se reciben en tiempo real por WebSocket** (más abajo). Todas las rutas requieren Bearer y responden 401 `UNAUTHENTICATED` sin token válido.
+
+| Método y ruta | Request | Respuesta | Errores |
+| --- | --- | --- | --- |
+| `POST /conversations` | `{ "publicationId": number, "body": string }` | La conversación nace con el primer mensaje. **201** `ConversationDTO` si se creó; **200** si ya existía (el mensaje se suma a ella). Es lo que usa el botón «Contactar». | 400 `VALIDATION_ERROR` (falta `publicationId`, `body` en blanco o de más de 2000 caracteres); 404 `PUBLICATION_NOT_FOUND` (no existe, fue dada de baja o no es de adopción); 403 `CHAT_OWN_PUBLICATION` (es propia); 403 `PROFILE_REQUIRED` (sin perfil); 409 `CHAT_READ_ONLY` (está `ADOPTED`); 409 `CHAT_CONFLICT` (dos primeros mensajes simultáneos de la misma persona; se puede reintentar). Se controlan en ese orden. |
+| `GET /conversations?role=&publicationId=&page=0&pageSize=20` | `role` opcional: `OWNER` (me contactaron por mis publicaciones) o `INTERESTED` (contacté yo); sin él, las dos bandejas juntas. `publicationId` opcional. `pageSize` de 1 a 50. | 200 `Page<ConversationDTO>` de las conversaciones en las que participa el usuario, de la de actividad más reciente a la más vieja. | 400 `VALIDATION_ERROR` si `role` no es válido o la paginación está fuera de rango |
+| `GET /conversations/{id}` | — | 200 `ConversationDTO` | 404 `CHAT_CONVERSATION_NOT_FOUND` si no existe **o el usuario no participa** (no revela qué conversaciones existen) |
+| `GET /conversations/{id}/messages?before=&pageSize=30` | `before` opcional: id de mensaje (cursor). `pageSize` de 1 a 50 (por defecto 30). | 200 `{ "items": MessageDTO[], "hasMore": boolean }`. Sin `before`, los más recientes; con `before`, los anteriores a ese id. `items` va **del más viejo al más nuevo**; para cargar más, pedir con `before` = id del primer elemento. También funciona en chats de solo lectura. | 404 `CHAT_CONVERSATION_NOT_FOUND` |
+| `POST /conversations/{id}/messages` | `{ "body": string }` (se recorta; hasta 2000 caracteres) | 201 `MessageDTO` | 400 `VALIDATION_ERROR`; 404 `CHAT_CONVERSATION_NOT_FOUND`; 409 `CHAT_READ_ONLY` |
+| `PUT /conversations/{id}/read` | Sin body | 204. Marca como leído todo lo recibido hasta ahora para quien llama. Llamarlo al abrir el chat y al recibir mensajes con el chat abierto. | 404 `CHAT_CONVERSATION_NOT_FOUND` |
+
+**Botón «Contactar»** en el detalle de una publicación ajena: `GET /conversations?role=INTERESTED&publicationId={id}` devuelve el chat existente (si hay) para ir directo a él; si `items` viene vacío, mostrar el campo del primer mensaje y enviarlo con `POST /conversations`.
+
+**`ConversationDTO`** (cambia según quién mira):
+
+```json
+{
+  "id": 14,
+  "role": "OWNER",
+  "publication": {
+    "id": 74, "type": "ADOPTION", "petName": "Luna", "species": "DOG",
+    "status": "AVAILABLE", "coverPhotoUrl": null, "deleted": false
+  },
+  "counterpart": { "profileId": 6, "displayName": "Ana Pérez", "profileType": "PERSON" },
+  "lastMessage": { "id": 15, "conversationId": 14, "senderRole": "INTERESTED", "body": "Hola, ¿sigue disponible?", "createdAt": "2026-11-15T18:30:48" },
+  "unreadCount": 1,
+  "readOnly": false,
+  "createdAt": "2026-11-15T18:30:47",
+  "lastMessageAt": "2026-11-15T18:30:48"
+}
+```
+
+- `role`: `OWNER` si la publicación es de quien mira (lo contactaron), `INTERESTED` si inició quien mira (contactó). Sirve para filtrar o separar las bandejas en el front.
+- `counterpart`: la otra persona, con la misma forma que `owner` de una adopción (para enlazar a `GET /profiles/{id}`). Nunca incluye email ni ids internos.
+- `publication`: lo justo para la bandeja y el encabezado. `petName`, `species` y `status` son `null` en publicaciones que no son de adopción. `deleted: true` significa que la publicación fue dada de baja y su detalle ya no se puede abrir.
+- `unreadCount`: mensajes de la otra persona posteriores a la última vez que quien mira marcó leído. Al enviar un mensaje, lo anterior queda leído automáticamente.
+- `readOnly`: `true` si la publicación está `ADOPTED` o fue dada de baja. Se puede leer el historial pero no escribir (409 `CHAT_READ_ONLY`). No se guarda: si vuelve a `AVAILABLE`, el chat se reabre.
+
+**`MessageDTO`**: `{ id, conversationId, senderRole, body, createdAt }`. `senderRole` (`OWNER` o `INTERESTED`) es igual para los dos participantes: el mensaje es propio si coincide con el `role` de la conversación. Los `id` son crecientes y ordenan los mensajes.
+
+#### Tiempo real (WebSocket + STOMP)
+
+- **Endpoint:** `ws://<host>:8081/ws` (STOMP 1.2 sobre WebSocket nativo, sin SockJS). El origen debe estar entre los del CORS (hoy `http://localhost:3000`).
+- **Autenticación:** el navegador no manda headers en el handshake, así que el JWT va en el frame `CONNECT`: `Authorization: Bearer <JWT Adoptr>`. Sin token o con uno inválido el servidor responde un frame `ERROR` (`message: UNAUTHENTICATED`) y cierra.
+- **Suscripción:** una sola, a `/user/queue/chat`. Recibe los mensajes de **todas** las conversaciones del usuario. Solo se permite suscribirse a `/user/queue/...` (otro destino da `ERROR` `ACCESS_DENIED`) y el canal es solo de recepción: `SEND` está bloqueado; los mensajes se envían por `POST`.
+- **Evento:** `{ "type": "MESSAGE", "message": MessageDTO }`. Llega a los dos participantes, también a quien escribió (así se sincronizan sus otras pestañas). Usar `message.conversationId` para agregarlo al chat abierto o actualizar la bandeja (último mensaje, `unreadCount`, orden). Si el chat está abierto, deduplicar por `message.id` contra la respuesta del `POST`. `type` deja lugar para eventos futuros: ignorar los tipos desconocidos.
+- **Heartbeats:** el servidor ofrece 10 s en ambos sentidos.
+- **Reconexión:** el evento se emite una sola vez y solo después de guardar el mensaje; si el cliente estaba desconectado, no se reenvía. Al reconectar, recargar la bandeja y el historial del chat abierto por HTTP.
+
+```js
+// @stomp/stompjs
+const client = new Client({
+  brokerURL: 'ws://localhost:8081/ws',
+  connectHeaders: { Authorization: `Bearer ${token}` },
+  heartbeatIncoming: 10000,
+  heartbeatOutgoing: 10000,
+  onConnect: () => client.subscribe('/user/queue/chat', (frame) => {
+    const event = JSON.parse(frame.body);
+    if (event.type === 'MESSAGE') handleMessage(event.message);
+  }),
+});
+client.activate();
+```
+
+Límite actual: el broker vive en memoria del backend, así que funciona con una sola instancia. Con varias instancias, pasar a un broker externo (RabbitMQ, ActiveMQ) con `enableStompBrokerRelay`; el contrato para el front no cambia.
+
 ## Formato de errores
 
 Todos los errores tienen el cuerpo `{ "code": string, "message": string }`, tanto los del filtro de seguridad como los de los controllers. **`code` es un texto estable y único en toda la API** (`MAYÚSCULAS_CON_GUIONES`): el front decide por `code`, no por `message`, que puede cambiar de redacción. Los errores de un módulo llevan su prefijo (`PROFILE_…`, `PUBLICATION_…`); los de `CommonError` son transversales:
@@ -142,9 +210,9 @@ Todos los errores tienen el cuerpo `{ "code": string, "message": string }`, tant
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | `Content-Type` que la ruta no acepta. |
 | 500 | `INTERNAL_ERROR` | Error inesperado. El mensaje es genérico; el detalle solo va al log del servidor. |
 
-Errores de dominio vigentes: 404 `PROFILE_NOT_FOUND`, 409 `PROFILE_ALREADY_EXISTS`, 403 `PROFILE_REQUIRED` (la acción exige tener perfil, por ejemplo publicar), 404 `PROVINCE_NOT_FOUND`, 400 `LOCALITY_NOT_FOUND` (una localidad inexistente enviada en un body), 404 `ADOPTION_NOT_FOUND` (no existe o fue dada de baja), 403 `ADOPTION_NOT_OWNER` (la publicación es de otra persona) 404 `ADOPTION_PHOTO_NOT_FOUND`, 409 `ADOPTION_PHOTO_LIMIT_REACHED` (ya tiene 5 fotos), 409 `ADOPTION_PHOTO_CONFLICT` y 409 `PROFILE_PHOTO_CONFLICT` (subidas simultáneas), 404 `PROFILE_PHOTO_NOT_FOUND`, 400 `IMAGE_INVALID` (el contenido no es un JPEG, PNG o WebP válido, sin importar lo que declare el cliente), 413 `IMAGE_TOO_LARGE`, 503 `IMAGE_STORAGE_UNAVAILABLE` (S3 no disponible o sin configurar) 404 `PUBLICATION_NOT_FOUND` (al guardar una favorita que no existe, fue dada de baja o no es de adopción) y 403 `FAVORITE_OWN_PUBLICATION` (no se pueden guardar las publicaciones propias). Los recursos de dominio inexistentes responden 404 (`NotFoundException`); reglas de negocio incumplidas o referencias inválidas en el body responden 400 (`BadRequestException`); un choque con el estado actual, como un recurso que ya existe, responde 409 (`ConflictException`); una operación que la persona autenticada no puede hacer responde 403 (`ForbiddenException`); un contenido que supera los límites responde 413 (`PayloadTooLargeException`); un servicio externo caído responde 503 (`ServiceUnavailableException`). Al agregar un error nuevo, usar el prefijo del módulo y registrarlo acá.
+Errores de dominio vigentes: 404 `PROFILE_NOT_FOUND`, 409 `PROFILE_ALREADY_EXISTS`, 403 `PROFILE_REQUIRED` (la acción exige tener perfil, por ejemplo publicar), 404 `PROVINCE_NOT_FOUND`, 400 `LOCALITY_NOT_FOUND` (una localidad inexistente enviada en un body), 404 `ADOPTION_NOT_FOUND` (no existe o fue dada de baja), 403 `ADOPTION_NOT_OWNER` (la publicación es de otra persona) 404 `ADOPTION_PHOTO_NOT_FOUND`, 409 `ADOPTION_PHOTO_LIMIT_REACHED` (ya tiene 5 fotos), 409 `ADOPTION_PHOTO_CONFLICT` y 409 `PROFILE_PHOTO_CONFLICT` (subidas simultáneas), 404 `PROFILE_PHOTO_NOT_FOUND`, 400 `IMAGE_INVALID` (el contenido no es un JPEG, PNG o WebP válido, sin importar lo que declare el cliente), 413 `IMAGE_TOO_LARGE`, 503 `IMAGE_STORAGE_UNAVAILABLE` (S3 no disponible o sin configurar) 404 `PUBLICATION_NOT_FOUND` (al guardar una favorita que no existe, fue dada de baja o no es de adopción) , 403 `FAVORITE_OWN_PUBLICATION` (no se pueden guardar las publicaciones propias), 404 `CHAT_CONVERSATION_NOT_FOUND` (no existe o el usuario no participa), 403 `CHAT_OWN_PUBLICATION` (contactar por una publicación propia), 409 `CHAT_READ_ONLY` (escribir en un chat cuya publicación está adoptada o dada de baja) y 409 `CHAT_CONFLICT` (dos primeros mensajes simultáneos). `PUBLICATION_NOT_FOUND` también lo devuelve `POST /conversations`. Los recursos de dominio inexistentes responden 404 (`NotFoundException`); reglas de negocio incumplidas o referencias inválidas en el body responden 400 (`BadRequestException`); un choque con el estado actual, como un recurso que ya existe, responde 409 (`ConflictException`); una operación que la persona autenticada no puede hacer responde 403 (`ForbiddenException`); un contenido que supera los límites responde 413 (`PayloadTooLargeException`); un servicio externo caído responde 503 (`ServiceUnavailableException`). Al agregar un error nuevo, usar el prefijo del módulo y registrarlo acá.
 
-Reglas globales: son públicas `/auth/**`, Swagger, las lecturas `GET /provinces` y `GET /provinces/**` (catálogo oficial sin datos personales), el catálogo `GET /adoptions`, el detalle `GET /adoptions/{id}` y los perfiles ajenos `GET /profiles/{id}` y `GET /profiles/{id}/adoptions` (el perfil propio, `/profile`, requiere token); `GET /adoptions/mine` requiere token (la regla está antes que la de `{id}`); `/favorites/**` requiere token; cualquier otra ruta, u otro método sobre esas rutas, exige autenticación salvo cambio de configuración. El JWT de Adoptr lleva como `sub` el **id interno del usuario** (numérico) y, como principal, el filtro deja ese mismo `Long`; los servicios lo obtienen con `MembershipSupport`. Los JWT emitidos antes de este cambio (con el nombre como `sub`) dejan de ser válidos. No reenviar mensajes internos o credenciales en errores nuevos.
+Reglas globales: son públicas `/auth/**`, Swagger, las lecturas `GET /provinces` y `GET /provinces/**` (catálogo oficial sin datos personales), el catálogo `GET /adoptions`, el detalle `GET /adoptions/{id}` y los perfiles ajenos `GET /profiles/{id}` y `GET /profiles/{id}/adoptions` (el perfil propio, `/profile`, requiere token); `GET /adoptions/mine` requiere token (la regla está antes que la de `{id}`); `/favorites/**` y `/conversations/**` requieren token; `GET /ws` (handshake de WebSocket) es pública porque el navegador no manda headers ahí, y el JWT se valida en el frame STOMP `CONNECT` (`StompAuthInterceptor`) antes de poder suscribirse; cualquier otra ruta, u otro método sobre esas rutas, exige autenticación salvo cambio de configuración. El JWT de Adoptr lleva como `sub` el **id interno del usuario** (numérico) y, como principal, el filtro deja ese mismo `Long`; los servicios lo obtienen con `MembershipSupport`. Los JWT emitidos antes de este cambio (con el nombre como `sub`) dejan de ser válidos. No reenviar mensajes internos o credenciales en errores nuevos.
 
 ### Límite de confianza actual (bloqueo para producción)
 
@@ -152,7 +220,7 @@ Reglas globales: son públicas `/auth/**`, Swagger, las lecturas `GET /provinces
 
 La respuesta actual de `/auth/oauth` incluye `UserDTO` con email e identificador externo del usuario que inicia sesión; revisar minimización y serialización antes de ampliar consumidores. Esto **no** demuestra exposición pública anónima.
 
-**No existen endpoints HTTP** para users, solicitudes de adopción, perdidas, servicios o chat. `PublicationService.get(Long)` es un método Java interno, no `/publication/{id}`.
+**No existen endpoints HTTP** para users, solicitudes de adopción formales, perdidas o servicios. El contacto por una publicación se hace con el chat. `PublicationService.get(Long)` es un método Java interno, no `/publication/{id}`.
 
 ## Al evolucionar el contrato (propuesta, no implementada)
 

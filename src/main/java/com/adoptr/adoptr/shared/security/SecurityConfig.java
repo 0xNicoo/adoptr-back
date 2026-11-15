@@ -49,6 +49,9 @@ public class SecurityConfig {
                     request.requestMatchers(HttpMethod.GET, "/profiles/{id}", "/profiles/{id}/adoptions").permitAll();
                     // Imágenes en disco de desarrollo, públicas como las del bucket. Con S3 la ruta responde 404.
                     request.requestMatchers(HttpMethod.GET, "/local-images/**").permitAll();
+                    // Handshake de WebSocket: el navegador no manda headers ahí. El JWT se valida en el
+                    // frame STOMP CONNECT (StompAuthInterceptor), antes de poder suscribirse a algo.
+                    request.requestMatchers(HttpMethod.GET, "/ws").permitAll();
                     request.anyRequest().authenticated();
                 })
                 .exceptionHandling(handling -> handling

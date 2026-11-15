@@ -51,6 +51,17 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 - **Listado:** de la guardada más reciente a la más vieja, con filtro «Todas / Perros / Gatos». Las adoptadas siguen apareciendo con su estado, en la misma lista: no hay una sección aparte. Las dadas de baja desaparecen. Las tarjetas no muestran cuándo se guardaron.
 - **Quitar:** sacando el corazón, sin confirmación. En «Guardadas» la tarjeta desaparece y un aviso ofrece «Deshacer»; en el resto de las pantallas el corazón cambia sin aviso.
 
+### Decisión: chat por publicación (kralsito, 2026-11-15)
+
+- **Qué es:** desde el detalle de una publicación ajena, «Contactar» abre un chat con quien publicó **sobre esa publicación**. Hay una conversación por publicación y persona interesada: si el mismo usuario tiene otra publicación, contactarlo por ella abre otro chat; volver a contactar por la misma publicación sigue en el chat existente.
+- **Acceso:** hace falta sesión y perfil para iniciar. No se puede contactar por una publicación propia. Solo los dos participantes ven la conversación.
+- **Inicio:** la conversación se crea con el primer mensaje, para que no queden chats vacíos.
+- **Roles y bandejas:** según quién mira, cada conversación es `OWNER` (la publicación es mía: me contactaron) o `INTERESTED` (contacté yo). El front filtra por ese rol; el rol no se guarda, se calcula.
+- **Tiempo real desde el inicio:** los mensajes llegan al instante por WebSocket; se envían por HTTP.
+- **Solo lectura:** si la publicación pasa a `ADOPTED` (o se da de baja), el chat se puede leer pero no se puede escribir ni iniciar uno nuevo. Si vuelve a `AVAILABLE`, el chat se reabre.
+- **Leídos:** cada participante tiene su marca de lectura y ve cuántos mensajes sin leer tiene cada conversación.
+- **Sin definir:** bloquear o reportar usuarios, moderación, adjuntar imágenes, editar o borrar mensajes, notificaciones fuera de la app (email, push) y cuánto tiempo se conservan los mensajes.
+
 ### Decisión: perfil propio y perfil de otras personas (Dolores, 2026-11-10; actualizada 2026-11-10)
 
 - **Mi perfil:** quien inició sesión ve sus datos y todas sus publicaciones de adopción, en adopción y adoptadas, cada una con su estado. Puede filtrar para ver solo las que están en adopción. No se muestra la fecha de alta en Adoptr.
@@ -78,8 +89,9 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 | Publicación | Entidad abstracta `Publication` (herencia JPA `JOINED`) con tipo `ADOPTION`, `LOST` o `SERVICE`, descripción, autor obligatorio, localidad opcional y fechas de alta, modificación y baja lógica. Su único subtipo es `AdoptionPublication`. `PublicationPhoto` guarda la referencia a sus fotos en S3. | Publicaciones de perdidas o servicios. |
 | Adopción | `AdoptionPublication` con la ficha y el estado. `POST /adoptions`, `GET /adoptions` (catálogo público con filtros), `GET /adoptions/{id}` (público, con `viewerIsOwner`), `PUT`, `PATCH /{id}/status`, `DELETE` (baja lógica) y `GET /adoptions/mine` (filtrable por estado), con permisos por dueño y perfil obligatorio para publicar. `POST` y `DELETE /adoptions/{id}/photos` gestionan las fotos. | Solicitud o contacto, registro de quién adoptó, ni filtros por salud o texto. |
 | Favoritos | `Favorite` une un usuario con una `Publication` (única por par, con fecha). `GET /favorites/adoptions` (filtrable por especie), `GET /favorites/ids`, `PUT` y `DELETE /favorites/{publicationId}`, todo con sesión; hoy solo acepta publicaciones de adopción ajenas. | Favoritos de servicios o perdidas, ni avisos cuando una favorita cambia de estado. |
+| Chat | `Conversation` une una `Publication`, su dueño y una persona interesada (única por publicación e interesado), con la marca de lectura de cada uno; `ChatMessage` guarda los mensajes. `POST /conversations` (inicia con el primer mensaje), `GET /conversations` (filtrable por rol y publicación), `GET /conversations/{id}`, `GET` y `POST /conversations/{id}/messages` y `PUT /conversations/{id}/read`, todo con sesión. Tiempo real por WebSocket/STOMP en `/ws`. Solo lectura si la adopción está `ADOPTED` o dada de baja. | Bloqueos, reportes, moderación, adjuntos, notificaciones fuera de la app ni registro de quién adoptó. |
 
-Fuentes de este inventario: `src/main/java/com/adoptr/adoptr/{user,profile,location,publication,adoption,favorite}/model/`, `auth/service/AuthService.java`, `profile/controller/ProfileController.java`, `adoption/controller/AdoptionController.java`, `favorite/controller/FavoriteController.java` y [contrato HTTP observado](../arquitectura/api.md). Revisarlo al cambiar código: un enum, DTO o asociación JPA no aprueba una regla de negocio.
+Fuentes de este inventario: `src/main/java/com/adoptr/adoptr/{user,profile,location,publication,adoption,favorite}/model/`, `auth/service/AuthService.java`, `profile/controller/ProfileController.java`, `adoption/controller/AdoptionController.java`, `favorite/controller/FavoriteController.java`, `chat/controller/ConversationController.java` y [contrato HTTP observado](../arquitectura/api.md). Revisarlo al cambiar código: un enum, DTO o asociación JPA no aprueba una regla de negocio.
 
 ## Recorrido de producto a definir con el equipo
 
@@ -88,7 +100,7 @@ Como hipótesis para un MVP (no contrato aprobado): una persona responsable publ
 1. ¿Requiere verificación publicar como organización? (Resuelto: publican personas y organizaciones con perfil, y el catálogo es público; ver la decisión de publicación de adopción.)
 2. ¿Qué fotos son obligatorias? ¿Quién almacena las imágenes y por cuánto tiempo? (Resuelto: atributos de la ficha y datos visibles del responsable.)
 3. ¿Cómo se evita recibir solicitudes de una publicación adoptada? (Resuelto: estados en adopción y adoptada, que cambia solo quien publicó.)
-4. ¿Qué es una solicitud de adopción: formulario, contacto externo o conversación? ¿Quién la ve, cómo se notifica, se modera y se cierra?
+4. ¿Qué es una solicitud de adopción: formulario, contacto externo o conversación? ¿Quién la ve, cómo se notifica, se modera y se cierra? (Resuelto en parte: el contacto es un chat por publicación; ver la decisión de chat. Faltan moderación, notificaciones fuera de la app y si se registra un resultado.)
 5. ¿Qué ubicación mostrar y con qué precisión? ¿Qué políticas aplican a animales perdidos y servicios si se incorporan al alcance?
 
 ## Decisiones que habilitan implementación (pendientes)
