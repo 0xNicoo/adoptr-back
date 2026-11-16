@@ -74,7 +74,7 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 - **Subida:** a través del backend, no directa desde el navegador, para garantizar en el servidor que no lleguen a S3 los metadatos ni la ubicación GPS de las fotos de celular.
 - **Formato:** se aceptan JPEG, PNG y WebP de hasta 5 MB y 40 megapíxeles. Siempre se guarda JPEG de hasta 1600 px por lado.
 - **Publicaciones de adopción:** fotos opcionales, hasta 5. La primera es la portada. Formato **vertical 3:4** (Dolores, 2026-11-10): quien publica recorta y ubica cada foto en ese formato al elegirla; si igual llega otra proporción, el backend recorta al centro. Las tarjetas de los listados son apaisadas y muestran la franja central de la foto; el detalle la muestra entera. Las fotos subidas antes de esta regla quedan como estaban. La tabla cuelga de `Publication`, así que otros tipos (como `LOST`) pueden reutilizarla.
-- **Perfiles:** una foto opcional, que se reemplaza al subir otra.
+- **Perfiles:** una foto opcional, que se reemplaza al subir otra. Formato **cuadrado 1:1** (Dolores, 2026-11-16), porque se muestra en un círculo: si llega otra proporción, el backend recorta al centro. Las fotos subidas antes de esta regla quedan como estaban.
 - **Baja lógica:** las fotos de una publicación dada de baja quedan guardadas junto con ella.
 - **Sin definir:** si la foto de perfil se muestra públicamente (hoy `owner` no la incluye), reordenar fotos o elegir portada, y cuánto tiempo conservar las fotos de publicaciones dadas de baja.
 
