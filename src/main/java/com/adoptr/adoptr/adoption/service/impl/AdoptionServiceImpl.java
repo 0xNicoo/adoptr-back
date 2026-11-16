@@ -19,6 +19,7 @@ import com.adoptr.adoptr.location.model.Locality;
 import com.adoptr.adoptr.location.repository.LocalityRepository;
 import com.adoptr.adoptr.profile.error.ProfileError;
 import com.adoptr.adoptr.profile.model.Profile;
+import com.adoptr.adoptr.profile.repository.ProfilePhotoRepository;
 import com.adoptr.adoptr.profile.repository.ProfileRepository;
 import com.adoptr.adoptr.publication.dto.response.PhotoDTO;
 import com.adoptr.adoptr.publication.model.PublicationPhoto;
@@ -65,6 +66,7 @@ public class AdoptionServiceImpl implements AdoptionService {
     private final LocalityRepository localityRepository;
     private final UserRepository userRepository;
     private final PublicationPhotoRepository photoRepository;
+    private final ProfilePhotoRepository profilePhotoRepository;
     private final ImageProcessor imageProcessor;
     private final ImageStorage imageStorage;
     private final AdoptionSummaries summaries;
@@ -76,6 +78,7 @@ public class AdoptionServiceImpl implements AdoptionService {
                                LocalityRepository localityRepository,
                                UserRepository userRepository,
                                PublicationPhotoRepository photoRepository,
+                               ProfilePhotoRepository profilePhotoRepository,
                                ImageProcessor imageProcessor,
                                ImageStorage imageStorage,
                                AdoptionSummaries summaries,
@@ -86,6 +89,7 @@ public class AdoptionServiceImpl implements AdoptionService {
         this.localityRepository = localityRepository;
         this.userRepository = userRepository;
         this.photoRepository = photoRepository;
+        this.profilePhotoRepository = profilePhotoRepository;
         this.imageProcessor = imageProcessor;
         this.imageStorage = imageStorage;
         this.summaries = summaries;
@@ -277,12 +281,18 @@ public class AdoptionServiceImpl implements AdoptionService {
 
     private AdoptionDTO toDto(AdoptionPublication publication, boolean viewerIsOwner) {
         OwnerDTO owner = profileRepository.findByUserId(publication.getAuthor().getId())
-                .map(AdoptionMapper::toOwner)
+                .map(profile -> AdoptionMapper.toOwner(profile, profilePhotoUrl(profile.getId())))
                 .orElse(null);
         AdoptionDTO dto = AdoptionMapper.toDto(publication, YearMonth.now(clock), owner, viewerIsOwner);
         dto.setPhotos(photoRepository.findByPublicationIdOrderBySortOrderAsc(publication.getId()).stream()
                 .map(photo -> new PhotoDTO(photo.getId(), imageStorage.publicUrl(photo.getS3Key())))
                 .toList());
         return dto;
+    }
+
+    private String profilePhotoUrl(Long profileId) {
+        return profilePhotoRepository.findByProfileId(profileId)
+                .map(photo -> imageStorage.publicUrl(photo.getS3Key()))
+                .orElse(null);
     }
 }

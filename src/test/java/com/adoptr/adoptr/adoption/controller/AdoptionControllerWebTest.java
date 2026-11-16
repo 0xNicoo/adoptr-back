@@ -12,6 +12,7 @@ import com.adoptr.adoptr.location.model.Locality;
 import com.adoptr.adoptr.location.model.Province;
 import com.adoptr.adoptr.location.repository.LocalityRepository;
 import com.adoptr.adoptr.profile.model.OrganizationProfile;
+import com.adoptr.adoptr.profile.repository.ProfilePhotoRepository;
 import com.adoptr.adoptr.profile.repository.ProfileRepository;
 import com.adoptr.adoptr.publication.model.PublicationPhoto;
 import com.adoptr.adoptr.publication.model.PublicationType;
@@ -55,6 +56,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -131,6 +133,9 @@ class AdoptionControllerWebTest {
 
     @MockitoBean
     private ProfileRepository profileRepository;
+
+    @MockitoBean
+    private ProfilePhotoRepository profilePhotoRepository;
 
     @MockitoBean
     private LocalityRepository localityRepository;
@@ -247,6 +252,7 @@ class AdoptionControllerWebTest {
                 .andExpect(jsonPath("$.owner.displayName").value("Refugio Patitas"))
                 .andExpect(jsonPath("$.owner.profileType").value("ORGANIZATION"))
                 .andExpect(jsonPath("$.owner.profileId").value(PROFILE_ID))
+                .andExpect(jsonPath("$.owner.photoUrl").value(nullValue()))
                 .andExpect(jsonPath("$.createdAt").value("2026-10-01T09:30:00"))
                 .andExpect(jsonPath("$.author").doesNotExist())
                 .andExpect(jsonPath("$.userId").doesNotExist())
