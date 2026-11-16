@@ -16,6 +16,7 @@ import com.adoptr.adoptr.shared.storage.ImageProcessor;
 import com.adoptr.adoptr.shared.storage.ImageStorage;
 import com.adoptr.adoptr.shared.util.MembershipSupport;
 import com.adoptr.adoptr.user.model.User;
+import com.adoptr.adoptr.user.google.GooglePhotoClient;
 import com.adoptr.adoptr.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,6 +62,9 @@ class PublicProfileControllerWebTest {
 
     @MockitoBean
     private UserRepository userRepository;
+
+    @MockitoBean
+    private GooglePhotoClient googlePhotoClient;
 
     @BeforeEach
     void setUp() {

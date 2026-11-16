@@ -10,4 +10,5 @@ public class UserDTOin {
     String providerUserId;
     String email;
     String name;
+    String googlePhotoUrl;
 }

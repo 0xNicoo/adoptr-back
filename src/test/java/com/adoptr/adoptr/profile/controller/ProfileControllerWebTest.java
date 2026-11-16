@@ -9,6 +9,7 @@ import com.adoptr.adoptr.profile.model.ProfilePhoto;
 import com.adoptr.adoptr.profile.repository.ProfilePhotoRepository;
 import com.adoptr.adoptr.profile.repository.ProfileRepository;
 import com.adoptr.adoptr.profile.service.impl.ProfileServiceImpl;
+import com.adoptr.adoptr.shared.exception.custom.ServiceUnavailableException;
 import com.adoptr.adoptr.shared.config.ClockConfig;
 import com.adoptr.adoptr.shared.security.JwtAuthFilter;
 import com.adoptr.adoptr.shared.security.JwtUtil;
@@ -17,6 +18,8 @@ import com.adoptr.adoptr.shared.storage.ImageProcessor;
 import com.adoptr.adoptr.shared.storage.ImageStorage;
 import com.adoptr.adoptr.shared.util.MembershipSupport;
 import com.adoptr.adoptr.user.model.User;
+import com.adoptr.adoptr.user.google.GooglePhotoClient;
+import com.adoptr.adoptr.user.google.GooglePhotoError;
 import com.adoptr.adoptr.user.repository.UserRepository;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
@@ -106,6 +109,11 @@ class ProfileControllerWebTest {
     @MockitoBean
     private UserRepository userRepository;
 
+    @MockitoBean
+    private GooglePhotoClient googlePhotoClient;
+
+    private final User user = new User();
+
     private String bearer() {
         return "Bearer " + jwtUtil.generateToken(USER_ID);
     }
@@ -126,9 +134,9 @@ class ProfileControllerWebTest {
 
     @BeforeEach
     void setUp() {
-        User user = new User();
         user.setId(USER_ID);
         when(userRepository.getReferenceById(USER_ID)).thenReturn(user);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(localityRepository.findById(6441030L)).thenReturn(Optional.of(laPlata()));
         when(profileRepository.saveAndFlush(any(Profile.class))).thenAnswer(invocation -> {
             Profile saved = invocation.getArgument(0);
@@ -332,5 +340,88 @@ class ProfileControllerWebTest {
         mockMvc.perform(delete("/profile/photo").header("Authorization", bearer()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("PROFILE_PHOTO_NOT_FOUND"));
+    }
+
+    private static final String GOOGLE_URL = "https://lh3.googleusercontent.com/a/foto=s96-c";
+
+    private static byte[] pngBytes(int width, int height) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ImageIO.write(new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB), "png", out);
+        return out.toByteArray();
+    }
+
+    private PersonProfile ownProfile() {
+        PersonProfile profile = new PersonProfile();
+        profile.setId(1L);
+        when(profileRepository.findByUserId(USER_ID)).thenReturn(Optional.of(profile));
+        return profile;
+    }
+
+    @Test
+    void fotoDeGoogleSinTokenDa401() throws Exception {
+        mockMvc.perform(put("/profile/photo/google"))
+                .andExpect(status().isUnauthorized());
+        verifyNoInteractions(googlePhotoClient, imageStorage);
+    }
+
+    @Test
+    void fotoDeGoogleDevuelveElPerfilConSuUrl() throws Exception {
+        ownProfile();
+        user.setGooglePhotoUrl(GOOGLE_URL);
+        when(googlePhotoClient.download(GOOGLE_URL)).thenReturn(pngBytes(20, 30));
+        ProfilePhoto photo = new ProfilePhoto();
+        photo.setS3Key("profiles/1/g.jpg");
+        when(profilePhotoRepository.findByProfileId(1L)).thenReturn(Optional.empty(), Optional.of(photo));
+        when(imageStorage.publicUrl("profiles/1/g.jpg")).thenReturn("https://cdn/profiles/1/g.jpg");
+
+        mockMvc.perform(put("/profile/photo/google").header("Authorization", bearer()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.photoUrl").value("https://cdn/profiles/1/g.jpg"));
+        verify(imageStorage).upload(any(), any());
+    }
+
+    @Test
+    void fotoDeGoogleSinPerfilDa404() throws Exception {
+        user.setGooglePhotoUrl(GOOGLE_URL);
+
+        mockMvc.perform(put("/profile/photo/google").header("Authorization", bearer()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("PROFILE_NOT_FOUND"));
+        verifyNoInteractions(googlePhotoClient);
+    }
+
+    @Test
+    void fotoDeGoogleSinFotoEnLaCuentaDa404() throws Exception {
+        ownProfile();
+
+        mockMvc.perform(put("/profile/photo/google").header("Authorization", bearer()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("GOOGLE_PHOTO_NOT_FOUND"));
+        verifyNoInteractions(googlePhotoClient);
+    }
+
+    @Test
+    void fotoDeGoogleQueNoSePuedeDescargarDa503() throws Exception {
+        ownProfile();
+        user.setGooglePhotoUrl(GOOGLE_URL);
+        when(googlePhotoClient.download(GOOGLE_URL))
+                .thenThrow(new ServiceUnavailableException(GooglePhotoError.UNAVAILABLE));
+
+        mockMvc.perform(put("/profile/photo/google").header("Authorization", bearer()))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("GOOGLE_PHOTO_UNAVAILABLE"));
+        verifyNoInteractions(imageStorage);
+    }
+
+    @Test
+    void fotoDeGoogleQueNoEsImagenDa503() throws Exception {
+        ownProfile();
+        user.setGooglePhotoUrl(GOOGLE_URL);
+        when(googlePhotoClient.download(GOOGLE_URL)).thenReturn(new byte[]{1, 2, 3});
+
+        mockMvc.perform(put("/profile/photo/google").header("Authorization", bearer()))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("GOOGLE_PHOTO_UNAVAILABLE"));
+        verifyNoInteractions(imageStorage);
     }
 }

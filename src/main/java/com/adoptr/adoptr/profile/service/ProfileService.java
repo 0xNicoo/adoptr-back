@@ -15,6 +15,8 @@ public interface ProfileService {
 
     ProfileDTO setPhoto(MultipartFile file);
 
+    ProfileDTO setGooglePhoto();
+
     void deletePhoto();
 
     /** URL de la foto de un perfil, o {@code null} si no tiene. */
