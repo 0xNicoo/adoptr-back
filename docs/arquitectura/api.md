@@ -96,7 +96,7 @@ Decisiones de producto en [dominio](../producto/dominio-y-alcance.md). Fechas co
   "status": "AVAILABLE",
   "locality": { "id": 6441030, "name": "La Plata", "displayName": "La Plata" },
   "province": { "id": 6, "name": "Buenos Aires" },
-  "owner": { "profileId": 3, "displayName": "Refugio Patitas", "profileType": "ORGANIZATION" },
+  "owner": { "profileId": 3, "displayName": "Refugio Patitas", "profileType": "ORGANIZATION", "photoUrl": "https://…/profiles/3/….jpg" },
   "photos": [{ "id": 1, "url": "https://adoptr.s3.sa-east-1.amazonaws.com/adoptions/12/a1b2c3.jpg" }],
   "coverPhotoUrl": null,
   "viewerIsOwner": false,
@@ -106,7 +106,7 @@ Decisiones de producto en [dominio](../producto/dominio-y-alcance.md). Fechas co
 ```
 
 - `lifeStage` se calcula con los meses cumplidos hasta el mes actual: `PUPPY` menos de 12, `ADULT` de 12 a menos de 96 (8 años), `SENIOR` 96 o más.
-- `owner` es el responsable: el id de su perfil (para enlazar a `GET /profiles/{id}`), nombre y apellido de una persona o nombre de la organización, y el tipo de perfil. Nunca incluye email, ids de proveedor ni el id interno del usuario.
+- `owner` es el responsable: el id de su perfil (para enlazar a `GET /profiles/{id}`), nombre y apellido de una persona o nombre de la organización, el tipo de perfil y la URL de su foto de perfil (`null` si no tiene). Nunca incluye email, ids de proveedor ni el id interno del usuario.
 - `photos` viene en orden y vacía si no hay fotos: la primera es la portada. Las URLs son públicas y no vencen. Una imagen subida siempre se guarda como JPEG de hasta 1600 px por lado, sin metadatos (se descarta la ubicación GPS) y con la orientación ya aplicada. Las fotos de adopción se guardan además **verticales, en 3:4** (hasta 1200×1600): el front las recorta antes de subirlas y, si llega otra proporción, el back recorta al centro lo que sobra. Las fotos de perfil conservan su proporción. El detalle no completa `coverPhotoUrl`: usar `photos`.
 - `viewerIsOwner` es `true` solo si el request trae un JWT válido de quien publicó. Sirve para que la interfaz muestre «Editar», «Marcar como adoptada» o «Dar de baja»; los permisos reales los verifica el backend en cada operación. Como la respuesta cambia según quién mira, el detalle sale con `Cache-Control: private` y **no debe cachearse compartido entre usuarios**.
 
@@ -154,7 +154,7 @@ Conversaciones entre quien publicó y una persona interesada, **una por publicac
     "id": 74, "type": "ADOPTION", "petName": "Luna", "species": "DOG",
     "status": "AVAILABLE", "coverPhotoUrl": null, "deleted": false
   },
-  "counterpart": { "profileId": 6, "displayName": "Ana Pérez", "profileType": "PERSON" },
+  "counterpart": { "profileId": 6, "displayName": "Ana Pérez", "profileType": "PERSON", "photoUrl": null },
   "lastMessage": { "id": 15, "conversationId": 14, "senderRole": "INTERESTED", "body": "Hola, ¿sigue disponible?", "createdAt": "2026-11-15T18:30:48" },
   "unreadCount": 1,
   "readOnly": false,
@@ -164,7 +164,7 @@ Conversaciones entre quien publicó y una persona interesada, **una por publicac
 ```
 
 - `role`: `OWNER` si la publicación es de quien mira (lo contactaron), `INTERESTED` si inició quien mira (contactó). Sirve para filtrar o separar las bandejas en el front.
-- `counterpart`: la otra persona, con la misma forma que `owner` de una adopción (para enlazar a `GET /profiles/{id}`). Nunca incluye email ni ids internos.
+- `counterpart`: la otra persona, con la misma forma que `owner` de una adopción (para enlazar a `GET /profiles/{id}`), incluida su foto. Las fotos de toda la bandeja se buscan en una sola consulta. Nunca incluye email ni ids internos.
 - `publication`: lo justo para la bandeja y el encabezado. `petName`, `species` y `status` son `null` en publicaciones que no son de adopción. `deleted: true` significa que la publicación fue dada de baja y su detalle ya no se puede abrir.
 - `unreadCount`: mensajes de la otra persona posteriores a la última vez que quien mira marcó leído. Al enviar un mensaje, lo anterior queda leído automáticamente.
 - `readOnly`: `true` si la publicación está `ADOPTED` o fue dada de baja. Se puede leer el historial pero no escribir (409 `CHAT_READ_ONLY`). No se guarda: si vuelve a `AVAILABLE`, el chat se reabre.

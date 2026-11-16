@@ -11,6 +11,8 @@ import com.adoptr.adoptr.chat.model.ChatRole;
 import com.adoptr.adoptr.chat.model.Conversation;
 import com.adoptr.adoptr.chat.repository.ChatMessageRepository;
 import com.adoptr.adoptr.chat.repository.UnreadCount;
+import com.adoptr.adoptr.profile.model.Profile;
+import com.adoptr.adoptr.profile.repository.ProfilePhotoRepository;
 import com.adoptr.adoptr.profile.repository.ProfileRepository;
 import com.adoptr.adoptr.publication.model.Publication;
 import com.adoptr.adoptr.publication.repository.PublicationPhotoRepository;
@@ -27,7 +29,7 @@ import java.util.stream.Collectors;
 
 /**
  * Arma las conversaciones vistas por un usuario. Resuelve toda la lista con una consulta por dato
- * (últimos mensajes, no leídos, perfiles y portadas), no una por conversación.
+ * (últimos mensajes, no leídos, perfiles, fotos de perfil y portadas), no una por conversación.
  * Las conversaciones tienen que traer la publicación cargada.
  */
 @Component
@@ -35,15 +37,18 @@ public class ConversationAssembler {
 
     private final ChatMessageRepository messageRepository;
     private final ProfileRepository profileRepository;
+    private final ProfilePhotoRepository profilePhotoRepository;
     private final PublicationPhotoRepository photoRepository;
     private final ImageStorage imageStorage;
 
     public ConversationAssembler(ChatMessageRepository messageRepository,
                                  ProfileRepository profileRepository,
+                                 ProfilePhotoRepository profilePhotoRepository,
                                  PublicationPhotoRepository photoRepository,
                                  ImageStorage imageStorage) {
         this.messageRepository = messageRepository;
         this.profileRepository = profileRepository;
+        this.profilePhotoRepository = profilePhotoRepository;
         this.photoRepository = photoRepository;
         this.imageStorage = imageStorage;
     }
@@ -96,8 +101,22 @@ public class ConversationAssembler {
                 .map(conversation -> counterpartId(conversation, conversation.roleOf(viewerId)))
                 .distinct()
                 .toList();
-        return profileRepository.findByUserIdIn(userIds).stream()
-                .collect(Collectors.toMap(profile -> profile.getUser().getId(), AdoptionMapper::toOwner,
+        List<Profile> profiles = profileRepository.findByUserIdIn(userIds);
+        Map<Long, String> photos = profilePhotos(profiles);
+        return profiles.stream()
+                .collect(Collectors.toMap(profile -> profile.getUser().getId(),
+                        profile -> AdoptionMapper.toOwner(profile, photos.get(profile.getId())),
+                        (first, other) -> first));
+    }
+
+    private Map<Long, String> profilePhotos(List<Profile> profiles) {
+        if (profiles.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> profileIds = profiles.stream().map(Profile::getId).toList();
+        return profilePhotoRepository.findByProfileIdIn(profileIds).stream()
+                .collect(Collectors.toMap(photo -> photo.getProfile().getId(),
+                        photo -> imageStorage.publicUrl(photo.getS3Key()),
                         (first, other) -> first));
     }
 

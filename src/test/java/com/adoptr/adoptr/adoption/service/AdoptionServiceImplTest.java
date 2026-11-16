@@ -20,6 +20,8 @@ import com.adoptr.adoptr.location.repository.LocalityRepository;
 import com.adoptr.adoptr.profile.model.OrganizationProfile;
 import com.adoptr.adoptr.profile.model.PersonProfile;
 import com.adoptr.adoptr.profile.model.ProfileType;
+import com.adoptr.adoptr.profile.model.ProfilePhoto;
+import com.adoptr.adoptr.profile.repository.ProfilePhotoRepository;
 import com.adoptr.adoptr.profile.repository.ProfileRepository;
 import com.adoptr.adoptr.publication.dto.response.PhotoDTO;
 import com.adoptr.adoptr.publication.model.PublicationPhoto;
@@ -87,6 +89,7 @@ class AdoptionServiceImplTest {
     private LocalityRepository localityRepository;
     private UserRepository userRepository;
     private PublicationPhotoRepository photoRepository;
+    private ProfilePhotoRepository profilePhotoRepository;
     private ImageProcessor imageProcessor;
     private ImageStorage imageStorage;
     private AdoptionService service;
@@ -103,10 +106,12 @@ class AdoptionServiceImplTest {
         localityRepository = mock(LocalityRepository.class);
         userRepository = mock(UserRepository.class);
         photoRepository = mock(PublicationPhotoRepository.class);
+        profilePhotoRepository = mock(ProfilePhotoRepository.class);
         imageProcessor = mock(ImageProcessor.class);
         imageStorage = mock(ImageStorage.class);
         service = new AdoptionServiceImpl(membershipSupport, adoptionRepository, profileRepository,
-                localityRepository, userRepository, photoRepository, imageProcessor, imageStorage,
+                localityRepository, userRepository, photoRepository, profilePhotoRepository, imageProcessor,
+                imageStorage,
                 new AdoptionSummaries(photoRepository, imageStorage, CLOCK), CLOCK);
         when(imageProcessor.process(any(MultipartFile.class), eq(3), eq(4))).thenReturn(IMAGE);
         when(imageStorage.publicUrl(any())).thenAnswer(invocation -> "https://cdn/" + invocation.getArgument(0));
@@ -577,6 +582,31 @@ class AdoptionServiceImplTest {
         assertThatThrownBy(() -> service.get(1L))
                 .isInstanceOf(NotFoundException.class)
                 .hasFieldOrPropertyWithValue("code", "ADOPTION_NOT_FOUND");
+    }
+
+    @Test
+    void detalleIncluyeLaFotoDeQuienPublica() {
+        anonymous();
+        existing(owner, AdoptionStatus.AVAILABLE);
+        PersonProfile profile = person();
+        profile.setId(9L);
+        when(profileRepository.findByUserId(USER_ID)).thenReturn(Optional.of(profile));
+        ProfilePhoto photo = new ProfilePhoto();
+        photo.setS3Key("profiles/9/a.jpg");
+        when(profilePhotoRepository.findByProfileId(9L)).thenReturn(Optional.of(photo));
+
+        assertThat(service.get(1L).getOwner().photoUrl()).isEqualTo("https://cdn/profiles/9/a.jpg");
+    }
+
+    @Test
+    void detalleSinFotoDeQuienPublicaDevuelvePhotoUrlNull() {
+        anonymous();
+        existing(owner, AdoptionStatus.AVAILABLE);
+        PersonProfile profile = person();
+        profile.setId(9L);
+        when(profileRepository.findByUserId(USER_ID)).thenReturn(Optional.of(profile));
+
+        assertThat(service.get(1L).getOwner().photoUrl()).isNull();
     }
 
     @Test

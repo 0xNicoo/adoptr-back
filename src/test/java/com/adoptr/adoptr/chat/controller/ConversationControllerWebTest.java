@@ -13,6 +13,8 @@ import com.adoptr.adoptr.chat.service.impl.ConversationAssembler;
 import com.adoptr.adoptr.chat.service.impl.ConversationServiceImpl;
 import com.adoptr.adoptr.profile.model.OrganizationProfile;
 import com.adoptr.adoptr.profile.model.PersonProfile;
+import com.adoptr.adoptr.profile.model.ProfilePhoto;
+import com.adoptr.adoptr.profile.repository.ProfilePhotoRepository;
 import com.adoptr.adoptr.profile.repository.ProfileRepository;
 import com.adoptr.adoptr.publication.model.PublicationType;
 import com.adoptr.adoptr.publication.repository.PublicationPhotoRepository;
@@ -48,6 +50,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -102,6 +105,9 @@ class ConversationControllerWebTest {
 
     @MockitoBean
     private ProfileRepository profileRepository;
+
+    @MockitoBean
+    private ProfilePhotoRepository profilePhotoRepository;
 
     @MockitoBean
     private UserRepository userRepository;
@@ -210,6 +216,7 @@ class ConversationControllerWebTest {
                 .andExpect(jsonPath("$.publication.deleted").value(false))
                 .andExpect(jsonPath("$.counterpart.displayName").value("Refugio Patitas"))
                 .andExpect(jsonPath("$.counterpart.profileType").value("ORGANIZATION"))
+                .andExpect(jsonPath("$.counterpart.photoUrl").value(nullValue()))
                 .andExpect(jsonPath("$.counterpart.email").doesNotExist())
                 .andExpect(jsonPath("$.lastMessage.body").value("Hola, ¿sigue en adopción?"))
                 .andExpect(jsonPath("$.lastMessage.senderRole").value("INTERESTED"))
@@ -278,12 +285,19 @@ class ConversationControllerWebTest {
         when(messageRepository.findLastMessages(List.of(CONVERSATION_ID))).thenReturn(List.of(last));
         when(messageRepository.countUnread(List.of(CONVERSATION_ID), OWNER_ID))
                 .thenReturn(List.of(new UnreadCount(CONVERSATION_ID, 2L)));
+        PersonProfile ana = new PersonProfile();
+        ana.setId(30L);
+        ProfilePhoto photo = new ProfilePhoto();
+        photo.setProfile(ana);
+        photo.setS3Key("profiles/30/a.jpg");
+        when(profilePhotoRepository.findByProfileIdIn(List.of(30L))).thenReturn(List.of(photo));
 
         mockMvc.perform(get("/conversations?role=OWNER").header("Authorization", bearer(OWNER_ID)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].role").value("OWNER"))
                 .andExpect(jsonPath("$.items[0].counterpart.displayName").value("Ana García"))
                 .andExpect(jsonPath("$.items[0].counterpart.profileId").value(30))
+                .andExpect(jsonPath("$.items[0].counterpart.photoUrl").value("https://cdn/profiles/30/a.jpg"))
                 .andExpect(jsonPath("$.items[0].lastMessage.body").value("¿Puedo ir el sábado?"))
                 .andExpect(jsonPath("$.items[0].unreadCount").value(2))
                 .andExpect(jsonPath("$.totalItems").value(1));

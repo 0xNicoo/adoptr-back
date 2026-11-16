@@ -35,15 +35,15 @@ public final class AdoptionMapper {
         return dto;
     }
 
-    public static OwnerDTO toOwner(Profile profile) {
+    public static OwnerDTO toOwner(Profile profile, String photoUrl) {
         return switch (profile) {
             case null -> null;
             case PersonProfile person ->
                     new OwnerDTO(person.getId(), person.getFirstName() + " " + person.getLastName(),
-                            person.getProfileType());
+                            person.getProfileType(), photoUrl);
             case OrganizationProfile organization ->
                     new OwnerDTO(organization.getId(), organization.getOrganizationName(),
-                            organization.getProfileType());
+                            organization.getProfileType(), photoUrl);
             default -> throw new IllegalStateException("Tipo de perfil sin mapeo: " + profile.getClass());
         };
     }
