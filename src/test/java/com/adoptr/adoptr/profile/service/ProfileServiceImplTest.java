@@ -4,6 +4,7 @@ import com.adoptr.adoptr.location.model.Locality;
 import com.adoptr.adoptr.location.model.Province;
 import com.adoptr.adoptr.location.repository.LocalityRepository;
 import com.adoptr.adoptr.profile.dto.request.ProfileDTOin;
+import com.adoptr.adoptr.profile.dto.request.ProfileUpdateDTOin;
 import com.adoptr.adoptr.profile.dto.response.ProfileDTO;
 import com.adoptr.adoptr.profile.dto.response.PublicProfileDTO;
 import com.adoptr.adoptr.profile.model.Gender;
@@ -586,5 +587,135 @@ class ProfileServiceImplTest {
 
         assertThatThrownBy(() -> service.setGooglePhoto()).isInstanceOf(ServiceUnavailableException.class);
         verifyNoInteractions(imageStorage);
+    }
+
+    // ---- Edición ----
+
+    private static ProfileUpdateDTOin personUpdate() {
+        ProfileUpdateDTOin request = new ProfileUpdateDTOin();
+        request.setFirstName(" Lola ");
+        request.setLastName("Dominguez");
+        request.setGenderType(Gender.FEMALE);
+        request.setDescription(" Tengo una perra. ");
+        request.setLocalityId(LOCALITY_ID);
+        return request;
+    }
+
+    private static ProfileUpdateDTOin organizationUpdate() {
+        ProfileUpdateDTOin request = new ProfileUpdateDTOin();
+        request.setOrganizationName(" Refugio Patitas Felices ");
+        request.setInstagram("@patitasfelices");
+        request.setFacebook("  ");
+        request.setWebsite("https://patitasfelices.org");
+        request.setDescription("Rescatamos perros y gatos.");
+        request.setLocalityId(LOCALITY_ID);
+        return request;
+    }
+
+    private OrganizationProfile existingOrganization() {
+        OrganizationProfile profile = new OrganizationProfile();
+        profile.setId(2L);
+        profile.setOrganizationName("Refugio Patitas");
+        profile.setFacebook("facebook.com/patitas");
+        when(profileRepository.findByUserId(USER_ID)).thenReturn(Optional.of(profile));
+        return profile;
+    }
+
+    @Test
+    void editarPersonaReemplazaSusDatos() {
+        PersonProfile profile = existingProfile();
+        profile.setFirstName("Dolores");
+        profile.setGenderType(Gender.X);
+
+        ProfileDTO dto = service.update(personUpdate());
+
+        verify(profileRepository).saveAndFlush(profile);
+        assertThat(profile.getFirstName()).isEqualTo("Lola");
+        assertThat(profile.getLastName()).isEqualTo("Dominguez");
+        assertThat(profile.getGenderType()).isEqualTo(Gender.FEMALE);
+        assertThat(profile.getDescription()).isEqualTo("Tengo una perra.");
+        assertThat(profile.getLocality().getId()).isEqualTo(LOCALITY_ID);
+        assertThat(dto.getFirstName()).isEqualTo("Lola");
+        assertThat(dto.getProfileType()).isEqualTo(ProfileType.PERSON);
+    }
+
+    @Test
+    void editarOrganizacionReemplazaNombreRedesYWeb() {
+        OrganizationProfile profile = existingOrganization();
+
+        ProfileDTO dto = service.update(organizationUpdate());
+
+        verify(profileRepository).saveAndFlush(profile);
+        assertThat(profile.getOrganizationName()).isEqualTo("Refugio Patitas Felices");
+        assertThat(profile.getInstagram()).isEqualTo("@patitasfelices");
+        assertThat(profile.getFacebook()).isNull();
+        assertThat(profile.getWebsite()).isEqualTo("https://patitasfelices.org");
+        assertThat(dto.getProfileType()).isEqualTo(ProfileType.ORGANIZATION);
+    }
+
+    @Test
+    void editarPersonaIgnoraLosCamposDeOrganizacion() {
+        PersonProfile profile = existingProfile();
+        ProfileUpdateDTOin request = personUpdate();
+        request.setOrganizationName("Otro nombre");
+        request.setWebsite("https://otro.org");
+
+        ProfileDTO dto = service.update(request);
+
+        assertThat(dto.getProfileType()).isEqualTo(ProfileType.PERSON);
+        assertThat(dto.getOrganizationName()).isNull();
+        assertThat(dto.getWebsite()).isNull();
+        verify(profileRepository).saveAndFlush(profile);
+    }
+
+    @Test
+    void editarPersonaSinNombreApellidoNiGeneroEsInvalidoYNoGuarda() {
+        existingProfile();
+        ProfileUpdateDTOin request = personUpdate();
+        request.setFirstName(" ");
+        request.setLastName(null);
+        request.setGenderType(null);
+
+        assertThatThrownBy(() -> service.update(request))
+                .isInstanceOfSatisfying(BadRequestException.class, e -> {
+                    assertThat(e.getCode()).isEqualTo("VALIDATION_ERROR");
+                    assertThat(e.getMessage()).contains("firstName", "lastName", "genderType");
+                });
+        verify(profileRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void editarOrganizacionConWebSinHttpEsInvalido() {
+        existingOrganization();
+        ProfileUpdateDTOin request = organizationUpdate();
+        request.setWebsite("patitas.org");
+
+        assertThatThrownBy(() -> service.update(request))
+                .isInstanceOfSatisfying(BadRequestException.class,
+                        e -> assertThat(e.getMessage()).contains("website"));
+        verify(profileRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void editarConLocalidadInexistenteEsInvalido() {
+        existingProfile();
+        ProfileUpdateDTOin request = personUpdate();
+        request.setLocalityId(999L);
+        when(localityRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.update(request))
+                .isInstanceOfSatisfying(BadRequestException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("LOCALITY_NOT_FOUND"));
+        verify(profileRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void editarSinPerfilDevuelveNotFound() {
+        when(profileRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.update(personUpdate()))
+                .isInstanceOfSatisfying(NotFoundException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("PROFILE_NOT_FOUND"));
+        verify(profileRepository, never()).saveAndFlush(any());
     }
 }

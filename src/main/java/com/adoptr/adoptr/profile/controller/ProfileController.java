@@ -1,6 +1,7 @@
 package com.adoptr.adoptr.profile.controller;
 
 import com.adoptr.adoptr.profile.dto.request.ProfileDTOin;
+import com.adoptr.adoptr.profile.dto.request.ProfileUpdateDTOin;
 import com.adoptr.adoptr.profile.dto.response.ProfileDTO;
 import com.adoptr.adoptr.profile.service.ProfileService;
 import jakarta.validation.Valid;
@@ -30,6 +31,11 @@ public class ProfileController {
     @ResponseStatus(HttpStatus.CREATED)
     public ProfileDTO create(@Valid @RequestBody ProfileDTOin request) {
         return profileService.create(request);
+    }
+
+    @PutMapping("")
+    public ProfileDTO update(@Valid @RequestBody ProfileUpdateDTOin request) {
+        return profileService.update(request);
     }
 
     /** Sube la foto del perfil o reemplaza la que tenía. */

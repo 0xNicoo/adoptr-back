@@ -3,6 +3,7 @@ package com.adoptr.adoptr.profile.controller;
 import com.adoptr.adoptr.location.model.Locality;
 import com.adoptr.adoptr.location.model.Province;
 import com.adoptr.adoptr.location.repository.LocalityRepository;
+import com.adoptr.adoptr.profile.model.OrganizationProfile;
 import com.adoptr.adoptr.profile.model.PersonProfile;
 import com.adoptr.adoptr.profile.model.Profile;
 import com.adoptr.adoptr.profile.model.ProfilePhoto;
@@ -423,5 +424,84 @@ class ProfileControllerWebTest {
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.code").value("GOOGLE_PHOTO_UNAVAILABLE"));
         verifyNoInteractions(imageStorage);
+    }
+
+    private static final String PERSON_UPDATE_JSON = """
+            {
+              "firstName": "Lola",
+              "lastName": "Dominguez",
+              "genderType": "FEMALE",
+              "description": "Tengo una perra.",
+              "localityId": 6441030
+            }
+            """;
+
+    @Test
+    void editarSinTokenDa401() throws Exception {
+        mockMvc.perform(put("/profile").contentType(MediaType.APPLICATION_JSON).content(PERSON_UPDATE_JSON))
+                .andExpect(status().isUnauthorized());
+        verify(profileRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void editarDevuelve200ConElPerfilActualizado() throws Exception {
+        PersonProfile profile = new PersonProfile();
+        profile.setId(1L);
+        profile.setFirstName("Dolores");
+        when(profileRepository.findByUserId(USER_ID)).thenReturn(Optional.of(profile));
+
+        mockMvc.perform(put("/profile").header("Authorization", bearer())
+                        .contentType(MediaType.APPLICATION_JSON).content(PERSON_UPDATE_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.profileType").value("PERSON"))
+                .andExpect(jsonPath("$.firstName").value("Lola"))
+                .andExpect(jsonPath("$.genderType").value("FEMALE"))
+                .andExpect(jsonPath("$.locality.displayName").value("La Plata"));
+    }
+
+    @Test
+    void editarNoCambiaElTipoDePerfil() throws Exception {
+        OrganizationProfile profile = new OrganizationProfile();
+        profile.setId(1L);
+        when(profileRepository.findByUserId(USER_ID)).thenReturn(Optional.of(profile));
+
+        mockMvc.perform(put("/profile").header("Authorization", bearer())
+                        .contentType(MediaType.APPLICATION_JSON).content(ORGANIZATION_JSON.replace(
+                                "\"profileType\": \"ORGANIZATION\"", "\"profileType\": \"PERSON\"")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profileType").value("ORGANIZATION"))
+                .andExpect(jsonPath("$.organizationName").value("Refugio Patitas"));
+    }
+
+    @Test
+    void editarSinDescripcionDa400() throws Exception {
+        mockMvc.perform(put("/profile").header("Authorization", bearer())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(PERSON_UPDATE_JSON.replace("\"Tengo una perra.\"", "\"  \"")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+        verify(profileRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void editarConLocalidadInexistenteDa400() throws Exception {
+        PersonProfile profile = new PersonProfile();
+        profile.setId(1L);
+        when(profileRepository.findByUserId(USER_ID)).thenReturn(Optional.of(profile));
+
+        mockMvc.perform(put("/profile").header("Authorization", bearer())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(PERSON_UPDATE_JSON.replace("6441030", "999")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("LOCALITY_NOT_FOUND"));
+    }
+
+    @Test
+    void editarSinPerfilDa404() throws Exception {
+        mockMvc.perform(put("/profile").header("Authorization", bearer())
+                        .contentType(MediaType.APPLICATION_JSON).content(PERSON_UPDATE_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("PROFILE_NOT_FOUND"));
     }
 }
