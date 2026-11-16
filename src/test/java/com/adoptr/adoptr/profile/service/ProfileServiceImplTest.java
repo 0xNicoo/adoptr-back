@@ -19,10 +19,15 @@ import com.adoptr.adoptr.shared.config.ClockConfig;
 import com.adoptr.adoptr.shared.exception.custom.BadRequestException;
 import com.adoptr.adoptr.shared.exception.custom.ConflictException;
 import com.adoptr.adoptr.shared.exception.custom.NotFoundException;
+import com.adoptr.adoptr.shared.exception.custom.PayloadTooLargeException;
+import com.adoptr.adoptr.shared.exception.custom.ServiceUnavailableException;
 import com.adoptr.adoptr.shared.storage.ImageProcessor;
 import com.adoptr.adoptr.shared.storage.ImageStorage;
 import com.adoptr.adoptr.shared.storage.ProcessedImage;
+import com.adoptr.adoptr.shared.storage.ImageError;
 import com.adoptr.adoptr.shared.util.MembershipSupport;
+import com.adoptr.adoptr.user.google.GooglePhotoClient;
+import com.adoptr.adoptr.user.google.GooglePhotoError;
 import com.adoptr.adoptr.user.model.User;
 import com.adoptr.adoptr.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +38,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -46,6 +52,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -64,8 +71,9 @@ class ProfileServiceImplTest {
     private final ProfilePhotoRepository photoRepository = mock(ProfilePhotoRepository.class);
     private final ImageProcessor imageProcessor = mock(ImageProcessor.class);
     private final ImageStorage imageStorage = mock(ImageStorage.class);
+    private final GooglePhotoClient googlePhotoClient = mock(GooglePhotoClient.class);
     private final ProfileService service = new ProfileServiceImpl(membershipSupport, profileRepository,
-            localityRepository, userRepository, photoRepository, imageProcessor, imageStorage,
+            localityRepository, userRepository, photoRepository, imageProcessor, imageStorage, googlePhotoClient,
             Clock.fixed(Instant.parse("2026-11-07T15:00:00Z"), ClockConfig.ZONE));
 
     private final User user = new User();
@@ -74,7 +82,9 @@ class ProfileServiceImplTest {
     void setUp() {
         user.setId(USER_ID);
         when(membershipSupport.getUserId()).thenReturn(USER_ID);
-        when(imageProcessor.process(any(), eq(1), eq(1))).thenReturn(IMAGE);
+        when(imageProcessor.process(any(MultipartFile.class), eq(1), eq(1))).thenReturn(IMAGE);
+        when(imageProcessor.process(any(byte[].class), eq(1), eq(1))).thenReturn(IMAGE);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(imageStorage.publicUrl(any())).thenAnswer(invocation -> "https://cdn/" + invocation.getArgument(0));
         when(userRepository.getReferenceById(USER_ID)).thenReturn(user);
         when(localityRepository.findById(LOCALITY_ID)).thenReturn(Optional.of(laPlata()));
@@ -470,5 +480,111 @@ class ProfileServiceImplTest {
         when(photoRepository.findByProfileId(1L)).thenReturn(Optional.of(photo(profile, "profiles/1/a.jpg")));
 
         assertThat(service.get().getPhotoUrl()).isEqualTo("https://cdn/profiles/1/a.jpg");
+    }
+
+    private static final String GOOGLE_URL = "https://lh3.googleusercontent.com/a/foto=s96-c";
+    private static final byte[] GOOGLE_BYTES = {9, 8, 7};
+
+    @Test
+    void laFotoDeGoogleSeDescargaRecortadaYSeGuardaComoFotoDelPerfil() {
+        PersonProfile profile = existingProfile();
+        user.setGooglePhotoUrl(GOOGLE_URL);
+        when(googlePhotoClient.download(GOOGLE_URL)).thenReturn(GOOGLE_BYTES);
+
+        ProfileDTO dto = service.setGooglePhoto();
+
+        verify(imageProcessor).process(GOOGLE_BYTES, 1, 1);
+        ArgumentCaptor<ProfilePhoto> saved = ArgumentCaptor.forClass(ProfilePhoto.class);
+        verify(photoRepository).saveAndFlush(saved.capture());
+        assertThat(saved.getValue().getProfile()).isSameAs(profile);
+        assertThat(saved.getValue().getS3Key()).startsWith("profiles/1/").endsWith(".jpg");
+        verify(imageStorage).upload(saved.getValue().getS3Key(), IMAGE);
+        assertThat(dto.getId()).isEqualTo(1L);
+    }
+
+    @Test
+    void laFotoDeGoogleReemplazaLaAnterior() {
+        PersonProfile profile = existingProfile();
+        ProfilePhoto current = photo(profile, "profiles/1/vieja.jpg");
+        when(photoRepository.findByProfileId(1L)).thenReturn(Optional.of(current));
+        user.setGooglePhotoUrl(GOOGLE_URL);
+        when(googlePhotoClient.download(GOOGLE_URL)).thenReturn(GOOGLE_BYTES);
+
+        service.setGooglePhoto();
+
+        InOrder order = inOrder(photoRepository, imageStorage);
+        order.verify(photoRepository).saveAndFlush(current);
+        order.verify(imageStorage).delete("profiles/1/vieja.jpg");
+    }
+
+    @Test
+    void sinPerfilLaFotoDeGoogleDa404SinDescargarNada() {
+        when(profileRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
+        user.setGooglePhotoUrl(GOOGLE_URL);
+
+        assertThatThrownBy(() -> service.setGooglePhoto())
+                .isInstanceOfSatisfying(NotFoundException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("PROFILE_NOT_FOUND"));
+        verifyNoInteractions(googlePhotoClient, imageStorage);
+    }
+
+    @Test
+    void siLaCuentaNoTieneFotoDeGoogleDa404() {
+        existingProfile();
+
+        assertThatThrownBy(() -> service.setGooglePhoto())
+                .isInstanceOfSatisfying(NotFoundException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("GOOGLE_PHOTO_NOT_FOUND"));
+        verifyNoInteractions(googlePhotoClient, imageStorage);
+    }
+
+    @Test
+    void unaUrlGuardadaQueNoEsDeGoogleSeTrataComoSinFoto() {
+        existingProfile();
+        user.setGooglePhotoUrl("https://evil.com/foto.jpg");
+
+        assertThatThrownBy(() -> service.setGooglePhoto())
+                .isInstanceOfSatisfying(NotFoundException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("GOOGLE_PHOTO_NOT_FOUND"));
+        verifyNoInteractions(googlePhotoClient, imageStorage);
+    }
+
+    @Test
+    void siFallaLaDescargaNoSubeNada() {
+        existingProfile();
+        user.setGooglePhotoUrl(GOOGLE_URL);
+        when(googlePhotoClient.download(GOOGLE_URL))
+                .thenThrow(new ServiceUnavailableException(GooglePhotoError.UNAVAILABLE));
+
+        assertThatThrownBy(() -> service.setGooglePhoto())
+                .isInstanceOfSatisfying(ServiceUnavailableException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("GOOGLE_PHOTO_UNAVAILABLE"));
+        verifyNoInteractions(imageStorage);
+    }
+
+    @Test
+    void siGoogleDevuelveAlgoQueNoEsUnaImagenDa503() {
+        existingProfile();
+        user.setGooglePhotoUrl(GOOGLE_URL);
+        when(googlePhotoClient.download(GOOGLE_URL)).thenReturn(GOOGLE_BYTES);
+        when(imageProcessor.process(any(byte[].class), eq(1), eq(1)))
+                .thenThrow(new BadRequestException(ImageError.INVALID));
+
+        assertThatThrownBy(() -> service.setGooglePhoto())
+                .isInstanceOfSatisfying(ServiceUnavailableException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("GOOGLE_PHOTO_UNAVAILABLE"));
+        verifyNoInteractions(imageStorage);
+    }
+
+    @Test
+    void siLaFotoDeGoogleEsDemasiadoGrandeDa503() {
+        existingProfile();
+        user.setGooglePhotoUrl(GOOGLE_URL);
+        when(googlePhotoClient.download(GOOGLE_URL)).thenReturn(GOOGLE_BYTES);
+        when(imageProcessor.process(any(byte[].class), eq(1), eq(1)))
+                .thenThrow(new PayloadTooLargeException(ImageError.TOO_LARGE));
+
+        assertThatThrownBy(() -> service.setGooglePhoto()).isInstanceOf(ServiceUnavailableException.class);
+        verifyNoInteractions(imageStorage);
     }
 }

@@ -19,11 +19,16 @@ import com.adoptr.adoptr.profile.service.ProfileService;
 import com.adoptr.adoptr.shared.exception.custom.BadRequestException;
 import com.adoptr.adoptr.shared.exception.custom.ConflictException;
 import com.adoptr.adoptr.shared.exception.custom.NotFoundException;
+import com.adoptr.adoptr.shared.exception.custom.PayloadTooLargeException;
+import com.adoptr.adoptr.shared.exception.custom.ServiceUnavailableException;
 import com.adoptr.adoptr.shared.exception.error.CommonError;
 import com.adoptr.adoptr.shared.storage.ImageProcessor;
 import com.adoptr.adoptr.shared.storage.ImageStorage;
 import com.adoptr.adoptr.shared.storage.ProcessedImage;
 import com.adoptr.adoptr.shared.util.MembershipSupport;
+import com.adoptr.adoptr.user.google.GooglePhotoClient;
+import com.adoptr.adoptr.user.google.GooglePhotoError;
+import com.adoptr.adoptr.user.model.User;
 import com.adoptr.adoptr.user.repository.UserRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -50,6 +55,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final ProfilePhotoRepository photoRepository;
     private final ImageProcessor imageProcessor;
     private final ImageStorage imageStorage;
+    private final GooglePhotoClient googlePhotoClient;
     private final Clock clock;
 
     public ProfileServiceImpl(MembershipSupport membershipSupport,
@@ -59,6 +65,7 @@ public class ProfileServiceImpl implements ProfileService {
                               ProfilePhotoRepository photoRepository,
                               ImageProcessor imageProcessor,
                               ImageStorage imageStorage,
+                              GooglePhotoClient googlePhotoClient,
                               Clock clock) {
         this.membershipSupport = membershipSupport;
         this.profileRepository = profileRepository;
@@ -67,6 +74,7 @@ public class ProfileServiceImpl implements ProfileService {
         this.photoRepository = photoRepository;
         this.imageProcessor = imageProcessor;
         this.imageStorage = imageStorage;
+        this.googlePhotoClient = googlePhotoClient;
         this.clock = clock;
     }
 
@@ -89,7 +97,27 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public ProfileDTO setPhoto(MultipartFile file) {
         Profile profile = findOwn();
-        ProcessedImage image = imageProcessor.process(file, PHOTO_RATIO_WIDTH, PHOTO_RATIO_HEIGHT);
+        return store(profile, imageProcessor.process(file, PHOTO_RATIO_WIDTH, PHOTO_RATIO_HEIGHT));
+    }
+
+    @Override
+    public ProfileDTO setGooglePhoto() {
+        Profile profile = findOwn();
+        String url = userRepository.findById(membershipSupport.getUserId())
+                .map(User::getGooglePhotoUrl)
+                .filter(GooglePhotoClient::isAllowed)
+                .orElseThrow(() -> new NotFoundException(GooglePhotoError.NOT_FOUND));
+        byte[] bytes = googlePhotoClient.download(url);
+        ProcessedImage image;
+        try {
+            image = imageProcessor.process(bytes, PHOTO_RATIO_WIDTH, PHOTO_RATIO_HEIGHT);
+        } catch (BadRequestException | PayloadTooLargeException e) {
+            throw new ServiceUnavailableException(GooglePhotoError.UNAVAILABLE);
+        }
+        return store(profile, image);
+    }
+
+    private ProfileDTO store(Profile profile, ProcessedImage image) {
         String key = "profiles/" + profile.getId() + "/" + UUID.randomUUID() + "." + image.extension();
         imageStorage.upload(key, image);
 

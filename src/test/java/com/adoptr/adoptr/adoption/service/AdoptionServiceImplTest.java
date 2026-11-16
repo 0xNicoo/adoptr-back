@@ -47,6 +47,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -107,7 +108,7 @@ class AdoptionServiceImplTest {
         service = new AdoptionServiceImpl(membershipSupport, adoptionRepository, profileRepository,
                 localityRepository, userRepository, photoRepository, imageProcessor, imageStorage,
                 new AdoptionSummaries(photoRepository, imageStorage, CLOCK), CLOCK);
-        when(imageProcessor.process(any(), eq(3), eq(4))).thenReturn(IMAGE);
+        when(imageProcessor.process(any(MultipartFile.class), eq(3), eq(4))).thenReturn(IMAGE);
         when(imageStorage.publicUrl(any())).thenAnswer(invocation -> "https://cdn/" + invocation.getArgument(0));
 
         Province province = new Province();
@@ -815,7 +816,7 @@ class AdoptionServiceImplTest {
         assertThatThrownBy(() -> service.addPhoto(1L, FILE))
                 .isInstanceOfSatisfying(ConflictException.class,
                         e -> assertThat(e.getCode()).isEqualTo("ADOPTION_PHOTO_LIMIT_REACHED"));
-        verify(imageProcessor, never()).process(any(), anyInt(), anyInt());
+        verify(imageProcessor, never()).process(any(MultipartFile.class), anyInt(), anyInt());
     }
 
     @Test

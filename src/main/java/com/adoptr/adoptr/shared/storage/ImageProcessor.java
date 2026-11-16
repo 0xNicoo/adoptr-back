@@ -59,9 +59,24 @@ public class ImageProcessor {
         if (file.getSize() > MAX_FILE_BYTES) {
             throw new PayloadTooLargeException(ImageError.TOO_LARGE);
         }
+        byte[] original;
+        try {
+            original = file.getBytes();
+        } catch (IOException e) {
+            throw new BadRequestException(ImageError.INVALID);
+        }
+        return process(original, ratioWidth, ratioHeight);
+    }
+
+    public ProcessedImage process(byte[] original, int ratioWidth, int ratioHeight) {
+        if (original == null || original.length == 0) {
+            throw new BadRequestException(ImageError.INVALID);
+        }
+        if (original.length > MAX_FILE_BYTES) {
+            throw new PayloadTooLargeException(ImageError.TOO_LARGE);
+        }
         permits.acquireUninterruptibly();
         try {
-            byte[] original = file.getBytes();
             int longestSide = inspect(original);
             Thumbnails.Builder<?> builder = Thumbnails.of(new ByteArrayInputStream(original));
             BufferedImage image = (longestSide > MAX_SIDE ? builder.size(MAX_SIDE, MAX_SIDE) : builder.scale(1.0))

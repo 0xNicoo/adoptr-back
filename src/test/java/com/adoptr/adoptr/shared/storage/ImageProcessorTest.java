@@ -226,6 +226,26 @@ class ImageProcessorTest {
     }
 
     @Test
+    void procesaBytesConLaMismaProporcion() throws IOException {
+        BufferedImage decoded = decode(processor.process(encode(rgb(500, 300), "png"), 1, 1));
+
+        assertThat(decoded.getWidth()).isEqualTo(300);
+        assertThat(decoded.getHeight()).isEqualTo(300);
+    }
+
+    @Test
+    void bytesVaciosSonInvalidos() {
+        assertThatThrownBy(() -> processor.process(new byte[0], 1, 1))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void bytesQueSuperanElLimiteSonDemasiadoGrandes() {
+        assertThatThrownBy(() -> processor.process(new byte[(int) ImageProcessor.MAX_FILE_BYTES + 1], 1, 1))
+                .isInstanceOf(PayloadTooLargeException.class);
+    }
+
+    @Test
     void conProporcionRecortaDespuesDeGirarSegunExif() throws IOException {
         BufferedImage decoded = decode(processor.process(file(jpegWithExif(rgb(600, 300)), "image/jpeg"), 3, 4));
 

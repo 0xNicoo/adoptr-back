@@ -18,6 +18,8 @@ public class User {
     private String providerUserId;
     private String email;
     private String name;
+    @Column(name = "google_photo_url", length = 2048)
+    private String googlePhotoUrl;
     private LocalDateTime createdAt;
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Profile profile;

@@ -39,8 +39,11 @@ public class AuthService {
     public AuthDTO authenticate(String provider, String token) {
         AuthUser authUser = validator.validate(token);
         Optional<User> userOptional = userService.findByProviderAndProviderUserId(provider, authUser.providerUserId());
-        UserDTOin userDTOin = new UserDTOin(provider, authUser.providerUserId(), authUser.email(), authUser.name());
-        User user = userOptional.orElseGet(() -> userService.createUser(userDTOin));
+        UserDTOin userDTOin = new UserDTOin(provider, authUser.providerUserId(), authUser.email(), authUser.name(),
+                authUser.avatar());
+        User user = userOptional
+                .map(existing -> userService.syncGooglePhotoUrl(existing, authUser.avatar()))
+                .orElseGet(() -> userService.createUser(userDTOin));
         UserDTO userDTO = UserMapper.MAPPER.toDto(user);
         if (userDTO.getProfile() != null) {
             userDTO.getProfile().setPhotoUrl(profileService.photoUrl(userDTO.getProfile().getId()));

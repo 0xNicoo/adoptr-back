@@ -12,6 +12,7 @@ import com.adoptr.adoptr.shared.config.ClockConfig;
 import com.adoptr.adoptr.shared.storage.ImageProcessor;
 import com.adoptr.adoptr.shared.storage.ImageStorage;
 import com.adoptr.adoptr.shared.util.MembershipSupport;
+import com.adoptr.adoptr.user.google.GooglePhotoClient;
 import com.adoptr.adoptr.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,6 +74,9 @@ class SecurityAndErrorsWebTest {
 
     @MockitoBean
     private UserRepository userRepository;
+
+    @MockitoBean
+    private GooglePhotoClient googlePhotoClient;
 
     @MockitoBean
     private AuthService authService;

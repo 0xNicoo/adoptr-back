@@ -38,6 +38,11 @@ public class ProfileController {
         return profileService.setPhoto(file);
     }
 
+    @PutMapping("/photo/google")
+    public ProfileDTO setGooglePhoto() {
+        return profileService.setGooglePhoto();
+    }
+
     @DeleteMapping("/photo")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deletePhoto() {
