@@ -74,7 +74,7 @@ class ProfileServiceImplTest {
     void setUp() {
         user.setId(USER_ID);
         when(membershipSupport.getUserId()).thenReturn(USER_ID);
-        when(imageProcessor.process(any())).thenReturn(IMAGE);
+        when(imageProcessor.process(any(), eq(1), eq(1))).thenReturn(IMAGE);
         when(imageStorage.publicUrl(any())).thenAnswer(invocation -> "https://cdn/" + invocation.getArgument(0));
         when(userRepository.getReferenceById(USER_ID)).thenReturn(user);
         when(localityRepository.findById(LOCALITY_ID)).thenReturn(Optional.of(laPlata()));

@@ -40,6 +40,9 @@ import java.util.UUID;
 @Service
 public class ProfileServiceImpl implements ProfileService {
 
+    static final int PHOTO_RATIO_WIDTH = 1;
+    static final int PHOTO_RATIO_HEIGHT = 1;
+
     private final MembershipSupport membershipSupport;
     private final ProfileRepository profileRepository;
     private final LocalityRepository localityRepository;
@@ -86,7 +89,7 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public ProfileDTO setPhoto(MultipartFile file) {
         Profile profile = findOwn();
-        ProcessedImage image = imageProcessor.process(file);
+        ProcessedImage image = imageProcessor.process(file, PHOTO_RATIO_WIDTH, PHOTO_RATIO_HEIGHT);
         String key = "profiles/" + profile.getId() + "/" + UUID.randomUUID() + "." + image.extension();
         imageStorage.upload(key, image);
 

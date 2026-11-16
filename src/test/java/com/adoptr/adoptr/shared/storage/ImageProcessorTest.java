@@ -218,6 +218,14 @@ class ImageProcessorTest {
     }
 
     @Test
+    void conProporcionCuadradaRecortaArribaYAbajoUnaFotoVertical() throws IOException {
+        BufferedImage decoded = decode(processor.process(file(encode(rgb(300, 500), "png"), "image/png"), 1, 1));
+
+        assertThat(decoded.getWidth()).isEqualTo(300);
+        assertThat(decoded.getHeight()).isEqualTo(300);
+    }
+
+    @Test
     void conProporcionRecortaDespuesDeGirarSegunExif() throws IOException {
         BufferedImage decoded = decode(processor.process(file(jpegWithExif(rgb(600, 300)), "image/jpeg"), 3, 4));
 
