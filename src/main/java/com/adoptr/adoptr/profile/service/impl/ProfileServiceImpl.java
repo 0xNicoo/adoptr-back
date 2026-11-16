@@ -4,6 +4,7 @@ import com.adoptr.adoptr.location.error.LocationError;
 import com.adoptr.adoptr.location.model.Locality;
 import com.adoptr.adoptr.location.repository.LocalityRepository;
 import com.adoptr.adoptr.profile.dto.request.ProfileDTOin;
+import com.adoptr.adoptr.profile.dto.request.ProfileUpdateDTOin;
 import com.adoptr.adoptr.profile.dto.response.ProfileDTO;
 import com.adoptr.adoptr.profile.dto.response.PublicProfileDTO;
 import com.adoptr.adoptr.profile.error.ProfileError;
@@ -177,8 +178,7 @@ public class ProfileServiceImpl implements ProfileService {
         if (profileRepository.existsByUserId(userId)) {
             throw new ConflictException(ProfileError.ALREADY_EXISTS);
         }
-        Locality locality = localityRepository.findById(request.getLocalityId())
-                .orElseThrow(() -> new BadRequestException(LocationError.LOCALITY_NOT_FOUND));
+        Locality locality = findLocality(request.getLocalityId());
 
         profile.setUser(userRepository.getReferenceById(userId));
         profile.setLocality(locality);
@@ -191,36 +191,66 @@ public class ProfileServiceImpl implements ProfileService {
         }
     }
 
+    @Override
+    @Transactional
+    public ProfileDTO update(ProfileUpdateDTOin request) {
+        Profile profile = findOwn();
+        Locality locality = findLocality(request.getLocalityId());
+        applyFields(profile, request);
+        profile.setLocality(locality);
+        profile.setDescription(clean(request.getDescription()));
+        return toDto(profileRepository.saveAndFlush(profile));
+    }
+
     private Profile buildProfile(ProfileDTOin request) {
+        Profile profile = request.getProfileType() == ProfileType.PERSON
+                ? new PersonProfile()
+                : new OrganizationProfile();
+        applyFields(profile, request);
+        return profile;
+    }
+
+    private void applyFields(Profile profile, ProfileUpdateDTOin request) {
         List<String> errors = new ArrayList<>();
-        Profile profile;
-        if (request.getProfileType() == ProfileType.PERSON) {
-            PersonProfile person = new PersonProfile();
-            person.setFirstName(required(request.getFirstName(), "firstName", errors));
-            person.setLastName(required(request.getLastName(), "lastName", errors));
-            if (request.getGenderType() == null) {
-                errors.add("genderType: es obligatorio");
+        switch (profile) {
+            case PersonProfile person -> {
+                String firstName = required(request.getFirstName(), "firstName", errors);
+                String lastName = required(request.getLastName(), "lastName", errors);
+                if (request.getGenderType() == null) {
+                    errors.add("genderType: es obligatorio");
+                }
+                failIfInvalid(errors);
+                person.setFirstName(firstName);
+                person.setLastName(lastName);
+                person.setGenderType(request.getGenderType());
             }
-            person.setGenderType(request.getGenderType());
-            profile = person;
-        } else {
-            OrganizationProfile organization = new OrganizationProfile();
-            organization.setOrganizationName(required(request.getOrganizationName(), "organizationName", errors));
-            organization.setInstagram(clean(request.getInstagram()));
-            organization.setFacebook(clean(request.getFacebook()));
-            String website = clean(request.getWebsite());
-            if (website != null && !isHttpUrl(website)) {
-                errors.add("website: debe empezar con http:// o https://");
+            case OrganizationProfile organization -> {
+                String organizationName = required(request.getOrganizationName(), "organizationName", errors);
+                String website = clean(request.getWebsite());
+                if (website != null && !isHttpUrl(website)) {
+                    errors.add("website: debe empezar con http:// o https://");
+                }
+                failIfInvalid(errors);
+                organization.setOrganizationName(organizationName);
+                organization.setInstagram(clean(request.getInstagram()));
+                organization.setFacebook(clean(request.getFacebook()));
+                organization.setWebsite(website);
             }
-            organization.setWebsite(website);
-            profile = organization;
+            default -> throw new IllegalStateException("Tipo de perfil sin mapeo: " + profile.getClass());
         }
+    }
+
+    private static void failIfInvalid(List<String> errors) {
         if (!errors.isEmpty()) {
             String detail = String.join("; ", errors.stream().sorted().toList());
             throw new BadRequestException(CommonError.VALIDATION_ERROR.getCode(),
                     CommonError.VALIDATION_ERROR.getMessage() + " (" + detail + ")");
         }
-        return profile;
+    }
+
+    private Locality findLocality(Long localityId) {
+        return localityRepository.findById(localityId)
+                .orElseThrow(() -> new BadRequestException(LocationError.LOCALITY_NOT_FOUND));
     }
 
     private static String required(String value, String field, List<String> errors) {
