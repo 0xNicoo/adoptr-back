@@ -152,6 +152,9 @@ public class AdoptionServiceImpl implements AdoptionService {
     @Transactional
     public void delete(Long id) {
         AdoptionPublication publication = findOwned(id);
+        if (publication.getStatus() == AdoptionStatus.ADOPTED) {
+            throw new ConflictException(AdoptionError.ADOPTED_NOT_DELETABLE);
+        }
         publication.setDeletedAt(LocalDateTime.now(clock));
         adoptionRepository.save(publication);
     }

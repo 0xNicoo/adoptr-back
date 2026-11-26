@@ -531,6 +531,18 @@ class AdoptionServiceImplTest {
     }
 
     @Test
+    void bajaDeAdoptadaDevuelve409() {
+        loggedAs(USER_ID);
+        AdoptionPublication p = existing(owner, AdoptionStatus.ADOPTED);
+
+        assertThatThrownBy(() -> service.delete(1L))
+                .isInstanceOf(ConflictException.class)
+                .hasFieldOrPropertyWithValue("code", "ADOPTION_ADOPTED_NOT_DELETABLE");
+        assertThat(p.getDeletedAt()).isNull();
+        verify(adoptionRepository, never()).save(any());
+    }
+
+    @Test
     void bajaRepetidaDevuelve404() {
         loggedAs(USER_ID);
         deleted();
