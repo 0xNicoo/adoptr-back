@@ -505,6 +505,15 @@ class AdoptionControllerWebTest {
     }
 
     @Test
+    void bajaDeAdoptadaDevuelve409() throws Exception {
+        existing().setStatus(AdoptionStatus.ADOPTED);
+
+        mockMvc.perform(delete("/adoptions/1").header("Authorization", bearer(OWNER_ID)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("ADOPTION_ADOPTED_NOT_DELETABLE"));
+    }
+
+    @Test
     void bajaSinTokenDevuelve401() throws Exception {
         mockMvc.perform(delete("/adoptions/1"))
                 .andExpect(status().isUnauthorized());

@@ -39,7 +39,7 @@ Vocabulario de trabajo para consensuar requisitos con el equipo. No confundir mo
 - **Estados:** en adopción y adoptada. Toda publicación nace en adopción. Solo quien publicó cambia el estado, en los dos sentidos (para corregir un error o una adopción que no funcionó). Más adelante pueden sumarse pausada, reservada o borrador.
 - **Catálogo y detalle:** el catálogo muestra solo las publicaciones en adopción, de la más nueva a la más vieja, y se puede filtrar por especie, sexo, tamaño, provincia, localidad y etapa de vida (los filtros se combinan). No hay filtros por salud ni por texto por ahora. El detalle de una adoptada sigue siendo público y muestra su estado, para que un link viejo compartido en redes diga «ya fue adoptada» y corte las consultas.
 - **Edición:** se puede editar en cualquier estado. Quien publicó también puede editar desde el detalle: el detalle informa si quien mira es el dueño.
-- **Baja:** lógica. La publicación desaparece del detalle y de «mis publicaciones», pero queda guardada.
+- **Baja:** lógica. La publicación desaparece del detalle y de «mis publicaciones», pero queda guardada. Solo se da de baja una publicación en adopción: una adoptada no se puede eliminar (Dolores, 2026-11-26). No hay forma de deshacerla desde la app.
 - **Responsable visible:** nombre y apellido de la persona, o nombre de la organización, y el tipo de perfil. Nunca el email.
 - **Para más adelante:** quién adoptó (depende del módulo de contacto), raza, color, compatibilidad con chicos y otros animales.
 
